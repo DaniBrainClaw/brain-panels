@@ -1,0 +1,6609 @@
+# OPENCLAW EXPERT — Complete Technical Reference
+
+> **Confidence Key:** ✅ = confirmed from source/docs | ⚠️ = partially confirmed | ❌ = may be wrong or outdated
+
+---
+
+## Table of Contents
+
+1. [Architecture Overview](#1-architecture-overview)
+2. [Configuration Deep Dive](#2-configuration-deep-dive)
+3. [Agent System](#3-agent-system)
+4. [Cron & Scheduling](#4-cron--scheduling)
+5. [Tool System](#5-tool-system)
+6. [Channel System](#6-channel-system)
+7. [Provider System](#7-provider-system)
+8. [Memory & Persistence](#8-memory--persistence)
+9. [Known Bugs & Limitations](#9-known-bugs--limitations)
+10. [Performance Optimization](#10-performance-optimization)
+11. [Troubleshooting Guide](#11-troubleshooting-guide)
+12. [Hidden Features](#12-hidden-features)
+
+---
+
+## 1. Architecture Overview
+
+### Gateway — The Single Source of Truth
+
+OpenClaw is built around a single **Gateway process** that owns all session state, routing, and channel connections. ✅
+
+```
+┌─────────────────────────────────────────────┐
+│              Gateway Process                │
+│  ┌─────────────┐  ┌─────────────────────┐  │
+│  │  Channel    │  │   Agent Runtime     │  │
+│  │  Adapters   │  │  (Embedded Pi Agent)│  │
+│  └─────────────┘  └─────────────────────┘  │
+│  ┌─────────────┐  ┌─────────────────────┐  │
+│  │   Session   │  │   Tool Registry     │  │
+│  │   Manager   │  │   + Skills          │  │
+│  └─────────────┘  └─────────────────────┘  │
+│  ┌─────────────┐  ┌─────────────────────┐  │
+│  │   Cron      │  │   Memory Plugin     │  │
+│  │   Scheduler │  │   (QMD/SQLite/Honcho│  │
+│  └─────────────┘  └─────────────────────┘  │
+└─────────────────────────────────────────────┘
+        │                    │
+        ▼                    ▼
+   Chat Apps           UI Clients (Web/macOS/iOS/Android)
+```
+
+**Key architectural principles:**
+- One process handles all channels, agents, sessions, and automation
+- UIs must query the Gateway for session data — session files are on the Gateway host
+- Gateway exposes RPC over WebSocket + HTTP (OpenAI-compatible endpoints)
+- Default port: `18789`, default bind: `loopback` ✅
+
+### Runtime Model
+
+The Gateway multiplexes on a single port:
+- **WebSocket RPC** for agent control, streaming
+- **HTTP APIs**: OpenAI-compatible `/v1/models`, `/v1/chat/completions`, `/v1/embeddings`, `/v1/responses`, `/tools/invoke`
+- **Control UI + Hooks** on the same port ✅
+
+**Auth**: Required by default. Shared-secret setups use `gateway.auth.token` / `gateway.auth.password`. Non-loopback binds require valid auth or `gateway.auth.mode: "trusted-proxy"`. ✅
+
+### Agent Loop — How a Message Becomes a Reply
+
+The full agentic loop (from `docs/concepts/agent-loop.md`) is:
+
+1. **Entry**: `agent` RPC validates params, resolves session (`sessionKey`/`sessionId`), returns `{ runId, acceptedAt }` immediately
+2. **Preparation**: Resolves model + thinking/verbose/trace defaults, loads skills snapshot, builds system prompt
+3. **Execution**: Calls `runEmbeddedPiAgent` — serializes via per-session + global queues
+4. **Streaming**: `subscribeEmbeddedPiSession` bridges pi-agent-core events to OpenClaw streams (`assistant`, `tool`, `lifecycle`)
+5. **Reply**: Final payloads assembled (assistant text, reasoning, inline tool summaries) ✅
+
+**Queueing**: Runs are serialized per session key (session lane) + optionally through a global lane. This prevents tool/session races. ✅
+
+**Tool execution**: Tool results are sanitized for size/image payloads before logging/emitting. Messaging tool sends are tracked to suppress duplicate assistant confirmations. ✅
+
+**Reply suppression**: The exact silent token `NO_REPLY` / `no_reply` is filtered from outgoing payloads. ✅
+
+### Context Assembly — What the Model Sees
+
+Context = everything sent to the model for a run, bounded by the model's context window.
+
+**System prompt** includes:
+- Tool list + descriptions
+- Skills list (metadata only — actual skill instructions loaded on-demand)
+- Workspace location, time (UTC + converted user time)
+- Runtime metadata (host/OS/model/thinking)
+- Injected workspace bootstrap files (AGENTS.md, SOUL.md, TOOLS.md, IDENTITY.md, USER.md, HEARTBEAT.md, BOOTSTRAP.md) ✅
+
+**Workspace bootstrap files** are truncated per-file at `agents.defaults.bootstrapMaxChars` (default 20,000 chars) and total at `agents.defaults.bootstrapTotalMaxChars` (default 150,000 chars). ✅
+
+### Multi-Agent Architecture
+
+Each **agent** is fully isolated:
+- Own **workspace** (files, AGENTS.md/SOUL.md/USER.md)
+- Own **agentDir** (`~/.openclaw/agents/<agentId>/agent`) for auth profiles + model registry
+- Own **session store** (`~/.openclaw/agents/<agentId>/sessions/`)
+- Auth profiles are **per-agent** — main agent creds are NOT shared automatically ✅
+
+**Routing**: `bindings[]` in config routes inbound messages to agents. Deterministic, **most-specific wins**:
+1. `peer` match (exact DM/group/channel id)
+2. `parentPeer` match (thread inheritance)
+3. `guildId + roles` (Discord role routing)
+4. `guildId` (Discord)
+5. `teamId` (Slack)
+6. `accountId` match for a channel
+7. channel-level match (`accountId: "*"`)
+8. fallback to default agent ✅
+
+**Bindings upgrade**: If you add a binding with explicit `accountId` to an agent that already has a channel-only binding, OpenClaw **upgrades** that binding in-place instead of adding a duplicate. ✅
+
+### Sub-agents
+
+Sub-agents are background runs spawned via `sessions_spawn`. Each runs in its own session (`agent:<agentId>:subagent:<uuid>`) and announces back to the requester chat on completion. ✅
+
+**Key behavior**:
+- Announce delivery is best-effort — gateway restart loses pending announces
+- Sub-agents do NOT get session tools by default (`sessions_list`, `sessions_history`, `sessions_send`, `sessions_spawn` denied)
+- When `maxSpawnDepth >= 2`, depth-1 orchestrator gets `sessions_spawn` + `subagents` to manage children
+- Cascade stop: `/stop` in main chat stops depth-1 and cascades to depth-2 children ✅
+- Announce skips if: `ANNOUNCE_SKIP` returned, or output is exactly `NO_REPLY`/`no_reply`
+- Sub-agent context only injects `AGENTS.md` + `TOOLS.md` (no SOUL.md, IDENTITY.md, USER.md, HEARTBEAT.md) ✅
+
+**Concurrency**: Dedicated in-process lane named `subagent`, capped by `agents.defaults.subagents.maxConcurrent` (default 8). ✅
+
+### Session Key Patterns
+
+| Pattern | Meaning |
+|---------|---------|
+| `agent:<agentId>:main` | Main/direct chat (default) |
+| `agent:<agentId>:<channel>:group:<id>` | Group chat |
+| `agent:<agentId>:<channel>:channel:<id>` | Discord/Slack room |
+| `agent:<agentId>:<channel>:room:<id>` | Alternative room key |
+| `cron:<jobId>` | Isolated cron run session |
+| `hook:<uuid>` | Webhook session |
+| `agent:<agentId>:subagent:<uuid>` | Sub-agent session |
+| `agent:<agentId>:subagent:<uuid>:subagent:<uuid>` | Sub-sub-agent (depth 2) |
+
+**DM scope options** (via `session.dmScope`):
+- `main` (default) — all DMs share one session
+- `per-peer` — isolate by sender across channels
+- `per-channel-peer` — isolate by channel + sender (recommended for multi-user)
+- `per-account-channel-peer` — isolate by account + channel + sender ✅
+
+---
+
+## 2. Configuration Deep Dive
+
+### Config File Location
+
+- Default: `~/.openclaw/openclaw.json`
+- Override: `OPENCLAW_CONFIG_PATH` env var
+- Format: **JSON5** (comments + trailing commas allowed)
+- All fields are optional — OpenClaw uses safe defaults when omitted ✅
+
+### Schema
+
+Code truth: `openclaw config schema` prints the live JSON Schema used for validation + Control UI. ✅
+
+```bash
+# Print full schema
+openclaw config schema
+
+# Look up one path
+openclaw config schema lookup agents.defaults.model
+```
+
+### Top-Level Config Structure
+
+```json5
+{
+  // Agents
+  agents: {
+    defaults: { /* workspace, model, skills, compaction, ... */ },
+    list: [{ /* per-agent overrides */ }]
+  },
+  
+  // Channels
+  channels: {
+    telegram: { /* ... */ },
+    discord: { /* ... */ },
+    whatsapp: { /* ... */ },
+    // ... 20+ channels
+  },
+  
+  // Model providers
+  models: {
+    mode: "merge",  // "merge" | "replace"
+    providers: {
+      minimax: { /* ... */ },
+      anthropic: { /* ... */ },
+      // ...
+    }
+  },
+  
+  // Tools
+  tools: {
+    allow: ["group:fs", "browser"],
+    deny: ["exec"],
+    profile: "full",  // "full" | "coding" | "messaging" | "minimal"
+    byProvider: {
+      "google-antigravity": { profile: "minimal" }
+    }
+  },
+  
+  // Cron
+  cron: { /* ... */ },
+  
+  // Memory
+  memory: { /* ... */ },
+  
+  // Hooks
+  hooks: { /* ... */ },
+  
+  // Gateway
+  gateway: {
+    port: 18789,
+    bind: "loopback",  // "loopback" | "lan" | "tailnet" | "custom"
+    auth: { /* ... */ },
+    reload: { mode: "hybrid" }  // "off" | "hot" | "restart" | "hybrid"
+  },
+  
+  // Web
+  web: { enabled: true, heartbeatSeconds: 60 },
+  
+  // Bindings (routing)
+  bindings: [{ /* ... */ }]
+}
+```
+
+### Gateway Hot Reload Modes
+
+| Mode | Behavior |
+|------|----------|
+| `off` | No config reload |
+| `hot` | Apply only hot-safe changes |
+| `restart` | Restart on any reload-required change |
+| `hybrid` (default) | Hot-apply when safe, restart when required |
+
+Config watches the active config file path. After first successful load, the running process serves the active in-memory snapshot; successful reload swaps atomically. ✅
+
+### Tool Profiles
+
+`tools.profile` sets a base allowlist before `allow`/`deny` is applied:
+
+| Profile | Includes |
+|---------|----------|
+| `full` | No restriction |
+| `coding` | `group:fs`, `group:runtime`, `group:web`, `group:sessions`, `group:memory`, `cron`, `image`, `image_generate`, `music_generate`, `video_generate` |
+| `messaging` | `group:messaging`, `sessions_list`, `sessions_history`, `sessions_send`, `session_status` |
+| `minimal` | `session_status` only |
+
+**Tool groups**:
+- `group:runtime` = `exec`, `process`, `code_execution` (`bash` alias)
+- `group:fs` = `read`, `write`, `edit`, `apply_patch`
+- `group:sessions` = `sessions_list`, `sessions_history`, `sessions_send`, `sessions_spawn`, `sessions_yield`, `subagents`, `session_status`
+- `group:memory` = `memory_search`, `memory_get`
+- `group:web` = `web_search`, `x_search`, `web_fetch`
+- `group:ui` = `browser`, `canvas`
+- `group:automation` = `cron`, `gateway`
+- `group:messaging` = `message`
+- `group:nodes` = `nodes`
+- `group:agents` = `agents_list`
+- `group:media` = `image`, `image_generate`, `music_generate`, `video_generate`, `tts`
+- `group:openclaw` = All built-in OpenClaw tools (excludes plugin tools) ✅
+
+### Agent Defaults
+
+```json5
+{
+  agents: {
+    defaults: {
+      workspace: "~/.openclaw/workspace",
+      model: { primary: "minimax/MiniMax-M2.7" },
+      skills: ["github", "weather"],  // omit for unrestricted
+      compaction: {
+        enabled: true,
+        reserveTokens: 16384,
+        keepRecentTokens: 20000,
+        model: "openrouter/anthropic/claude-sonnet-4-6",  // optional override
+        memoryFlush: { enabled: true, softThresholdTokens: 4000 }
+      },
+      contextInjection: "always",  // "always" | "continuation-skip"
+      bootstrapMaxChars: 20000,
+      bootstrapTotalMaxChars: 150000,
+      skipBootstrap: false,
+      timeoutSeconds: 172800,  // 48h default
+      blockStreamingDefault: "off",
+      blockStreamingBreak: "message_end",
+      blockStreamingChunk: { minChars: 500, maxChars: 4000, breakPreference: "paragraph" }
+    }
+  }
+}
+```
+
+### Per-Agent Override Example
+
+```json5
+{
+  agents: {
+    list: [
+      {
+        id: "main",
+        workspace: "~/.openclaw/workspace",
+        identity: { name: "BRAIN", emoji: "🧠" }
+      },
+      {
+        id: "writer",
+        workspace: "~/.openclaw/workspace-writer",
+        skills: ["docs-search"],  // replaces defaults
+        model: { primary: "openai/gpt-5.4-mini" }
+      },
+      {
+        id: "locked-down",
+        workspace: "~/.openclaw/workspace-locked",
+        skills: []  // no skills
+      }
+    ]
+  }
+}
+```
+
+### Session Configuration
+
+```json5
+{
+  session: {
+    dmScope: "per-channel-peer",  // "main" | "per-peer" | "per-channel-peer" | "per-account-channel-peer"
+    reset: {
+      idleMinutes: 0,  // 0 = disabled
+    },
+    maintenance: {
+      mode: "warn",  // "warn" | "enforce"
+      pruneAfter: "30d",
+      maxEntries: 500,
+      maxDiskBytes: 500_000_000,
+      highWaterBytes: 400_000_000
+    }
+  }
+}
+```
+
+### Environment Variables
+
+Config can reference env vars with `${VAR_NAME}` syntax (JSON5). ✅
+
+---
+
+## 3. Agent System
+
+### Agent Lifecycle
+
+1. **Session resolution**: `sessionKey` → lookup in `sessions.json` → get `sessionId`
+2. **Bootstrap**: Workspace created/sandboxed, skills loaded, bootstrap files resolved
+3. **System prompt build**: OpenClaw base + skills + bootstrap context + per-run overrides
+4. **Model resolution**: Provider/model from config or session override
+5. **Run**: `runEmbeddedPiAgent` serializes via queues, subscribes to pi-agent-core events
+6. **Streaming**: Assistant deltas → `assistant` events; tool events → `tool` events
+7. **Compaction**: Auto-compact when context nears limit, retry
+8. **Persistence**: Session metadata + transcript written to disk ✅
+
+### Session Store Schema (`sessions.json`)
+
+Located at `~/.openclaw/agents/<agentId>/sessions/sessions.json`.
+
+Key fields:
+- `sessionId`: current transcript id
+- `updatedAt`: last activity timestamp
+- `chatType`: `direct | group | room`
+- `provider`, `subject`, `room`, `space`, `displayName`: metadata
+- **Toggles**: `thinkingLevel`, `verboseLevel`, `reasoningLevel`, `elevatedLevel`, `sendPolicy`
+- **Model selection**: `providerOverride`, `modelOverride`, `authProfileOverride`
+- **Token counters**: `inputTokens`, `outputTokens`, `totalTokens`, `contextTokens`
+- `compactionCount`: how many auto-compactions completed
+- `memoryFlushAt`, `memoryFlushCompactionCount`: for pre-compaction memory flush ✅
+
+### Transcript Structure (`*.jsonl`)
+
+Append-only JSONL with tree structure (entries have `id` + `parentId`).
+
+**Header line**: `type: "session"`, `id`, `cwd`, `timestamp`, optional `parentSession`
+
+**Entry types**:
+- `message`: user/assistant/toolResult messages
+- `custom_message`: extension-injected, enters model context, can be hidden from UI
+- `custom`: extension state, does NOT enter model context
+- `compaction`: persisted summary with `firstKeptEntryId` + `tokensBefore`
+- `branch_summary`: persisted summary when navigating tree branch ✅
+
+**Transcript path**: `~/.openclaw/agents/<agentId>/sessions/<sessionId>.jsonl` (Telegram topic: `<sessionId>-topic-<threadId>.jsonl`) ✅
+
+### Compaction
+
+**Auto-compaction triggers**:
+1. **Overflow recovery**: model returns context-overflow error → compact → retry
+2. **Threshold maintenance**: after successful turn, when `contextTokens > contextWindow - reserveTokens`
+
+**Tool pairing**: When splitting transcript into chunks, OpenClaw keeps assistant tool calls paired with their `toolResult` entries. If split lands between them, shifts boundary to keep pairs together. ✅
+
+**Memory flush before compaction** (pre-threshold flush):
+- `softThresholdTokens` (default 4000) triggers silent "write memory now" turn
+- Uses exact `NO_REPLY`/`no_reply` to suppress delivery
+- Runs once per compaction cycle (tracked in sessions.json)
+- Skipped when workspace is read-only (`workspaceAccess: "ro"` or `"none"`) ✅
+
+**Pluggable providers**: Plugins can register via `registerCompactionProvider()`. When configured via `agents.defaults.compaction.provider`, OpenClaw delegates to that provider. Forces `mode: "safeguard"`. Falls back to built-in on failure. ✅
+
+### Session Pruning vs Compaction
+
+| | Compaction | Pruning |
+|--|--|--|
+| What | Summarizes older conversation | Trims old tool results |
+| Saved | Yes (in transcript) | No (in-memory only) |
+| Scope | Entire conversation | Tool results only |
+
+### Daily Reset
+
+- Default: 4:00 AM local time on gateway host
+- New `sessionId` created on next message after reset boundary ✅
+
+### Idle Reset
+
+- Configured via `session.reset.idleMinutes`
+- When both daily + idle configured, whichever expires first wins ✅
+
+---
+
+
+
+### Deep Research Findings: Skills System (2026-04-25)
+
+> Source: deep-research-report---8ccb14ac-1961-436d-8ee6-f648e9cba459.md
+
+#### Best Practices for Deterministic Skills
+
+To maximize determinism and prevent model "free interpretation":
+
+1. **Clear Guidelines**: Use precise step-by-step lists and exact output formats
+2. **Special Flags**:
+   - `disable-model-invocation: true` in SKILL.md frontmatter
+     - Excludes skill from model's prompt
+     - Skill only visible to AI when user invokes it explicitly
+   - `command-dispatch: tool` in SKILL.md frontmatter
+     - Executes command directly in tool (bypasses LLM)
+     - Receives raw arguments: `{command: "...", commandName: "...", skillName: "..."}`
+
+#### Benefits of These Approaches
+
+- **Predictable Activation**: Skill only triggers via Slash Command
+- **Reduced Ambiguity**: Logic executed exactly as script/function
+- **No Model Interpretation**: Avoids unwanted LLM reasoning/alteration
+
+> 💡 **Key Insight (Dani, 2026-04-25):** `disable-model-invocation` allows hiding skills from the model when you want them to only execute manually. With these options, you transition from an **agent that improvises** to an **agent that executes repeatable, controlled procedures**. This is the technical mechanism for the "Scripts over Model" principle (AGENTS.md).
+
+#### Contradictions Found
+
+- **Docs vs Implementation**:
+  - `disable-model-invocation` documented in SKILL.md specs ✅
+  - But: in OpenCode (similar version), this option wasn't applied
+  - Marked skills still appeared in prompt despite the flag ❌
+  - Unclear if current OpenClaw has fixed this discrepancy
+
+#### Unresolved Points
+
+- Whether current OpenClaw correctly implements `disable-model-invocation`
+- Need verification that the flag actually prevents skill inclusion in model prompt
+
+#### 🛠️ Hallazgos Técnicos & Limitaciones (Deep Research 2026-04-25)
+
+> Source: deep-research-report---8ccb14ac-1961-436d-8ee6-f648e9cba459.md
+
+- **Fiabilidad de `disable-model-invocation`**: Existe una discrepancia conocida entre las especificaciones (frontmatter de SKILL.md) y la implementación real. En versiones reportadas (OpenCode/OpenClaw base), las skills marcadas con este flag seguían apareciendo en el prompt del modelo. **Conclusión**: No confiar ciegamente en este flag; auditar mediante `sessions_history` que la skill no esté presente en el system prompt del agente.
+- **`command-dispatch: tool` como alternativa determinista**: Para ejecución 100% predecible, usar `command-dispatch: tool` en el frontmatter. Esto omite el LLM y pasa los argumentos `{command, commandName, skillName}` directamente a la herramienta, reduciendo la ambigüedad y alucinaciones.
+- **Discrepancia en Hooks de Plugin**: La documentación SDK sugiere que `api.registerHook` funciona para plugins, pero en ejecución real los handlers no disparan. El problema raíz reside en una **separación de instancias de módulo** entre el proceso de registro y el de ejecución.
+- **Inconsistencia CronJobs**: El cargador de cron es estricto con el formato (`{ "version":1, jobs: [...] }`) e ignora formatos antiguos sin aviso. Además, **no existe monitorización activa (fs.watch)** sobre `jobs.json`; toda edición manual requiere un reinicio del gateway.
+
+## 4. Cron & Scheduling
+
+### Cron Sessions
+
+| Style | `--session` value | Runs in | Best for |
+|-------|-----------------|---------|----------|
+| Main session | `main` | Next heartbeat turn | Reminders, system events |
+| Isolated | `isolated` | Dedicated `cron:<jobId>` | Reports, background chores |
+| Current session | `current` | Bound at creation time | Context-aware recurring work |
+| Custom session | `session:custom-id` | Persistent named session | Workflows that build on history |
+
+### Execution Flow for Isolated Cron
+
+1. Cron wakes at scheduled time
+2. Creates/uses `cron:<jobId>` session
+3. Runs agent turn with optional `--message`, `--model`, `--thinking`, `--light-context`
+4. Runner owns final delivery (`announce`, `webhook`, or `none`)
+5. On completion: announces to target channel or keeps internal ✅
+
+### Delivery Modes
+
+- `announce` (default for isolated): Deliver summary to target channel
+- `webhook`: POST finished event payload to URL
+- `none`: Internal only, no delivery
+
+**Failure notifications**: `delivery.failureDestination` first → `cron.failureDestination` → falls back to primary announce target. ✅
+
+### Cron Model Selection Precedence (Isolated Jobs)
+
+1. Gmail hook model override (when run came from Gmail + override allowed)
+2. Per-job `--model` payload
+3. Stored cron session model override
+4. Agent/default model selection ✅
+
+**Fast mode**: If selected model config has `params.fastMode`, isolated cron uses it by default. Stored session `fastMode` override wins over config. ✅
+
+**Live model switch**: If isolated run hits `LiveSessionModelSwitchError`, cron persists the switched provider/model (and auth profile override when present) before retrying. Bounded: 2 switch retries after initial attempt, then aborts. ✅
+
+### Retry Behavior
+
+- **One-shot retry**: transient errors (rate limit, overload, network, server_error) retry up to 3 times with exponential backoff
+- **Recurring retry**: exponential backoff (30s → 1m → 5m → 15m → 60m) after consecutive errors; resets after next successful run ✅
+
+### Webhooks
+
+Enable via:
+```json5
+{
+  hooks: {
+    enabled: true,
+    token: "shared-secret",
+    path: "/hooks"
+  }
+}
+```
+
+**Endpoints**:
+- `POST /hooks/wake`: Enqueue system event for main session
+- `POST /hooks/agent`: Run isolated agent turn
+- `POST /hooks/<name>`: Custom mapped hooks
+
+**Security**:
+- Header: `Authorization: Bearer <token>` (recommended) or `x-openclaw-token`
+- Query-string tokens rejected
+- Keep `/hooks/path` on dedicated subpath (not `/`) ✅
+
+
+
+### Deep Research Findings: Hooks System (2026-04-25)
+
+> Source: deep-research-report---8ccb14ac-1961-436d-8ee6-f648e9cba459.md
+
+#### Hook Types
+
+1. **Internal Hooks** ("internal hooks"):
+   - Discovered in local folders with `HOOK.md` and `handler.ts`
+   - Triggered by Gateway events (`/new`, `/reset`, etc.)
+   - Run inside Gateway process
+   - Receive `event` object with `event.context` (e.g., `context.cfg` for session patching)
+
+2. **Plugin Hooks**:
+   - Registered via SDK: `api.registerHook()`
+   - Appear in `openclaw hooks list` as "Managed by plugin"
+   - **CRITICAL ISSUE**: Often listed but **do not actually execute** during events
+   - Known problem: module instance separation between registration and execution
+
+#### Contradictions Found
+
+- **Documentation vs Reality**:
+  - Docs say plugins can register hooks via SDK ✅
+  - But: registered hooks often don't execute at runtime ❌
+  - Issue: `api.registerHook("evento", handler)` lists but doesn't fire
+  - Root cause: suspected module instance separation of handlers
+
+#### Unresolved Points
+
+- **Root Cause**: No definitive fix for plugin hook execution problem
+- Developers detected module instance separation issue but no published fix
+- Internal hook registration/execution flow not fully documented
+
+### Gmail PubSub Integration
+
+- Wizard: `openclaw webhooks gmail setup --account openclaw@gmail.com`
+- When `hooks.gmail.account` set, Gateway starts `gog gmail watch serve` on boot
+- Model override available via `hooks.gmail.model` ✅
+
+### One-Shot Jobs
+
+- `--at` jobs auto-delete after success by default
+- Use `--keep-after-run` to keep them
+- Offset-less `--at` datetimes treated as UTC unless `--tz <iana>` passed ✅
+
+### Light Context
+
+`--light-context` skips workspace bootstrap file injection for isolated jobs. ✅
+
+---
+
+
+### Deep Research Findings: Cron Jobs (2026-04-25)
+
+> Source: deep-research-report (hooks/cron/skills investigation, 2026-04-25)
+
+#### Key Findings
+
+1. **Job Storage Location**: Cron jobs are stored in `~/.openclaw/cron/jobs.json` ✅
+2. **CLI vs Reality Discrepancy**: 
+   - `openclaw cron list` shows registered jobs (from memory or file)
+   - BUT: if JSON uses `jobId` instead of `id`, scheduler doesn't recognize them → "unknown cron job id" error
+3. **Format Change in ≥2026.4.x**: 
+   - New format: `{ "version":1, jobs: [...] }`
+   - Old format (plain array) is **ignored at startup** 
+   - First `cron add` overwrites the file, losing pre-existing jobs
+4. **Critical Limitation**: 
+   - Cron reads `jobs.json` **ONLY ONCE at gateway startup**
+   - **NO hot-reload detection** while gateway is running
+   - Direct edits to `jobs.json` require gateway restart to take effect
+
+#### Contradictions Found
+
+- **Documentation vs Practice**: 
+  - Docs say jobs persist in `jobs.json` and load at startup ✅
+  - But: loader ignores valid old formats (plain array) ❌
+  - Blocks on unexpected fields like `jobId` vs `id` ❌
+  - Creates inconsistency: CLI lists jobs that gateway doesn't see
+
+#### Unresolved Points
+
+- **Hot-reload of cron**: No active `fs.watch` on `jobs.json` in current versions
+- Proposed fix exists but not officially implemented
+- Currently: edits require gateway restart to apply
+
+
+
+
+## 5. Tool System
+
+### Built-in Tools
+
+| Tool | What it does |
+|------|-------------|
+| `exec` / `process` | Run shell commands, manage background processes |
+| `code_execution` | Run sandboxed remote Python analysis |
+| `browser` | Control Chromium browser |
+| `web_search` / `x_search` / `web_fetch` | Search web, search X, fetch page content |
+| `read` / `write` / `edit` | File I/O in workspace |
+| `apply_patch` | Multi-hunk file patches |
+| `message` | Send messages across all channels |
+| `canvas` | Drive node Canvas |
+| `nodes` | Discover and target paired devices |
+| `cron` / `gateway` | Manage scheduled jobs; inspect/patch/restart gateway |
+| `image` / `image_generate` | Analyze or generate images |
+| `music_generate` | Generate music tracks |
+| `video_generate` | Generate videos |
+| `tts` | One-shot text-to-speech |
+| `sessions_*` / `subagents` / `agents_list` | Session management, sub-agent orchestration |
+| `session_status` | Lightweight `/status`-style readback + model override |
+| `memory_search` / `memory_get` | Semantic memory recall |
+| `gateway` | Owner-only: `config.schema.lookup`, `config.get`, `config.patch`, `config.apply`, `update.run` |
+
+### Tool Registration
+
+Tools are typed functions registered with the agent runtime. Built-in tools ship with OpenClaw. Plugins can register additional tools via the Plugin SDK. ✅
+
+### How Tool Results Flow
+
+1. Agent calls tool → params validated → executed
+2. Result sanitized for size/image payloads
+3. Tool result event emitted on `tool` stream
+4. Result appended to session transcript
+5. `sessions_history` applies safety filters: strips thinking tags, tool-call XML payloads, model control tokens, malformed MiniMax tool-call XML ✅
+
+### sessions_history Safety Filters
+
+`sessions_history` returns a bounded, sanitized view:
+- Strips: thinking tags, `<relevant-memories>` scaffolding, plain-text tool-call XML (`<tool_call>`, `</think>`, `<tool_calls>`, `<function_calls>`)
+- Downgrades: tool-call scaffolding, leaked ASCII/full-width model control tokens
+- Redacts: credential/token-like text
+- Truncates: long blocks, very large histories drop older rows ✅
+
+### Tool Profiles and Groups
+
+See Section 2 for tool profiles and group mappings. ✅
+
+### Exec Tool
+
+**Security levels**:
+- `tools.exec.security: "deny"` (default) — exec blocked
+- `tools.exec.security: "allowlist"` — exec allowed only for senders in `tools.exec.allowFrom.<channel>`
+- `tools.exec.security: "full"` — exec allowed for all
+
+**Approval flow**: When `tools.exec.ask: "on-miss"` or `"always"`, exec requests for unlisted commands go to approvers. Timeout: 30 minutes default. ✅
+
+### Gateway Tool (Owner-Only)
+
+Only available to owner. Provides:
+- `config.schema.lookup`: Get schema node for one path
+- `config.get`: Current config snapshot + hash
+- `config.patch`: Partial config update with restart
+- `config.apply`: Full config replacement
+- `update.run`: Self-update + restart
+
+**Refuses** to change `tools.exec.ask` or `tools.exec.security`. Legacy `tools.bash.*` aliases normalize to protected exec paths. ✅
+
+---
+
+## 6. Channel System
+
+### Channel Startup
+
+Each channel starts automatically when its config section exists (unless `enabled: false`). ✅
+
+### DM Policies (All Channels)
+
+| Policy | Behavior |
+|--------|----------|
+| `pairing` (default) | Unknown senders get one-time pairing code; owner must approve |
+| `allowlist` | Only senders in `allowFrom` (or paired allow store) |
+| `open` | Allow all DMs (requires `allowFrom: ["*"]`) |
+| `disabled` | Ignore all DMs |
+
+**Pairing code expiry**: 1 hour. Pending DM pairing requests capped at **3 per channel**. ✅
+
+### Group Policies (All Channels)
+
+| Policy | Behavior |
+|--------|----------|
+| `allowlist` (default) | Only groups matching configured allowlist |
+| `open` | Bypass group allowlists (mention-gating still applies) |
+| `disabled` | Block all group/room messages |
+
+**Mention types**:
+- **Metadata mentions**: Native platform @-mentions
+- **Text patterns**: Safe regex in `agents.list[].groupChat.mentionPatterns`
+
+### Telegram Deep Dive
+
+**Token resolution**: `channels.telegram.botToken` or `channels.telegram.tokenFile` (symlinks rejected). `TELEGRAM_BOT_TOKEN` env fallback for default account. ✅
+
+**Multi-account**: When 2+ account IDs configured, set `channels.telegram.defaultAccount` (or `channels.telegram.accounts.default`) for explicit default routing. `openclaw doctor` warns if missing. ✅
+
+**Forum topics**:
+- Topic session keys: `agent:<agentId>:telegram:group:<chatId>:topic:<threadId>`
+- Topic config path: `channels.telegram.groups.<chatId>.topics.<threadId>`
+- Per-topic agent routing: set `agentId` in topic config → each topic gets isolated workspace/memory/session ✅
+
+**Streaming modes** (via `channels.telegram.streaming`):
+- `off` (default), `partial` (preview message + `editMessageText`), `block`, `progress` (maps to `partial` on Telegram)
+- Legacy `streamMode` + boolean `streaming` auto-migrated ✅
+
+**Telegram specific features**:
+- `replyToMode`: `off | first | all | batched`
+- `customCommands[]`: adds Telegram bot menu entries
+- `ackReaction`: acknowledgement emoji while processing (resolved via account → channel → messages → identity emoji fallback)
+- `errorPolicy`: `reply | silent` + `errorCooldownMs` (default 60000ms) per-account/group/topic overrides
+- `reactionNotifications`: `off | own | all`
+- `reactionLevel`: `off | ack | minimal | extensive`
+- `execApprovals`: native approval delivery with `target: "dm" | "channel" | "both"` ✅
+
+**Inline buttons**: `channels.telegram.capabilities.inlineButtons: "allowlist | off | dm | group | all"` (default `allowlist`). `capabilities: ["inlineButtons"]` legacy maps to `inlineButtons: "all"`. ✅
+
+### Discord Deep Dive
+
+**Token**: `channels.discord.token` with `DISCORD_BOT_TOKEN` env fallback. ✅
+
+**Guild config**: Use guild IDs (not slugs). Channel keys use slugged name (no `#`). ✅
+
+**Thread bindings** (`channels.discord.threadBindings`):
+- `enabled`: enables thread-bound session features (`/focus`, `/unfocus`, `/agents`, `/session idle`, `/session max-age`)
+- `idleHours`: auto-unfocus after N hours (`0` disables)
+- `maxAgeHours`: hard max age (`0` disables)
+- `spawnSubagentSessions`: opt-in for `sessions_spawn({ thread: true })` ✅
+
+**Exec approvals**: `channels.discord.execApprovals` with `enabled: true | false | "auto"`, `approvers`, `agentFilter`, `sessionFilter`, `target: "dm | channel | both"`, `cleanupAfterResolve`. ✅
+
+**Voice**: `channels.discord.voice` enables Discord voice + optional auto-join + TTS overrides. `daveEncryption: true`, `decryptionFailureTolerance: 24`. OpenClaw attempts voice recovery by leave/rejoin on decrypt failures. ✅
+
+**AutoPresence**: Maps runtime availability to bot presence (healthy→online, degraded→idle, exhausted→dnd). ✅
+
+### WhatsApp Deep Dive
+
+**Mechanism**: Baileys Web (runs through gateway's web channel). Starts automatically when linked session exists. ✅
+
+**Multi-account**:
+```json5
+{
+  channels: {
+    whatsapp: {
+      accounts: {
+        default: {},
+        personal: {},
+        biz: {}
+      }
+    }
+  }
+}
+```
+- Outbound defaults to `default` account if present, else first sorted account
+- `channels.whatsapp.defaultAccount` overrides that fallback ✅
+
+**Self-chat mode**: Include your own number in `allowFrom`. Ignores native @-mentions, only responds to text patterns. ✅
+
+**Web channel reconnect**:
+```json5
+{
+  web: {
+    reconnect: {
+      initialMs: 2000,
+      maxMs: 120000,
+      factor: 1.4,
+      jitter: 0.2,
+      maxAttempts: 0  // 0 = unlimited
+    }
+  }
+}
+```
+
+### Slack Deep Dive
+
+**Socket mode**: Requires both `botToken` + `appToken`. **HTTP mode**: requires `botToken` + `signingSecret`. ✅
+
+**Native streaming**: `channels.slack.streaming.nativeTransport: true` uses Slack native streaming API when `mode=partial`. Requires reply thread target — top-level DMs stay off-thread. ✅
+
+**Typing reaction**: `channels.slack.typingReaction` adds temporary reaction to inbound message while reply runs, then removes on completion. ✅
+
+**Thread session isolation**: `thread.historyScope` (`thread | channel`), `thread.inheritParent` copies parent transcript to new threads. ✅
+
+### Signal Deep Dive
+
+**Account pinning**: `channels.signal.account` pins startup to specific Signal account identity. ✅
+
+**Reaction notifications**: `channels.signal.reactionNotifications: "off | own | all | allowlist"` with `reactionAllowlist[]`. ✅
+
+### iMessage Deep Dive
+
+**Mechanism**: Spawns `imsg rpc` (JSON-RPC over stdio). No daemon or port required. Requires Full Disk Access to Messages DB. ✅
+
+**CLI path + remote**: `cliPath` can point to SSH wrapper. Set `remoteHost` for SCP attachment fetching. SCP uses strict host-key checking. ✅
+
+### Matrix Deep Dive
+
+**Auth**: Token auth (`accessToken`) or password auth (`userId` + `password`). ✅
+
+**Multi-account**:
+```json5
+{
+  channels: {
+    matrix: {
+      accounts: {
+        ops: { name: "Ops", userId: "@ops:example.org", accessToken: "syt_ops_xxx" },
+        alerts: { userId: "@alerts:example.org", password: "secret" }
+      }
+    }
+  }
+}
+```
+
+**Auto-join**: `autoJoin: "off"` (default) ignores invites. Set `autoJoin: "allowlist"` with `autoJoinAllowlist` or `autoJoin: "always"`. ✅
+
+**Exec approvals**: `channels.matrix.execApprovals` with same schema as Discord/Slack. ✅
+
+### Google Chat Deep Dive
+
+**Auth**: Service account JSON (inline `serviceAccount` or file `serviceAccountFile`) or SecretRef. Env fallback: `GOOGLE_CHAT_SERVICE_ACCOUNT` or `GOOGLE_CHAT_SERVICE_ACCOUNT_FILE`. ✅
+
+### IRC Deep Dive
+
+**NickServ**: `channels.irc.nickserv` supports register + login. `registerEmail` for auto-register. ✅
+
+### Mattermost Deep Dive
+
+**Plugin**: Ships as `openclaw plugins install @openclaw/mattermost`. ✅
+
+**Chat modes**: `oncall` (respond on @-mention, default), `onmessage` (every message), `onchar` (messages with trigger prefixes `>`, `!`). ✅
+
+**Native commands**: Opt-in via `commands.native: true`. Requires `commands.callbackPath` (path, not full URL) + `commands.callbackUrl` reachable from Mattermost server. Authenticated with per-command tokens from Mattermost. ✅
+
+### BlueBubbles Deep Dive
+
+**Recommended iMessage path**. Bundled plugin, configured under `channels.bluebubbles`. REST API-based (full-featured) vs legacy `imsg` which uses JSON-RPC over stdio. Supports edit, unsend, effects, reactions, group management.
+
+**macOS compatibility:** Sequoia 15 (recommended/tested), Tahoe 26 works but sticker edit broken + group icon sync issues. ✅
+
+### Matrix — E2EE (Unique Among Channels)
+
+Matrix is the **only OpenClaw channel with native End-to-End Encryption**. Also supports threads, polls, location sharing, reactions, media. Uses `matrix-js-sdk`. Auth: token auth (`accessToken`) or password auth (`userId` + `password`). ✅
+
+### Slack — Socket Mode (No Public URL Needed)
+
+Slack default = **Socket Mode** (no public URL required, unlike HTTP Request URLs). Requires both `botToken` + `appToken`. Native streaming via `channels.slack.streaming.nativeTransport: true` uses Slack's native streaming API when `mode=partial`. ✅
+
+### Channel Routing — 8-Step Hierarchy + Broadcast Groups
+
+**8-step deterministic match** (most-specific wins):
+1. `peer.kind` + `peer.id` — exact peer match
+2. `parentPeer` — thread inheritance
+3. `guildId` + `roles` — Discord role routing
+4. `guildId` — Discord guild
+5. `teamId` — Slack team
+6. `accountId` — channel account
+7. `accountId: "*"` — any account on channel
+8. Default agent fallback
+
+**Broadcast groups:** Run multiple agents for same peer (parallel strategy):
+```json5
+{
+  broadcast: {
+    strategy: "parallel",
+    "120363403215116621@g.us": ["alfred", "baerbel"],
+    "+15555550123": ["support", "logger"],
+  },
+}
+```
+
+**Thread session keys:** `agent:<agentId>:<channel>:channel:<id>:thread:<threadId>` (Discord/Slack) or `agent:<agentId>:telegram:group:<id>:topic:<threadId>` (Telegram forum topics). ✅
+
+**Session store templating:** `session.store` supports `{agentId}` template. Gateway scans disk-backed stores under `agents/` root and templated roots. Must stay inside resolved agent root, regular `sessions.json` required, symlinks/out-of-root paths ignored. ✅
+
+### Browser Tool — v2026.4.24 Enhancements
+
+**New capabilities:**
+- **Per-profile headless override**: Specific profiles can run headless while others use visible Chrome
+- **Stable tab reuse + crash recovery**: Tabs reused when possible, recovered gracefully on crash (increases stability)
+- **WebAssembly (WASM) support**: Run browser-based WASM modules via postMessage in browser context
+- **Coordinate clicks**: `browser.click({ x: 500, y: 300 })` using `page.mouse.click()` — useful for canvas/SVG/position-based elements
+- **Action budgets + retries**: v2026.4.24 increased `maxAttempts` (default 5), retry delay 1000ms, 30000ms timeout for transient failures
+- **Profile isolation**: Each Chrome profile has isolated cookies, local storage, cache, auth state, user agent string
+
+### Auto-Updater — SHA-256 Checksum + VirusTotal Integration
+
+**Checksum verification:**
+- SHA-256 checksums for all release packages + ClawHub published skills
+- Signature verification built-in for macOS release packages
+- Pre-apply checks: download verification → signature validation → hash comparison → reject on mismatch
+
+**VirusTotal integration:** When skills published to ClawHub, SHA-256 hashes checked against VirusTotal database + AI analysis performed before release. ✅
+
+**Creative uses documented:** CI/CD pipeline checksum verification, multi-environment deployment consistency checks, config drift detection, compliance auditing (SOC2/ISO 27001), rollback verification, third-party skill verification. ✅
+
+### Subagent Lifecycle Hooks (Context Engine Plugin API)
+
+```typescript
+interface SubagentLifecycle {
+  onSubagentEnded(sessionKey: string, outcome: Outcome): void | Promise<void>
+  prepareSubagentSpawn(config: SpawnConfig): SpawnConfig | Promise<SpawnConfig>
+}
+```
+
+- `onSubagentEnded`: called when subagent session completes or is swept — cleanup hook
+- `prepareSubagentSpawn`: part of interface (not yet invoked) — pre-spawn configuration hook ✅
+
+### apply_patch — Gated by tools.exec.applyPatch
+
+The `apply_patch` tool (structured multi-hunk patches) is gated by `tools.exec.applyPatch` config. Not available unless explicitly enabled. ✅
+
+### Group Chat Mention Gating
+
+Group messages default to **require mention**. Config per group:
+```json5
+{
+  channels: {
+    telegram: {
+      groups: {
+        "*": { requireMention: true },
+        "-1001234567890": {
+          requireMention: false,
+          allowFrom: ["tg:123456789"]
+        }
+      }
+    }
+  }
+}
+```
+
+### Multi-Account Routing
+
+All major channels support multiple accounts. Use `accountId` in bindings:
+```json5
+{
+  bindings: [
+    { agentId: "home", match: { channel: "whatsapp", accountId: "personal" } },
+    { agentId: "work", match: { channel: "whatsapp", accountId: "biz" } }
+  ]
+}
+```
+
+If 2+ accounts for a channel, set `channels.<channel>.defaultAccount` for explicit default. ✅
+
+---
+
+## 7. Provider System
+
+### Provider Architecture
+
+OpenClaw has a **pluggable provider system**. Each provider:
+- Has a unique ID (e.g., `minimax`, `anthropic`, `nvidia`)
+- Handles auth, API shape normalization, streaming
+- Registers models with `id`, `name`, `contextWindow`, `maxTokens`, `cost`, `input/output` types
+- Can register tools (image gen, music gen, video gen, web search) ✅
+
+### Provider Discovery
+
+1. Auth keys in env (e.g., `MINIMAX_API_KEY`, `ANTHROPIC_API_KEY`)
+2. Explicit `models.providers.<id>` config
+3. `openclaw onboard` sets up auth interactively ✅
+
+### MiniMax Provider
+
+**Provider ID**: `minimax` (API key) or `minimax-portal` (OAuth/Coding Plan)
+
+**Models**:
+| Model | Type | Context | Max Output |
+|-------|------|---------|------------|
+| `MiniMax-M2.7` | Chat (reasoning) | 204,800 | 131,072 |
+| `MiniMax-M2.7-highspeed` | Chat (reasoning) | 204,800 | 131,072 |
+| `MiniMax-VL-01` | Vision | — | — |
+| `image-01` | Image gen | — | — |
+| `music-2.5+` | Music gen | — | — |
+| `MiniMax-Hailuo-2.3` | Video gen | — | — |
+
+**Auth**: API key (`MINIMAX_API_KEY`) or OAuth Coding Plan (`openclaw onboard --auth-choice minimax-global-oauth`)
+
+**Base URLs**:
+- International: `https://api.minimax.io/anthropic` (Anthropic-compatible)
+- China: `https://api.minimaxi.com/anthropic`
+
+**Thinking**: On `api: "anthropic-messages"`, OpenClaw injects `thinking: { type: "disabled" }` by default (prevents `reasoning_content` leakage from OpenAI-style streaming chunks). ✅
+
+**Fast mode**: `/fast on` rewrites `MiniMax-M2.7` → `MiniMax-M2.7-highspeed` on Anthropic-compatible stream path. ✅
+
+**Bundled capabilities**: Text, image understanding, image generation, music generation, video generation, web search (via Coding Plan search API). ✅
+
+### NVIDIA Provider
+
+**Provider ID**: `nvidia` | **Auth**: `NVIDIA_API_KEY` | **API**: OpenAI-compatible `/v1` completions
+
+**Base URL**: `https://integrate.api.nvidia.com/v1`
+
+**Models** (free):
+| Model | Context | Max Output |
+|-------|---------|------------|
+| `nvidia/nvidia/nemotron-3-super-120b-a12b` | 262,144 | 8,192 |
+| `nvidia/moonshotai/kimi-k2.5` | 262,144 | 8,192 |
+| `nvidia/minimaxai/minimax-m2.5` | 196,608 | 8,192 |
+| `nvidia/z-ai/glm5` | 202,752 | 8,192 |
+
+**Auto-enable**: When `NVIDIA_API_KEY` env is set. No explicit config needed. ✅
+
+### Google Provider
+
+**Provider ID**: `google` | **Auth**: `GEMINI_API_KEY` or `GOOGLE_API_KEY`
+
+**Models**: Gemini 3.1 Pro, 3.1 Flash, 3.1 Flash Lite, Gemma 4, etc.
+
+**Capabilities**: Chat completions, image generation (`gemini-3.1-flash-image-preview`), music generation (`lyria-3-clip-preview`), video generation (`veo-3.1-fast-generate-preview`), image/audio/video understanding, web search (Grounding), thinking/reasoning (Gemini 3.1+). ✅
+
+**OAuth alt**: `google-gemini-cli` provider uses PKCE OAuth via local `gemini` CLI. Unofficial — some account restrictions possible. ✅
+
+### OpenAI Provider
+
+**Provider ID**: `openai` | **Auth**: `OPENAI_API_KEY`
+
+**Models**: GPT-5.4, GPT-4.1, o4-mini, etc.
+
+**Note**: OpenAI Codex subscription auth is separate (`openai-codex`). ✅
+
+### Anthropic Provider
+
+**Provider ID**: `anthropic` | **Auth**: `ANTHROPIC_API_KEY`
+
+**Models**: Claude Opus 4.6, Sonnet 4.6, Haiku 4, etc.
+
+**Long context**: `context1m: true` param enables 1M token context. Requires eligible credential + Anthropic long-context beta. If 429 with "Extra usage required for long context", either disable `context1m` or use eligible credential. ✅
+
+### Provider Auto-detection
+
+When `models.mode: "merge"` (default), explicit provider configs merge with built-in catalog. Set `models.mode: "replace"` to use only explicit configs. ✅
+
+### Model Aliases
+
+```json5
+{
+  agents: {
+    defaults: {
+      models: {
+        "anthropic/claude-opus-4-6": { alias: "primary" },
+        "minimax/MiniMax-M2.7": { alias: "minimax" },
+        "nvidia/nvidia/nemotron-3-super-120b-a12b": { alias: "free" }
+      },
+      model: {
+        primary: "anthropic/claude-opus-4-6",
+        fallbacks: ["minimax/MiniMax-M2.7", "nvidia/nvidia/nemotron-3-super-120b-a12b"]
+      }
+    }
+  }
+}
+```
+
+---
+
+## 8. Memory & Persistence
+
+### Memory Files (Workspace)
+
+| File | Purpose | Loaded |
+|------|---------|--------|
+| `MEMORY.md` | Long-term memory. Durable facts, preferences, decisions | Start of every DM session |
+| `memory/YYYY-MM-DD.md` | Daily notes. Running context + observations | Today + yesterday automatically |
+| `DREAMS.md` | Dream Diary + dreaming sweep summaries (experimental) | On-demand |
+
+### Memory Tools
+
+- **`memory_search`**: Semantic search via embeddings (hybrid vector + keyword)
+- **`memory_get`**: Read specific file or line range ✅
+
+### Memory Backends
+
+| Backend | Type | Notes |
+|---------|------|-------|
+| `memory-builtin` (default) | SQLite | Works out of box, keyword + vector + hybrid |
+| `memory-qmd` | Local-first sidecar | Reranking, query expansion, can index dirs outside workspace |
+| `memory-honcho` | Plugin | AI-native cross-session, user modeling, semantic search, multi-agent |
+| `memory-wiki` | Plugin | Compiled wiki vault with claims, dashboards, Obsidian-friendly |
+
+
+### LCM — Lossless Context Management (Deep Architecture)
+
+> Source: coolmanns/openclaw-memory-architecture (GitHub, 2026-04-07) + field testing
+
+**Problem it solves**: AI agents wake up fresh every session. Context compression eats older messages mid-conversation. Agent forgets what you told it yesterday.
+
+**Core principle**: Don't rely on one approach. Use the right memory layer for each type of recall.
+
+#### LCM Architecture Diagram
+
+```
+┌──────────────────────────────────────────────────────┐
+│ LOSSLESS CONTEXT ENGINE (lcm.db)                      │
+│ Stores all messages → builds summary DAG → assembles  │
+│ context window from DAG + live messages                │
+├──────────────────────────────────────────────────────┤
+│ CONTEXT WINDOW (~200K tokens, assembled by LCM)       │
+│  ┌────────────────────────────────────────────────┐  │
+│  │ Workspace Files (always loaded)                 │  │
+│  │ MEMORY.md · USER.md · SOUL.md · AGENTS.md      │  │
+│  └────────────────────────────────────────────────┘  │
+│  ┌────────────────────────────────────────────────┐  │
+│  │ Plugin Context (injected at runtime)            │  │
+│  │ Continuity · Stability · Metabolism             │  │
+│  └────────────────────────────────────────────────┘  │
+│  ┌────────────────────────────────────────────────┐  │
+│  │ Conversation (managed by LCM)                   │  │
+│  │ Live messages + DAG summaries of older ones     │  │
+│  └────────────────────────────────────────────────┘  │
+├──────────────────────────────────────────────────────┤
+│ PERSISTENT STORAGE                                    │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────┐       │
+│  │ lcm.db   │  │ facts.db │  │ continuity   │       │
+│  │ Messages │  │ Entities │  │ Archives     │       │
+│  │ Summaries│  │ Relations│  │ Embeddings   │       │
+│  │ FTS index│  │ Aliases  │  │ Topics       │       │
+│  │ DAG nodes│  │ Decay    │  │ Anchors      │       │
+│  └──────────┘  └──────────┘  └──────────────┘       │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────┐       │
+│  │ LightRAG │  │Embeddings│  │ Daily Files  │       │
+│  │PostgreSQL│  │ llama.cpp│  │ memory/*.md  │       │
+│  │ GraphRAG │  │nomic 768d│  │ Journal      │       │
+│  └──────────┘  └──────────┘  └──────────────┘       │
+├──────────────────────────────────────────────────────┤
+│ METACOGNITIVE PIPELINE (main agent only)              │
+│ Metabolism → Gaps → Contemplation → Growth Vectors   │
+└──────────────────────────────────────────────────────┘
+```
+
+#### The 12-Layer Memory Model
+
+| Layer | System | Searchable via | Purpose | Latency |
+|-------|--------|---------------|---------|---------|
+| 0 | LCM (lossless-claw) | `memory_search` (lcm) + LCM tools | Lossless within-session context — DAG + FTS | Runtime |
+| 1 | Always-loaded files | (injected) | Identity, working memory | 0ms |
+| 2 | MEMORY.md | (injected) | Curated long-term wisdom | 0ms |
+| 3 | PROJECT.md per project | (injected) | Institutional knowledge | 0ms |
+| 4 | facts.db | `memory_search` (facts) | Structured entity/key/value | <1ms |
+| 5 | Continuity archive | `memory_search` (continuity) | Cross-session conversation recall | ~7ms |
+| 5a | File-vec index | `memory_search` (files) | Workspace document search | ~7ms |
+| 5b | LightRAG | Dedicated tool | Domain GraphRAG | ~200ms |
+| 6 | Daily logs | On demand | Raw session history | On demand |
+| 10 | Continuity plugin | — | Context budgeting, topic tracking, anchors | Runtime |
+| 11 | Stability plugin | — | Entropy monitoring, growth vectors | Runtime |
+| 12 | Metabolism plugin | — | Fact extraction, gap detection | Runtime |
+| 13 | Contemplation plugin | — | Deep inquiry pipeline (3-pass) | Background |
+
+#### memory_search — One Tool, Four Backends
+
+```python
+memory_search("what did we decide about the database?")
+  │
+  ├── continuity — semantic vector search over conversation archives (384d embeddings)
+  ├── facts — structured entity/key/value lookup + FTS5 (facts.db)
+  ├── files — workspace document vector search (file-vec index)
+  └── lcm — full-text search over lossless messages + summaries (lcm.db FTS5)
+  │
+  ▼
+  Combined results — one response, all memory systems
+```
+
+All four backends run **in parallel** — no latency penalty from adding more.
+
+| Backend | What it finds | Best for |
+|---------|--------------|----------|
+| `continuity` | Past conversations (semantic + temporal re-ranking) | "What did we discuss about X?" |
+| `facts` | Structured facts, preferences, decisions (exact + fuzzy) | "What's my daughter's birthday?" |
+| `files` | Workspace documents, project files, notes | "Where did I document the deploy process?" |
+| `lcm` | Raw messages + compressed summaries from lossless history | "What command did I run yesterday?" |
+
+**Scope control**: `memory_search(query, systems: "continuity,facts,files,lcm")` — pass comma-separated subset to narrow.
+
+#### LCM Dedicated Tools (for the other 10% of recall)
+
+- **`lcm_grep`** — targeted regex/full-text search over messages + summaries
+- **`lcm_describe`** — inspect a specific summary's metadata and lineage
+- **`lcm_expand_query`** — spawn sub-agent to traverse DAG and answer from expanded context (~120s, precision questions)
+
+#### Facts.db — Structured Memory
+
+- Scale: 770+ facts, relations, aliases (post-cleanup)
+- Decay system: Hot/Warm/Cool tiers, `superseded_at` invalidation
+- Facts writer: Metabolism plugin (runs every 5 min)
+- Schema: entities, relations, aliases, decay tiers
+
+#### Embedding Options for Memory
+
+| Provider | Cost | Latency | Dims | Quality | Notes |
+|----------|------|---------|------|---------|-------|
+| llama.cpp (GPU) | Free | ~4ms | 768 | Best | Multilingual, local (nomic-embed-text-v2-moe) |
+| Ollama nomic-embed-text | Free | ~61ms | 768 | Good | `ollama pull nomic-embed-text` |
+| OpenAI | ~$0.02/M | ~200ms | 1536 | Great | Cloud API, no local GPU needed |
+
+#### Metacognitive Pipeline (Main Agent Only)
+
+```
+Metabolism → Gaps → Contemplation → Growth Vectors
+   │            │          │              │
+   ▼            ▼          ▼              ▼
+ Fact         Knowledge   3-pass deep    Direction for
+ extraction   gap         inquiry        self-improvement
+ every 5min   detection   (explore→      via stability
+                           reflect→       monitoring
+                           synthesize)
+```
+
+---
+
+### Memory Problems & Solutions (Community Findings)
+
+> Source: blog.dailydoseofds.com + dev.to AWS audit + GitHub issues
+
+#### Problem 1: Memory Retrieval Without Understanding
+
+**Symptom**: "The more you use OpenClaw, the worse its memory gets. It remembers everything you tell it but understands none of it."
+
+**Root cause**: Vector search gives you **similar text** but memory needs **structure**. The system can't connect facts across conversations.
+
+**Example**:
+- Monday: "Alice manages the auth team" → stored as text chunk
+- Wednesday: "Who handles auth permissions?" → retrieves both "Alice" and "auth" chunks but can't connect them
+
+**Solution — Cognee Plugin** (open-source knowledge graph):
+- Extracts entities + relationships from conversations
+- Stores as graph: `Alice [Person] --manages→ Auth Team [Team]`
+- Graph traversal instead of text similarity
+- 3 phases: On Startup (scan MEMORY.md), Auto-Recall (before each run), Auto-Index (after each run)
+- Hash-based change detection — only modified files trigger updates
+- Setup: Docker + `openclaw plugins install cognee` + config.yaml
+
+#### Problem 2: Memory Poisoning via Unvalidated Context
+
+**Symptom**: Malicious/false information introduced into memory persists and affects all future interactions — even after the attacker loses access.
+
+**Root cause**: OpenClaw's memory = plain Markdown files on disk (MEMORY.md + memory/*.md). No integrity validation mechanism. If an attacker introduces false info via channel or prompt injection, it persists.
+
+**Concrete scenario**: Agent has in memory that "admin user is bad@boy.com". Attacker introduces that this data changed. Memory is updated. Effect persists.
+
+**Mitigation strategies**:
+- Validate channel sources before writing to memory
+- Enable audit logging for all memory writes
+- Use `lcm_expand_query` to trace where information originated
+- Consider integrity checks on memory files
+
+#### Problem 3: 53 Skills Active by Default (Opt-out, Not Opt-in)
+
+**Symptom**: OpenClaw installs 53 bundled skills, all active by default. Skills auto-activate if corresponding CLI tool is available.
+
+**Security implication**: Default capabilities include code execution, filesystem access, web browsing, email sending, external API interaction, process management. Violates principle of least privilege.
+
+**Recommendation**: Review and disable skills not needed for your use case. Use `openclaw skills list` + per-skill disable.
+
+#### Problem 4: No Granular Channel Access Controls
+
+**Symptom**: Channel configuration UI doesn't expose granular access controls. No authorized sender whitelist. In a Telegram group, any participant can instruct the agent.
+
+**Risk**: Horizontal privilege escalation — any channel participant can execute tasks as if they were an authorized user.
+
+**Mitigation**: Use channel-specific allowlists where available. Monitor agent instructions via audit logs.
+
+---
+
+### Tool Call Observability & Audit (GitHub Issue #55806)
+
+> Source: github.com/openclaw/openclaw/issues/55806 (2026-03-27)
+
+**Current state**: Tool call logging captures some info but lacks key observability for production auditing.
+
+| Feature | Status |
+|---------|--------|
+| Input summary (sanitized) | ❌ Full args exposed |
+| Permission decision | ❌ Not tracked |
+| Execution duration | ⚠️ Computed from timestamps |
+| Error category | ❌ Raw message only |
+| Context writeback | ❌ Not tracked |
+
+**Proposed enhancements**:
+
+1. **Input Sanitization Log** — sanitized parameter summary at INFO level:
+   - File paths: keep but truncate
+   - Commands: truncate, don't log full scripts
+   - API keys/tokens: always redact
+   - Message content: redact or hash
+
+2. **Error Categorization** — structured error type in toolResult:
+   - Categories: `ENOENT`, `PERMISSION`, `VALIDATION`, `TIMEOUT`, `RATE_LIMIT`, `TOOL_ERROR`
+   - Adds `errorType`, `errorMessage`, `errorRecoverable` fields
+
+3. **Context Writeback Tracking** — log what tools write:
+   - `tool writeback: edit file=memory/2026-03-27.md lines=+5/-2`
+   - `tool writeback: write file=WRITING_CHECKLIST.md bytes=2934`
+   - Enables: audit trail of what changed, recovery from bad writes, understanding agent behavior
+
+**Related issues**: #55801 (tool policy audit logging), #55803 (plugin system audit)
+
+---
+
+### Embedding Provider Auto-detection
+
+When embedding provider configured (OpenAI, Gemini, Voyage, Mistral key), `memory_search` auto-enables hybrid search. ✅
+
+### Memory Search Extra Collections
+
+```json5
+{
+  agents: {
+    defaults: {
+      memorySearch: {
+        qmd: {
+          extraCollections: [{ path: "~/agents/family/sessions", name: "family-sessions" }]
+        }
+      }
+    }
+  }
+}
+```
+
+Paths inside workspace stay agent-scoped. Paths outside workspace use explicit name. ✅
+
+### Compaction Interaction
+
+**Pre-compaction memory flush**:
+- `agents.defaults.compaction.memoryFlush.enabled: true` (default)
+- `softThresholdTokens: 4000` triggers silent turn before auto-compaction
+- Uses exact `NO_REPLY`/`no_reply` suppression
+- Runs once per compaction cycle ✅
+
+### Dreaming (Experimental)
+
+**Opt-in** via `plugins.entries.memory-core.config.dreaming.enabled: true`.
+
+**Phases**: Light (sort/stage) → REM (reflect/surface themes) → Deep (promote to `MEMORY.md`)
+
+**Sweep schedule**: Default `0 3 * * *` (3 AM daily)
+
+**Promotion thresholds**: `minScore: 0.8`, `minRecallCount: 3`, `minUniqueQueries: 3`
+
+**Diary output**: `DREAMS.md` + `memory/dreaming/<phase>/YYYY-MM-DD.md`
+
+**Grounded backfill**: Reads historical `memory/YYYY-MM-DD.md` files, writes structured review output into `DREAMS.md`. Staged into short-term store (not directly promoted). Rollback available. ✅
+
+### Session Persistence
+
+**Two layers**:
+1. `sessions.json` — key/value map, mutable, safe to edit/delete entries
+2. `<sessionId>.jsonl` — append-only transcript ✅
+
+**Store maintenance** (`session.maintenance`):
+- `mode: "warn"` (default) — reports what would be cleaned
+- `mode: "enforce"` — auto-cleanup
+- `pruneAfter`: stale entry cutoff (default `30d`)
+- `maxEntries`: cap entries in sessions.json (default `500`)
+- `rotateBytes`: rotate sessions.json when oversized (default `10mb`) ✅
+
+**Disk budget** (`mode: "enforce"`):
+1. Remove oldest archived/orphan transcript artifacts
+2. Evict oldest session entries + transcript files until below `highWaterBytes`
+3. In `warn` mode: reports only ✅
+
+### Cron Session Retention
+
+- `cron.sessionRetention` (default `24h`) prunes isolated run sessions from store
+- `cron.runLog.maxBytes` + `cron.runLog.keepLines` prune `~/.openclaw/cron/runs/<jobId>.jsonl` ✅
+
+---
+
+## 9. Known Bugs & Limitations
+
+### Confirmed Issues from Docs
+
+1. **BlueBubbles edit broken on macOS 26 Tahoe** — sticker edit currently broken on macOS 26 Tahoe. (✅ confirmed from BlueBubbles channel doc)
+
+2. **iMessage requires Full Disk Access** — iMessage channel requires Full Disk Access to Messages DB. No workaround except using BlueBubbles instead. (✅)
+
+3. **Telegram native draft transport fallback** — If native draft transport unavailable/rejected, OpenClaw falls back to `sendMessage` + `editMessageText`. (✅)
+
+4. **MiniMax thinking leaks via streaming** — On Anthropic-compatible streaming path, MiniMax emits `reasoning_content` in OpenAI-style delta chunks instead of native Anthropic thinking blocks. OpenClaw disables thinking by default unless explicitly set. (✅)
+
+5. **Telegram reaction updates lack thread IDs** — Telegram does not provide thread IDs in reaction updates. Non-forum groups route to group chat session; forum groups route to general-topic (`:topic:1`), not exact originating topic. (✅)
+
+6. **Signal message reactions in group chats** — Signal group chat reaction notifications route to group session, not per-sender DM session. (⚠️)
+
+7. **@username allowlist resolution requires bot token** — `openclaw doctor --fix` for legacy `@username` allowlist entries requires a Telegram bot token for resolution. (✅)
+
+8. **BOT_COMMANDS_TOO_MUCH** — If Telegram menu still overflows after trimming, reduce plugin/skill/custom commands or disable `channels.telegram.commands.native`. (✅)
+
+9. **Context overflow signatures vary by provider** — Compaction trigger signatures: `request_too_large`, `context length exceeded`, `input exceeds maximum tokens`, `input token count exceeds maximum`, `input is too long`, `ollama error: context length exceeded`. (✅)
+
+10. **sessions_history not raw dump** — `sessions_history` applies safety filters, truncations, redactions. Never a raw transcript. (✅)
+
+11. **Sub-agent announce is best-effort** — If gateway restarts, pending "announce back" work is lost. (✅)
+
+12. **Playwright not in all builds** — `Playwright is not available in this gateway build` for basic page screenshots; ARIA snapshots and basic screenshots may still work but navigation, AI snapshots, CSS-selector element screenshots, and PDF export are unavailable. (✅)
+
+13. **Chrome MCP screenshot limitations** — `existing-session` profiles: no element screenshots (use page capture or snapshot `--ref`), no CSS `--element` selectors (use snapshot ref/inputRef), one file at a time for uploads, no `timeoutMs` for dialog hooks, no `responsebody` support yet. (✅)
+
+14. **exec approval denials don't fall through to plugin resolution** — Real exec approval denials/errors do not silently fall through to plugin approval resolution. (✅)
+
+15. **Cron "OR" day-of-month/day-of-week** — Croner uses OR logic for day-of-month + day-of-week when both non-wildcard. `0 9 15 * 1` fires on every 15th AND every Monday, not just when both match. Use `+` modifier for AND. (⚠️ confirmed from cron-jobs doc)
+
+16. **Matrix DM session scope** — `channels.matrix.dm.sessionScope: "per-room"` isolates each DM room; `per-user` (default) shares by routed peer. (✅)
+
+17. **DM pairing ≠ group authorization** — Pairing grants DM access only. Group sender authorization requires explicit `groupAllowFrom` or per-group/per-topic `allowFrom`. Pairing store NOT inherited for groups. (✅)
+
+18. **groupAllowFrom is NOT group allowlist** — `groupAllowFrom` is for **sender IDs**, not group chat IDs. Group IDs go under `channels.<channel>.groups`. (✅ confirmed from Telegram doc warning)
+
+19. **SOCKS proxy DNS may leak** — Telegram `proxy: "socks5://..."` may leak DNS on some proxies. Use `channels.telegram.network.dangerouslyAllowPrivateNetwork` only for trusted proxy environments. (⚠️)
+
+20. **workspace is not a hard sandbox** — Each agent's workspace is the default cwd, not a hard sandbox. Absolute paths can reach other host locations unless sandboxing enabled. (✅)
+
+### Limitations
+
+1. **Max nesting depth 5** — Sub-agent `maxSpawnDepth` range is 1–5. Depth 2 recommended for most orchestrator patterns. (✅)
+
+2. **maxChildrenPerAgent** — Range 1–20, default 5. Prevents runaway fan-out from single orchestrator. (✅)
+
+3. **No raw transcript via sessions_history** — Must inspect file on disk (`<sessionId>.jsonl`) for raw byte-for-byte transcript. (✅)
+
+4. **Pairing code 1-hour expiry** — Pairing codes expire after 1 hour. (✅)
+
+5. **3 pending DM pairing cap** — Max 3 pending DM pairing requests per channel. (✅)
+
+---
+
+## 10. Performance Optimization
+
+### Context Size Reduction
+
+**Workspace bootstrap**:
+- Set `bootstrapMaxChars` per file (default 20,000)
+- Set `bootstrapTotalMaxChars` total (default 150,000)
+- Use `bootstrapPromptTruncationWarning: "off"` if you don't need in-prompt warnings
+- Use `contextInjection: "continuation-skip"` to skip re-injection on safe continuation turns ✅
+
+**Tool schemas** dominate context for many agents. Use `/context detail` to see which tools have the largest schemas. Consider:
+- Denying large-schema tools not needed by that agent
+- Using `tools.profile: "minimal"` or `"messaging"` for narrow-purpose agents
+- Using smaller-context models for secondary agents ✅
+
+**Skills**:
+- Skills list in system prompt: ~195 chars base + ~97 chars/skill + field lengths
+- XML escaping (`& < > " '`) increases lengths
+- ~4 chars/token estimate: ~24 tokens/skill overhead
+- Use per-agent skill allowlists to limit which skills load ✅
+
+**Session pruning**: Enable `session pruning` to trim old tool results from in-memory prompt without full compaction. Lighter-weight than compaction. ✅
+
+### Model Selection
+
+**Cheap models for sub-agents**: Configure `agents.defaults.subagents.model` with a cheaper model. Sub-agents have their own context and token usage. ✅
+
+**Fast mode**: `/fast on` on MiniMax rewrites to `M2.7-highspeed` (2x cost but 2x speed). Good for simple tasks. ✅
+
+**Fallback chain**: Set `model.fallback: ["provider/model"]` so runs continue when primary fails. OpenClaw tries fallbacks in order. ✅
+
+**Image understanding**: Use `MiniMax-VL-01` via `minimax` provider for image understanding — it's bundled separately from text catalog. ✅
+
+### Cron Optimization
+
+**Stagger recurring cron**: Top-of-hour recurring expressions auto-stagger by up to 5 minutes. Use `--exact` for precise timing or `--stagger 30s` for explicit window. Reduces load spikes. ✅
+
+**Light context for isolated cron**: Use `--light-context` to skip bootstrap file injection. Faster startup for jobs that don't need workspace context. ✅
+
+**Model for isolated cron**: Set `--model` explicitly for cron jobs. If model not allowed, falls back to agent/default. Set `cron.sessionRetention` appropriately (default `24h`) to prune old cron sessions. ✅
+
+### Streaming
+
+**Preview streaming** (`channels.<channel>.streaming: "partial"`): Updates a single preview message instead of sending multiple messages. Reduces message volume. ✅
+
+**Block streaming** (`blockStreamingDefault: "on"`): Sends coarse chunks as assistant writes. Consider `blockStreamingBreak: "text_end"` for progressive output or `"message_end"` for batched final output. ✅
+
+**Coalescing** (`blockStreamingCoalesce`): Merges consecutive block chunks before sending. Reduces "single-line spam". Default `minChars` bumped to 1500 for Signal/Slack/Discord. ✅
+
+**Human-like pacing** (`agents.defaults.humanDelay`): Adds randomized 800–2500ms pause between blocks for natural feel. Only for block replies, not final replies. ✅
+
+### Concurrency
+
+**Sub-agent concurrency**: `agents.defaults.subagents.maxConcurrent` (default 8). Cap higher for throughput, lower for resource control. ✅
+
+**Per-agent children cap**: `maxChildrenPerAgent` (default 5). Prevents runaway spawns. ✅
+
+**Session maintenance**: Set `session.maintenance.mode: "enforce"` to automatically prune old sessions. Prevents unbounded disk growth. ✅
+
+### Memory
+
+**QMD vs SQLite**: QMD has reranking + query expansion but more overhead. SQLite (builtin) is simpler. Choose based on search quality needs vs performance. ✅
+
+**Dreaming schedule**: Set `dreaming.frequency` to off-peak hours. Default 3 AM. Don't run during peak hours. ✅
+
+### Network
+
+**Telegram proxy**: For unstable connections, use `channels.telegram.proxy: "socks5://..."`. Consider `channels.telegram.network.autoSelectFamily: false` if IPv6 is broken. ✅
+
+**Slack native streaming**: `channels.slack.streaming.nativeTransport: true` uses Slack's native streaming when available, reducing gateway overhead. ✅
+
+---
+
+## 11. Troubleshooting Guide
+
+### Command Ladder (Run in Order)
+
+```bash
+# 1. Basic status
+openclaw status
+
+# 2. Gateway health
+openclaw gateway status
+
+# 3. Follow logs
+openclaw logs --follow
+
+# 4. Doctor (config/service audit)
+openclaw doctor
+
+# 5. Channel probes
+openclaw channels status --probe
+
+# 6. Cron status
+openclaw cron status
+openclaw cron list
+openclaw cron runs --id <jobId> --limit 20
+
+# 7. Session inspection
+openclaw sessions --json
+openclaw sessions --active 30
+```
+
+### "No replies" — Channels Up But Silent
+
+**Check routing**:
+```bash
+openclaw pairing list --channel <channel>
+openclaw config get channels
+```
+
+Look for: pairing pending, mention gating, allowlist mismatches. Signatures: `drop guild message (mention required)`, `pairing request`, `blocked`. ✅
+
+### "Unknown model: minimax/MiniMax-M2.7"
+
+**Fix** (2026.1.12+):
+1. Run `openclaw configure` and select MiniMax auth option, OR
+2. Add `models.providers.minimax` block manually, OR
+3. Set `MINIMAX_API_KEY`, `MINIMAX_OAUTH_TOKEN`, or MiniMax auth profile ✅
+
+**Case sensitivity**: Use `minimax/MiniMax-M2.7` (capital M), not `minimax/minimax-m2.7`. ✅
+
+### Context Overflow / Compaction Spam
+
+1. Check model context window — too small?
+2. Check `compaction.reserveTokens` — if too high for model window, causes earlier compaction
+3. Enable session pruning to trim tool-result bloat
+4. Consider larger-context model for long-conversation tasks ✅
+
+### Sub-agent Announce Not Delivered
+
+- Best-effort only — gateway restart loses pending announces
+- Check if sub-agent returned `ANNOUNCE_SKIP` or `NO_REPLY`/`no_reply`
+- Verify requester session still exists ✅
+
+### Telegram Bot Not Responding to Group Messages
+
+1. If `requireMention=false`, Telegram privacy mode must allow full visibility:
+   - BotFather: `/setprivacy` → Disable
+   - Remove + re-add bot to group
+2. `openclaw channels status --probe` warns when config expects unmentioned group messages
+3. Quick test: `/activation always` ✅
+
+### Telegram Polling/Network Instability
+
+```yaml
+channels:
+  telegram:
+    proxy: "socks5://localhost:9050"  # if SOCKS needed
+    network:
+      autoSelectFamily: false  # if IPv6 broken
+```
+
+Node 22+ defaults: `autoSelectFamily=true`, `dnsResultOrder=ipv4first`. WSL2 defaults to disabled. Override with `network` config or env vars: `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=1`. ✅
+
+### Cron Not Firing
+
+1. Check `cron.enabled` and `OPENCLAW_SKIP_CRON` env var
+2. Confirm Gateway running continuously
+3. For `cron` schedules, verify `--tz` vs host timezone
+4. `reason: not-due` with `--due` flag means not yet scheduled time ✅
+
+### Cron Fired But No Delivery
+
+1. `none` delivery mode = no external message expected
+2. Delivery target missing/invalid
+3. Channel auth errors (`unauthorized`, `Forbidden`)
+4. If isolated run returned only `NO_REPLY`/`no_reply`, suppress both direct delivery and fallback queued summary ✅
+
+### Exec Blocked / Approval Not Working
+
+1. Check `tools.exec.security` is not `"deny"` (default is `"deny"`)
+2. Check sender in `tools.exec.allowFrom.<channel>`
+3. Check approver has approved
+4. Check timeout not expired (30 min default)
+5. For Telegram: `channels.telegram.execApprovals` must be configured ✅
+
+### Control UI Can't Connect
+
+1. Correct URL + port?
+2. Auth mode/token mismatch?
+3. Non-secure context / missing device auth?
+4. `origin not allowed` → browser `Origin` not in `gateway.controlUi.allowedOrigins`
+
+Auth detail codes:
+- `AUTH_TOKEN_MISMATCH`: token mismatch. If `canRetryWithDeviceToken=true`, allow one trusted retry.
+- `AUTH_DEVICE_TOKEN_MISMATCH`: cached per-device token stale/revoked. Rotate via `openclaw devices rotate`.
+- `PAIRING_REQUIRED`: device identity not approved. Run `openclaw devices approve <requestId>`. ✅
+
+### Gateway Won't Start / Won't Stay Up
+
+1. `EADDRINUSE` → port conflict
+2. `refusing to bind ... without auth` → non-loopback bind without valid auth
+3. `Gateway start blocked: set gateway.mode=local` → local mode not enabled. Fix: set `gateway.mode="local"` in config or re-run `openclaw onboard --mode local`
+4. Check for stale service installs: `openclaw gateway status --deep` ✅
+
+### Browser Tool Not Available
+
+```bash
+openclaw browser status
+openclaw browser start --browser-profile openclaw
+```
+
+- `unknown command "browser"` → bundled browser plugin excluded by `plugins.allow`
+- `Failed to start Chrome CDP` → browser process failed
+- `browser.executablePath not found` → invalid path
+- `Playwright is not available` → full Playwright package not in this build ✅
+
+### Model Fails on Long Sessions Only
+
+```bash
+curl http://127.0.0.1:1234/v1/chat/completions \
+  -H 'content-type: application/json' \
+  -d '{"model":"<id>","messages":[{"role":"user","content":"hi"}],"stream":false}'
+openclaw infer model run --model <provider/model> --prompt "hi" --json
+```
+
+Common issues:
+- Backend rejects structured content parts → set `compat.requiresStringContent: true`
+- Backend crashes on large prompts → lower prompt pressure or use stronger model
+- `messages[...].content: invalid type: sequence, expected string` → same fix ✅
+
+### Heartbeat Not Running
+
+```bash
+openclaw system heartbeat last
+```
+
+- `reason=quiet-hours` → outside active hours window
+- `reason=empty-heartbeat-file` → `HEARTBEAT.md` exists but only blank/markdown headers
+- `reason=no-tasks-due` → `HEARTBEAT.md` has `tasks:` block but none due
+- `reason=dm-blocked` → target resolved to DM while `agents.defaults.heartbeat.directPolicy` = `block` ✅
+
+### After Upgrade Something Broke
+
+1. Auth/URL override behavior changed — check `gateway.mode`, `gateway.remote.url`, `gateway.auth.mode`
+2. Bind/auth guardrails stricter — non-loopback binds need valid auth
+3. Pairing/device identity state changed — run `openclaw devices list`, `openclaw pairing list`
+4. Reinstall service: `openclaw gateway install --force && openclaw gateway restart` ✅
+
+---
+
+## 12. Hidden Features
+
+### 1. Pluggable Compaction Providers
+
+Plugins can register custom compaction via `registerCompactionProvider()`. Set `agents.defaults.compaction.provider: "my-provider"` to delegate summarization. Forces `mode: "safeguard"`. Falls back to built-in on failure. ✅
+
+### 2. Pluggable Context Engines
+
+Install a plugin with `kind: "context-engine"` and select with `plugins.slots.contextEngine`. OpenClaw delegates context assembly, `/compact`, and related hooks to that engine. `ownsCompaction: false` does NOT auto-fallback — engine must implement `compact()` correctly. ✅
+
+### 3. Per-Topic Agent Routing (Telegram)
+
+Each forum topic can route to a different agent:
+```json5
+{
+  channels: {
+    telegram: {
+      groups: {
+        "-1001234567890": {
+          topics: {
+            "1": { agentId: "main" },
+            "3": { agentId: "zu" },
+            "5": { agentId: "coder" }
+          }
+        }
+      }
+    }
+  }
+}
+```
+Each topic gets isolated workspace, memory, session. ✅
+
+### 4. Persistent ACP Topic Binding
+
+Forum topics can pin ACP harness sessions through top-level typed ACP bindings with `type: "acp"` + `match.channel: "telegram"`. Currently scoped to forum topics in groups/supergroups. ✅
+
+### 5. Thread-Bound Subagent Sessions (Discord)
+
+`sessions_spawn({ thread: true })` creates/binds a Discord thread to that session. Follow-up messages in that thread route to the same session. Use `/focus`, `/unfocus`, `/agents`, `/session idle`, `/session max-age` for control. ✅
+
+### 6. ACP Agent Spawn from Chat
+
+`/acp spawn <agent> --thread here|auto` can bind current Telegram topic to a new ACP session. Follow-up topic messages route directly (no `/acp steer` needed). Requires `channels.telegram.threadBindings.spawnAcpSessions=true`. ✅
+
+### 7. Deep Sub-agent Nesting (Orchestrator Pattern)
+
+Set `maxSpawnDepth: 2` to enable: main → orchestrator sub-agent → worker sub-sub-agents. Orchestrator gets `sessions_spawn` + `subagents` to manage children. Cascade stop works: stopping orchestrator stops all children. ✅
+
+### 8. sessions_history Safety Sanitization
+
+`sessions_history` is NOT a raw dump. It strips:
+- Thinking tags
+- `<relevant-memories>` scaffolding
+- Tool-call XML (`<tool_call>`, `</think>`, `<tool_calls>`, `<function_calls>`)
+- Downgraded tool-call scaffolding
+- Leaked model control tokens (`<|assistant|>`, `<｜...｜>`, etc.)
+- Malformed MiniMax tool-call XML
+- Credential/token-like text
+- Then applies truncation/redaction ✅
+
+### 9. NO_REPLY / no_reply Exact Suppression
+
+Only **exact** `NO_REPLY` or `no_reply` (case-insensitive) at start of output triggers suppression. Partial or mixed content does NOT. Applies to:
+- Sub-agent announce
+- Isolated cron delivery
+- Silent memory flush turns
+- Draft/typing streaming suppression (as of 2026.1.10) ✅
+
+### 10. Auto-Presence (Discord)
+
+Runtime availability maps to bot presence:
+- healthy → online
+- degraded → idle
+- exhausted → dnd
+
+With optional status text overrides. ✅
+
+### 11. Voice Receive Recovery (Discord)
+
+If decrypt failures exceed tolerance, OpenClaw attempts recovery by leaving and rejoining the voice session. ✅
+
+### 12. Workspace Bootstrap Continuation-Skip
+
+`contextInjection: "continuation-skip"` skips workspace bootstrap re-injection on safe continuation turns (after completed assistant response). Reduces prompt size. Heartbeat runs and post-compaction retries still rebuild context. ✅
+
+### 13. Per-Channel Streaming Override
+
+Block streaming defaults are `off` unless explicitly set. Preview streaming is separate from block streaming. Telegram: `streaming: "progress"` maps to `partial`. Discord: `streaming: "progress"` maps to `partial`. ✅
+
+### 14. Lightweight Cron Context
+
+`--light-context` on isolated cron jobs skips ALL workspace bootstrap file injection. Useful for jobs that don't need workspace context. ✅
+
+### 15. Grounded Dreaming Backfill
+
+`openclaw memory rem-backfill --path ./memory --stage-short-term` reads historical daily notes and stages grounded durable candidates into the live short-term promotion store. Does NOT directly promote. Write reversible to `DREAMS.md`. Rollback: `--rollback` or `--rollback-short-term`. ✅
+
+### 16. sessions_history is Orchestration Safety Net
+
+When orchestrating subagents, use `sessions_history` for bounded sanitized recall instead of raw transcript inspection. Prevents credential/token leakage in orchestration context. ✅
+
+### 17. exec Approvals Cascade Resolution
+
+When Telegram exec approval is unknown/expired, Telegram retries once through `plugin.approval.resolve` if also authorized for plugin approvals. Real exec denial/errors do NOT fall through silently. ✅
+
+### 18. Config Write Blocking Per-Channel
+
+`channels.<channel>.configWrites: false` blocks that channel from mutating config (group migrations, `/config set|unset`). Per-account override: `channels.<channel>.accounts.<id>.configWrites`. ✅
+
+### 19. Sub-agent Auth Merged Per-Agent
+
+Sub-agent auth resolves from target agent's `agentDir`. Main agent's auth profiles merged as **fallback** (not override). Merge is additive — main profiles always available. ✅
+
+### 20. Binding Upgrade In-Place
+
+If you add binding with explicit `accountId` to agent that already has channel-only binding for same channel, OpenClaw **upgrades** existing binding in-place instead of adding duplicate. Prevents binding proliferation. ✅
+
+---
+
+## Quick Reference
+
+### File Locations
+
+| File | Path |
+|------|------|
+| Config | `~/.openclaw/openclaw.json` |
+| State | `~/.openclaw/` |
+| Workspace | `~/.openclaw/workspace` |
+| Sessions store | `~/.openclaw/agents/<agentId>/sessions/sessions.json` |
+| Session transcripts | `~/.openclaw/agents/<agentId>/sessions/<sessionId>.jsonl` |
+| Cron jobs | `~/.openclaw/cron/jobs.json` |
+| Cron run logs | `~/.openclaw/cron/runs/<jobId>.jsonl` |
+| Skills | `~/.openclaw/skills/` or `<workspace>/skills/` |
+| Hooks | `~/.openclaw/hooks/` |
+| Memory | `<workspace>/memory/` + `<workspace>/MEMORY.md` |
+
+### Default Ports
+
+| Service | Port |
+|---------|------|
+| Gateway RPC/WebSocket | 18789 |
+| Webhook local listener | 8787 (Telegram) |
+
+### Key CLI Commands
+
+```bash
+openclaw gateway status      # Check gateway health
+openclaw gateway restart     # Restart gateway
+openclaw channels status     # Channel status
+openclaw cron list           # List cron jobs
+openclaw cron run <id>      # Force run cron
+openclaw sessions            # List sessions
+openclaw agents list         # List agents
+openclaw agents bindings     # Routing bindings
+openclaw config schema       # Full schema
+openclaw doctor              # Config/service audit
+openclaw logs --follow       # Live logs
+openclaw memory status       # Memory index status
+openclaw hooks list          # Available hooks
+openclaw skills install <slug>  # Install from ClawHub
+```
+
+### Model Name Format
+
+Format: `provider/provider/model-id` or `provider/model-id`
+
+Examples:
+- `minimax/MiniMax-M2.7` (API key path)
+- `minimax-portal/MiniMax-M2.7` (OAuth path)
+- `nvidia/nvidia/nemotron-3-super-120b-a12b`
+- `google/gemini-3.1-flash-lite`
+- `anthropic/claude-opus-4-6`
+
+---
+
+*Compiled from OpenClaw docs at `/usr/local/lib/node_modules/openclaw/docs/`*
+*Last updated: 2026-04-23***
+
+---
+
+## 13. ACP vs Pi Embedded Integration
+
+### ACP (Agent Coding Protocol)
+ACP is an **external coding harness** that OpenClaw hosts via `openclaw acp serve`. External IDEs/editors (Codex, Claude Code, Cursor) speak ACP over stdio to connect to OpenClaw Gateway. ACP does NOT run inside the OpenClaw process — it's a bridge that routes through the Gateway.
+
+**Architecture:**
+```
+External Editor (Codex/Claude Code/Cursor)
+    ↓ stdio
+openclaw acp serve (ACP bridge process)
+    ↓ WebSocket
+OpenClaw Gateway
+    ↓ message routing
+Agent Session
+```
+
+- ACP bridge is a **standalone process** spawned by OpenClaw
+- Communication: stdio between editor and bridge, WebSocket between bridge and Gateway
+- ACP does NOT run agent code inside OpenClaw — it routes through it
+
+**Key use:** External IDE integration (Codex, Claude Code, Cursor), IDE UX with OpenClaw messaging surface.
+
+### Pi Embedded Integration
+Pi is an **embedded SDK** (`@mariozechner/pi-coding-agent`) that OpenClaw imports directly in-process via `createAgentSession()`. It runs INSIDE the OpenClaw Gateway process — NOT as a subprocess, NOT over RPC.
+
+**Architecture:**
+```
+OpenClaw Gateway Process
+    ├── createAgentSession() ← Pi SDK imported directly
+    ├── runEmbeddedPiAgent()
+    └── Tool Injection Pipeline:
+        ├── Base tools (pi built-ins)
+        ├── Custom replacements (exec, process, sandboxed)
+        ├── OpenClaw tools (messaging, browser, canvas, sessions)
+        ├── Channel tools (Discord/Telegram/Slack/WhatsApp)
+        └── Policy filtering (profile/provider/agent/group/sandbox)
+```
+
+**Key use:** Custom tool injection per channel/context, lowest latency (no cross-process), full session lifecycle control.
+
+### ACP vs Pi Embedded Comparison
+
+| Aspect | ACP | Pi Embedded |
+|--------|-----|-------------|
+| Runtime location | External process | In-process (Gateway) |
+| Communication | stdio + WebSocket | Direct function calls |
+| IDE support | Codex/Claude Code/Cursor | Not supported |
+| Tool injection | No | Yes (full pipeline) |
+| Latency | Higher (serialization) | Lower (zero-copy) |
+| Custom extensions | No | Yes |
+| Debugging | Cross-process | In-process |
+| Session control | Gateway-level | Full internal control |
+
+### Hybrid Approach
+```
+User Message → OpenClaw Gateway → Pi Embedded Agent (normal conversations)
+                              → ACP Bridge → External Editor (complex coding tasks)
+```
+
+- **Pi Embedded** for normal conversations, tool injection, multi-agent orchestration
+- **ACP** for complex coding tasks in external IDE (Codex/Claude Code/Cursor)
+
+### Edge Cases
+
+**ACP edge cases:**
+- Connection drops: ACP bridge reconnects to Gateway WebSocket
+- Editor crash: ACP bridge continues, editor can reconnect
+- Gateway restart: ACP bridge needs to reconnect, sessions preserved on disk
+
+**Pi Embedded edge cases:**
+- Context overflow: triggers auto-compaction, retry on context length error
+- Image injection: prompt-local only (not stored in session)
+- Stale parent output: suppressed when descendant runs are active
+- Provider errors: auth profile rotation, model fallback chain
+
+### Sources
+- `/usr/local/lib/node_modules/openclaw/docs/pi.md` — Pi Integration Architecture
+- `/usr/local/lib/node_modules/openclaw/docs/pi-dev.md` — Pi Development Workflow
+- `/usr/local/lib/node_modules/openclaw/docs/concepts/multi-agent.md` — Multi-agent routing
+
+
+---
+
+## 14. OpenClaw Hooks System
+
+### Two Hook Systems
+
+OpenClaw has **TWO separate hook systems**:
+
+| System | Count | Purpose | Discovery |
+|--------|-------|---------|-----------|
+| **Internal Hooks** | 4 bundled | Workspace/event automation | `~/.openclaw/hooks/` |
+| **Plugin Hooks** | 28+ | Deep integration into model, agent, message, tool lifecycle | Bundled with plugins |
+
+**4 Bundled Internal Hooks:**
+
+| Hook | Events | Purpose |
+|------|--------|---------|
+| `session-memory` | `command:new`, `command:reset` | Saves session context to `memory/` |
+| `bootstrap-extra-files` | `agent:bootstrap` | Injects additional bootstrap files |
+| `command-logger` | `command` | Logs all commands to `~/.openclaw/logs/commands.log` |
+| `boot-md` | `gateway:startup` | Runs `BOOT.md` on gateway start |
+
+**Key Plugin Hooks (28+ total):**
+
+| Hook | Purpose |
+|------|---------|
+| `before_model_resolve` | Route/override model selection |
+| `before_prompt_build` | Inject dynamic system prompts |
+| `before_agent_start` | **DEPRECATED** — use before_model_resolve or before_prompt_build |
+| `before_tool_call` | Validate tool parameters, enforce policies |
+| `after_tool_call` | Post-process tool results |
+| `message:received` | Anti-spam, content moderation |
+| `message:preprocessed` | Enrich messages before agent sees them |
+| `agent:bootstrap` | Add/remove bootstrap files dynamically |
+| `session:compact:before/after` | Prepare/cleanup for compaction |
+
+### Hook Discovery Order (Precedence)
+
+1. **Bundled hooks** — shipped with OpenClaw
+2. **Plugin hooks** — bundled inside installed plugins
+3. **Managed hooks** — `~/.openclaw/hooks/` (user-installed)
+4. **Workspace hooks** — `<workspace>/hooks/` (**disabled by default**)
+
+### PROMPT_INJECTION_HOOK_NAMES (Security Critical)
+
+Restricts which hooks receive **prompt injection context**:
+
+- ✅ `before_prompt_build`
+- ✅ `before_agent_start`
+- ❌ Other hooks CANNOT see injected prompt context
+
+### ⚠️ CRITICAL DANGER: bootstrapFiles Mutation
+
+The `agent:bootstrap` hook can **modify the `bootstrapFiles` array** — including **removing `MEMORY.md`**:
+
+```typescript
+// DANGEROUS — removes memory from bootstrap
+event.context.bootstrapFiles = event.context.bootstrapFiles.filter(
+  f => !f.includes("MEMORY.md")
+);
+// Result: agent loses ALL persistent memory for entire session
+```
+
+**Always verify intended files remain in bootstrapFiles.**
+
+### before_agent_start — DEPRECATED
+
+| Status | Migration |
+|--------|-----------|
+| **DEPRECATED** | Use `before_model_resolve` for model override |
+| **DEPRECATED** | Use `before_prompt_build` for prompt mutation |
+| Still works | But shows "legacy warning" in diagnostics |
+
+### Hook-to-Hook Communication
+
+**No built-in mechanism.** Each hook runs independently. Shared state requires external mechanism (files, memory store).
+
+### Infinite Hook Loops
+
+**Possible — no built-in protection:**
+
+```
+Hook A (message:received) → modifies session
+→ triggers Hook B (session:patch) → modifies session
+→ triggers Hook A → infinite loop → Gateway hangs
+```
+
+**Mitigation:** Implement guard counters; avoid triggers that re-fire same event type.
+
+### Best Practices
+
+1. **Keep handlers fast** — fire-and-forget heavy work
+2. **Handle errors gracefully** — wrap in try/catch
+3. **Filter events early** — exit fast if not your event
+4. **Use specific event keys** — `"command:new"` not just `"command"`
+5. **Enable only what you need** — minimize attack surface
+
+### Sources
+- `/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md`
+- `/usr/local/lib/node_modules/openclaw/docs/cli/hooks.md`
+- `/usr/local/lib/node_modules/openclaw/docs/plugins/architecture.md`
+
+
+---
+
+## 15. Custom Pi Extensions (pi-hooks)
+
+### pi-hooks ≠ Gateway Hooks
+
+**pi-hooks operate INSIDE the Pi runtime, NOT at gateway layer.**
+
+| Aspect | pi-hooks | Gateway Hooks |
+|--------|----------|---------------|
+| Location | Inside Pi agent runtime | OpenClaw Gateway layer |
+| Purpose | Extend/modify Pi agent behavior | Intercept events across entire gateway |
+| Discovery | Via `additionalExtensionPaths` | Via `~/.openclaw/hooks/` |
+| API | ExtensionAPI (internal) | Event-based hook handlers |
+
+### 2 Built-in Extensions
+
+| Extension | Purpose |
+|-----------|---------|
+| **compaction-safeguard** | Quality guardrails for session compaction (summarization) |
+| **context-pruning** | Cache-TTL based context pruning ("microcompact") — affects only in-memory context, NOT JSONL on disk |
+
+### Loading Mechanism
+
+```typescript
+const resourceLoader = new DefaultResourceLoader({
+  cwd: resolvedWorkspace,
+  agentDir,
+  settingsManager,
+  additionalExtensionPaths,  // ← extension paths pushed here
+});
+await resourceLoader.reload();
+```
+
+### How to Create Custom Extension
+
+1. Write extension in TypeScript
+2. Compile to `.js`
+3. Export default function(api): registers callbacks
+4. Add path to `additionalExtensionPaths`
+5. Pi runtime calls extension hooks at lifecycle points
+
+### ⚠️ CRITICAL LIMITATION
+
+Extensions affect **in-memory context ONLY** — they do NOT rewrite the session JSONL file on disk. This means:
+- Compacted context in memory may differ from persisted JSONL
+- Extensions cannot guarantee permanent session modifications
+
+### ExtensionAPI (Internal — `@mariozechner/pi-coding-agent`)
+
+Methods include callbacks like:
+- `onCompactionStart` — fires when compaction begins
+- `onCompactionEnd` — fires when compaction finishes
+- Context pruning callbacks based on cache TTL
+
+**⚠️ NOTE:** ExtensionAPI is internal to `pi-coding-agent` — NOT publicly documented. Methods may change between versions.
+
+### session-manager-runtime-registry
+
+Registry per-session for **shared state between extension callbacks**:
+
+```typescript
+// Extensions share state via registry
+const state = registry.getSessionState(sessionId);
+state.sharedData = { key: "value" };
+```
+
+### Edge Cases
+
+| Edge Case | Behavior |
+|-----------|----------|
+| Extension throws exception | Unhandled — may crash Pi session |
+| Hot reload without restart | Not supported (requires restart) |
+| Memory leaks in registry | Possible — registry not cleaned on session end |
+| Extensions communicate | Via `session-manager-runtime-registry` only |
+
+### Best Practices
+
+1. Keep extensions idempotent
+2. Handle all callbacks in try/catch
+3. Use registry for shared state, not closure variables
+4. Extensions are internal — expect API changes
+
+### Sources
+- `dist/plugin-sdk/src/agents/pi-hooks/compaction-safeguard.d.ts`
+- `dist/plugin-sdk/src/agents/pi-hooks/context-pruning.d.ts`
+- `dist/plugin-sdk/src/agents/pi-hooks/session-manager-runtime-registry.d.ts`
+- `/usr/local/lib/node_modules/openclaw/docs/pi.md`
+
+
+---
+
+## 16. Hook Security Audit
+
+### CRITICAL SECURITY PRINCIPLE
+
+> **Hooks and native plugins run IN-PROCESS with the Gateway — NOT SANDBOXED.**
+
+A malicious plugin = arbitrary code execution inside OpenClaw process.
+
+```
+┌─────────────────────────────────────────────────┐
+│            OPENCLAW GATEWAY (NO Sandbox)         │
+│  CORE CODE + HOOKS + PLUGINS = SAME TRUST LEVEL  │
+│  - Can access: process.env, file system, network│
+│  - Can access: ALL credentials, API keys, secrets│
+│  - Can crash/destabilize Gateway                │
+└─────────────────────────────────────────────────┘
+         vs.
+┌─────────────────────────────────────────────────┐
+│            SANDBOXED (only tools)                │
+│     exec, read, write, edit, browser            │
+│     (isolated via Docker/SSH/OpenShell)         │
+└─────────────────────────────────────────────────┘
+```
+
+### What Hooks Can Access
+
+| Access | Risk |
+|--------|------|
+| `context.cfg` | **ALL credentials/ secrets** (API keys, tokens, channel configs) |
+| `process.env` | Environment variables with secrets |
+| File system | Read/write anywhere Gateway has access |
+| Network | Make HTTP requests, exfiltrate data |
+| Gateway internals | Modify session state, crash Gateway |
+
+### Security Issues
+
+| Issue | Severity | Description |
+|-------|----------|-------------|
+| **No hook sandboxing** | CRITICAL | Hooks run as privileged code, same as core |
+| **No hook audit logging** | HIGH | No record of hook execution or credential access |
+| **agent:bootstrap can delete MEMORY.md** | CRITICAL | Agent loses all long-term memory permanently |
+| **workspace hooks disabled but risky** | HIGH | When enabled, run with full privileges |
+| **No hook permissions model** | HIGH | Cannot limit what a hook can access |
+| **No code signing for third-party hooks** | MEDIUM | No verification hook code hasn't been tampered |
+
+### PROMPT_INJECTION_HOOK_NAMES (Security Control)
+
+Only 2 hooks receive prompt injection context:
+- `before_prompt_build` ✅
+- `before_agent_start` ⚠️ (DEPRECATED)
+
+All other hooks cannot see injected system prompt.
+
+### Hook Discovery Order (Precedence)
+
+1. Bundled hooks
+2. Plugin hooks
+3. Managed hooks (`~/.openclaw/hooks/`)
+4. Workspace hooks (`<workspace>/hooks/`) — **disabled by default**
+
+Workspace hooks can **ADD** new hook names but **CANNOT override** existing hooks.
+
+### Best Practices for Security
+
+| Practice | Why |
+|----------|-----|
+| Only install hooks from trusted sources | No sandboxing = full system access |
+| Review hook code before enabling | Hook can access all credentials |
+| Keep workspace hooks disabled |除非 explicitly needed |
+| No audit trail — be extra careful | You won't know if a hook accessed credentials |
+| Monitor Gateway stability | Unexpected crashes may indicate malicious hook |
+
+### Security Mitigations
+
+1. **Code review** — Always review hook source code
+2. **Minimal privileges** — Only enable hooks you need
+3. **Gateway monitoring** — Watch for unexpected restarts or behavior
+4. **Isolated testing** — Test hooks in non-production environment first
+
+### Sources
+- `/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md`
+- `/usr/local/lib/node_modules/openclaw/docs/plugins/architecture.md`
+- `/usr/local/lib/node_modules/openclaw/docs/gateway/sandboxing.md`
+
+
+---
+
+## 17. Skill Dynamic Activation from Hooks
+
+### Short Answer
+
+**NO direct API** to activate skills from hooks at runtime.
+
+### Skills vs Hooks
+
+| Aspect | Skills | Hooks |
+|--------|--------|-------|
+| **Load time** | Session start (snapshot) | Runtime (event-based) |
+| **Modification** | Via file changes (watcher) | Via hook return values |
+| **Direct activation from hook** | ❌ NO | ❌ NO |
+
+### How Skills Are Loaded
+
+1. Skills watcher monitors skill directories
+2. Changes to skill files trigger snapshot refresh
+3. Skills injected into system prompt at session start
+4. **Hook executes AFTER skills are injected** — cannot control skill list
+
+### Skills Snapshot Mechanism
+
+- Skills are snapshotted per-session at load time
+- Refresh happens on next turn when watcher detects changes
+- Hook cannot force immediate skill refresh
+
+### Workaround: Prompt Injection via Hook
+
+The only viable approach — use `before_prompt_build` to inject context:
+
+```typescript
+api.registerHook({
+  events: ["before_prompt_build"],
+  handler: async (event) => {
+    // Inject skill-like behavior via prompt
+    event.context.systemPrompt += `\n\n# Active Context:\nUse the following skill: [skill content]`;
+  }
+});
+```
+
+### Best Compliance Pattern
+
+```
+before_prompt_build hook + prependSystemContext
+```
+
+This adds enforcement-like behavior without modifying skill files directly.
+
+### Skills Watcher
+
+- Allows **reload dinámico** based on file changes
+- Changes detected → snapshot refresh on next turn
+- Hook cannot trigger immediate refresh
+
+### Edge Cases
+
+| Edge Case | Behavior |
+|-----------|----------|
+| Hook tries to modify skill list directly | No API exists — not possible |
+| Skills modified mid-session | Watcher detects → refresh on next turn |
+| Hook executes before skill injection | Not possible — hook runs after |
+
+### Sources
+- `Research/OpenClaw/findings/skill-dynamic-activation-hooks.md`
+
+
+---
+
+## 18. Hook Types: Internal vs Plugin — Deep Dive
+
+### TWO Distinct Systems
+
+| Aspect | Internal Hooks | Plugin Hooks |
+|--------|---------------|---------------|
+| **Discovery** | Directory-based auto-discovery | Programmatic SDK registration |
+| **Count** | 4 bundled + custom in `~/.openclaw/hooks/` | 44+ provider runtime hooks |
+| **Execution** | Fire-and-forget, registration order | Void/modifying/claiming modes |
+| **Security** | No prompt injection context by default | Controlled via `PROMPT_INJECTION_HOOK_NAMES` |
+
+### Internal Hooks (4 Bundled)
+
+| Hook | Events | Purpose |
+|------|--------|---------|
+| `session-memory` | `command:new`, `command:reset` | Saves context to `memory/` |
+| `bootstrap-extra-files` | `agent:bootstrap` | Injects additional bootstrap files |
+| `command-logger` | `command` | Logs commands to `~/.openclaw/logs/` |
+| `boot-md` | `gateway:startup` | Runs `BOOT.md` on startup |
+
+**Discovery order**: Bundled → Managed (`~/.openclaw/hooks/`) → Extra dirs → Workspace (disabled)
+
+### Plugin Hooks (44+)
+
+**Model resolution hooks (11):** `normalizeModelId`, `normalizeTransport`, `normalizeConfig`, `resolveDynamicModel`, `prepareDynamicModel`, `normalizeResolvedModel`, `contributeResolvedModelCompat`, `resolveReasoningOutputMode`, `prepareExtraParams`, `createStreamFn`, `wrapStreamFn`
+
+**Transport/policy hooks (8):** `resolveTransportTurnState`, `resolveWebSocketSessionPolicy`, `matchesContextOverflowError`, `classifyFailoverReason`, `isCacheTtlEligible`, `buildMissingAuthMessage`, `suppressBuiltInModel`, `augmentModelCatalog`
+
+**Thinking/reasoning hooks (4):** `isBinaryThinking`, `supportsXHighThinking`, `resolveDefaultThinkingLevel`, `isModernModelRef`
+
+**Auth/usage hooks (5):** `prepareRuntimeAuth`, `resolveUsageAuth`, `fetchUsageSnapshot`, `createEmbeddingProvider`, `onModelSelected`
+
+**Tool hooks:** `before_tool_call`, `after_tool_call`, `tool_result_persist`, `before_agent_reply`
+
+### Plugin Hook Execution Modes
+
+| Mode | Behavior |
+|------|----------|
+| **Void** | Parallel execution via `Promise.all` — all hooks run simultaneously |
+| **Modifying** | Sequential — results merged in order |
+| **Claiming** | First hook to return truthy WINS — others skipped |
+
+### Sources
+- `/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md`
+- `/usr/local/lib/node_modules/openclaw/docs/plugins/architecture.md`
+
+
+---
+
+## 19. Plugin Hook Dynamic Registration + State Access
+
+### Dynamic Registration: NO
+
+Plugin hooks **CANNOT be dynamically registered/unregistered at runtime.**
+
+| Hook Type | Dynamic Registration | Notes |
+|-----------|---------------------|-------|
+| **Plugin hooks** | ❌ NO | Tied to plugin lifecycle, no public API |
+| **Internal hooks** | ❌ NO | `registerInternalHook` only during plugin load/unload |
+
+### State Access: YES (Security Gap)
+
+Hooks receive `context.cfg` — **full gateway config with ALL secrets:**
+
+- API keys, tokens
+- Channel configurations
+- Plugin configs
+- Credentials
+
+**⚠️ NO audit logging exists for hooks accessing `context.cfg`.** This is a significant security gap.
+
+### What Context Contains
+
+| Context Field | What It Contains |
+|---------------|------------------|
+| `context.cfg` | Full gateway config + ALL secrets |
+| `context.sessionEntry` | Session metadata |
+| `context.patch` | Changed fields (session:patch event) |
+| `context.bootstrapFiles` | Mutable array (agent:bootstrap event) |
+
+### Configuration Hot-Reload
+
+| Change | Hot-Reload? |
+|--------|-------------|
+| Hook enable/disable | **May require gateway restart** |
+| Config changes | Not all changes hot-reload |
+
+### Sources
+- `dist/internal-hooks-*.js` (internal hook registry)
+- `dist/hook-runner-global-*.js` (hook runner)
+- `docs/automation/hooks.md`
+
+
+
+---
+
+## 20. Deep Research Architecture — Continuous Investigation System
+
+### Core Problem: Early Termination
+
+A LLM optimizes for completion, not depth. Telling it "keep researching" is insufficient. The solution is an **explicit loop** with verifiable artifacts and no early termination without artifact persistence.
+
+### The 5-Layer Architecture
+
+```
+User → Supervisor (budget + queue) → Gateway OpenClaw → Research Agent
+                                                      → Tools (search, fetch, browser, exec)
+                                                      → Persistent Artifacts (wiki, ledger, backlog)
+                                                      → Observability (logs, OTEL, health)
+```
+
+| Layer | Purpose | OpenClaw Native? |
+|-------|---------|-----------------|
+| Orchestration | Budget, queue, backoff | Cron + Heartbeat (approximation) |
+| Evidence Acquisition | Web search, fetch, browser, scraping | ✅ Yes (search, fetch, browser plugin) |
+| Persistent Knowledge | Wiki, ledger, backlog, sources | ✅ Yes (workspace files) |
+| Evaluation | Ranking, verification, novelty scoring | External supervisor recommended |
+| Observability | Logs, metrics, cost, health | ✅ Yes (OTEL, openclaw status) |
+
+### The 7-Phase Research Loop
+
+**Phase 1: Gap Detection**
+- Maintain a map of what you know, what you don't, what is verified, what is stale, what sources need refresh
+
+**Phase 2: Action Selection**
+- Choose next action by expected value: official doc, repo, issue, changelog, discussion, forum, JS-heavy page
+
+**Phase 3: Evidence Acquisition**
+- `web_search` for discovery
+- `web_fetch` for known URLs
+- `browser` for JS/login pages
+- `Firecrawl` only when structured scraping adds value over plain fetch
+
+**Phase 4: Artifact Writing**
+- Update wiki/ledger/backlog with findings
+- Score novelty and confidence
+
+**Phase 5: Decision**
+- If promising but incomplete → add to backlog, schedule next step
+- If complete → mark verified, move to next gap
+
+**Phase 6: Cost/Novelty Tracking**
+- Record estimated cost per iteration
+- Track redundant queries vs new findings
+
+**Phase 7: Replan**
+- Review backlog
+- Decide next high-value gap
+
+### Source Prioritization (Hierarchical)
+
+| Priority | Source Type | Role |
+|----------|-------------|------|
+| 1 | Official docs + changelogs | Primary evidence |
+| 2 | Source code + repositories | Verification |
+| 3 | Issues + public discussions | Edge cases, problems |
+| 4 | Integration docs + provider docs | Technical depth |
+| 5 | High-value communities | Discovery surface |
+| 6 | Secondary + social | Last resort |
+
+**Rule:** Each critical claim needs either an official source OR two independent non-official sources.
+
+### Budget Supervisor (Recommended for Strict Control)
+
+For "100 calls/hour continuous research," a token-bucket supervisor outside OpenClaw is needed:
+
+```python
+from collections import deque
+from time import time, sleep
+
+RATE_PER_HOUR = 100
+WINDOW = 3600
+events = deque()
+
+def allow():
+    now = time()
+    while events and now - events[0] > WINDOW:
+        events.popleft()
+    if len(events) < RATE_PER_HOUR:
+        events.append(now)
+        return True
+    return False
+
+while True:
+    if gateway_healthy() and queue_depth() < 2 and allow():
+        trigger_research_turn(topic="OpenClaw")
+    sleep(10)
+```
+
+**Without supervisor:** Approximation via Cron + Heartbeat + Ledger (less precise, but functional).
+
+### Stop Condition (Per Run)
+
+A research iteration MUST NOT terminate until:
+1. At least one persistent artifact was written, AND
+2. At least one concrete next step is documented in backlog, OR
+3. The current budget/limitation blocking continuation is documented
+
+### Key Files for Research Agent
+
+| File | Purpose | Location |
+|------|---------|----------|
+| `AGENTS.md` | Research mission + non-negotiable behavior | Agent workspace root |
+| `HEARTBEAT.md` | Per-heartbeat iteration template | Agent workspace root |
+| `Standing Orders` | Persistent behavior rules | Separate file or AGENTS.md section |
+| `BOOT.md` | Initialize structure on gateway start | Hook-triggered |
+| `research/<topic>/ledger.json` | Tracking: topic, budget, last_run, hypotheses | Per topic |
+| `research/<topic>/backlog.md` | Open questions ranked by priority | Per topic |
+| `research/<topic>/sources.md` | Source classification: official/repo/issues/community/secondary | Per topic |
+| `wiki/<topic>/...` | Consolidated verified knowledge | Per topic |
+
+### Source Providers Available in OpenClaw
+
+OpenClaw supports multiple search providers for layered coverage:
+- **Brave, DuckDuckGo, Exa, Firecrawl, Gemini, Grok, Kimi, MiniMax Search, Ollama, Perplexity, SearXNG, Tavily**
+
+---
+
+#### 🌐 Proveedores Gratuitos (Key-Free)
+
+| Proveedor | Costo | Setup | Notas |
+|-----------|-------|-------|-------|
+| **DuckDuckGo** | Gratis | `openclaw config set tools.web.search.provider duckduckgo` | ⚠️ Puede mostrar CAPTCHA antibots |
+| **SearXNG** | Gratis | Docker: `docker run -d -p 8888:8080 searxng/searxng` + config | Autohospedado, ilimitado, privado |
+| **Ollama** | Gratis | Si ya usas Ollama local | Requiere `ollama signin` |
+
+**Configuración DuckDuckGo (ya aplicado):**
+```bash
+# Activar
+openclaw config set tools.web.search.provider duckduckgo
+```
+
+**Configuración SearXNG:**
+```bash
+# Iniciar contenedor Docker
+docker run -d -p 8888:8080 searxng/searxng
+
+# Configurar OpenClaw
+export SEARXNG_BASE_URL=http://localhost:8888
+openclaw config set tools.web.search.provider searxng
+```
+
+---
+
+## 🔍 Web Search Best Practices (Based on Field Testing)
+
+Based on empirical testing of search providers and content extraction:
+
+### ✅ What Works Well
+
+**Search Query Optimization:**
+- Always use `-youtube -video -watch` filter to avoid JavaScript-heavy results
+- Prefer technical terms: `tutorial`, `guide`, `documentation`, `setup`
+- Avoid ambiguous terms that may return multimedia content
+
+**Content Extraction Success Rates:**
+- **High success** (80-90%): dev.to, medium.com, freecodecamp.org, every.to
+- **Medium success** (40-60%): Personal blogs, technical documentation sites
+- **Low success** (<20%): YouTube (needs JS), Reddit (403/429), highly dynamic sites
+
+**Provider Reliability Ranking:**
+1. **MiniMax Search** (our API key) - Structured results, no CAPTCHA risk
+2. **DuckDuckGo** - Works via OpenClaw integration (despite direct CAPTCHA issues)
+3. **Brave Search** - Good free tier ($5/month ≈ 1000 queries)
+
+### 📊 Field Test Results (April 2024)
+
+**Test Query:** `OpenClaw skills plugins tutorials 2026 -youtube -video -watch`
+- **10/10 results**: Non-video sources achieved ✅
+- **Web Fetch Success**: 6/10 URLs extracted successfully
+
+**Successful Extractions:**
+- dev.to: OpenClaw ACP tutorial (complete)
+- freecodecamp.org: Architecture & agentic loop guide (excellent)
+- medium.com: Personal experience + security considerations
+- every.to: OpenClaw Camp setup guide
+- levelup.gitconnected.com: 5 production-ready plugins
+- systemdesigner.medium.com: Meta skill & hot-reload mechanism
+
+**Failed Extractions:**
+- YouTube ×3: Requires JavaScript rendering
+- Reddit: 403 Forbidden (anti-bot protection)
+- foxessellfaster.com: 404 Not Found
+- answeroverflow.com: 429 Rate limit (Vercel)
+
+---
+
+**Optimal combination for deep research:**
+- **SearXNG** (metasearch, 251 engines, self-hostable) → discovery
+- **Tavily or Exa** (agent-oriented, semantic) → refinement
+- **Browser or Firecrawl** → hard-to-scrape pages
+### Tool Selection Strategy
+
+| Task | Tool | Why |
+|------|------|-----|
+| Discover topics/keywords | `web_search` | Fast, broad |
+| Extract from known URL | `web_fetch` | Direct, cheap |
+| JS-heavy or login-required | `browser` (isolated) | Renders properly |
+| Structured scraping needed | `Firecrawl` | When fetch insufficient |
+
+### Quality Metrics to Track
+
+| Metric | Target |
+|--------|--------|
+| Documentation coverage | >80% of official tree |
+| Source coverage (code/repos) | >70% before expanding to community |
+| Freshness (avg age) | <14 days for active areas |
+| Useful novelty | >5 useful findings / 100 calls |
+| Verification rate | >95% of critical claims with 2+ sources |
+| Cost per finding | Decreasing trend |
+| Redundant queries | Decreasing trend |
+
+### Cost Reference (2026-04)
+
+| Component | Cost Model | Notes |
+|-----------|-----------|-------|
+| MiniMax-M2.7 | Per-token | Most cost-effective for research |
+| Tavily Basic | $0.008/credit (1 credit/search) | 100 RPM dev, 1000 RPM prod |
+| Exa Search | $7/1k requests | 10 QPS limit |
+| Firecrawl | $0.008/credit (1-5 credits/page) | Proxy auto mode |
+
+**Recommendation:** Use MiniMax as primary model + Tavily/Exa for search. Reserve browser/Firecrawl for difficult targets only.
+
+### Boot Initialization Tasks
+
+On gateway boot, initialize research structure:
+```
+research/openclaw/
+  ledger.json      # topic, started_at, budget_target, last_run_at
+  backlog.md       # prioritized open questions
+  sources.md       # source classification
+  summary.md       # latest synthesis
+wiki/OpenClaw/    # consolidated verified knowledge
+```
+
+### Implementation: Minimum Viable Continuous Research
+
+```bash
+# Frequent research loop
+openclaw cron add \
+  --name "Research loop" \
+  --every "30m" \
+  --session isolated \
+  --message "Execute one deep research iteration: read ledger + backlog, pick highest-value gap, acquire evidence, write artifact, update backlog with next step. Stop only when artifact written AND next step documented."
+
+# Maintenance + health
+openclaw cron add \
+  --name "Research maintenance" \
+  --every "2h" \
+  --session isolated \
+  --message "Review health, cost, backlog debts, cache freshness, queue depth. Document operational alerts."
+```
+
+**Note:** Without external supervisor, exact 100 calls/hour cadence is not guaranteed. Cron + Heartbeat + Ledger provides reasonable approximation.
+
+### Security Considerations
+
+| Risk | Mitigation |
+|------|------------|
+| Prompt injection via web content | Verify extracted content before acting on it |
+| Secret leakage via logs | Enable `redactSensitive: "tools"` in logging config |
+| Excessive spending | Token bucket supervisor, cost dashboards |
+| Site blocking (403/429/CAPTCHA) | Rotate method, prioritize sources, do not force |
+| Loops (same query repeatedly) | Ledger of queries, novelty scoring, repetition limits |
+
+### Sources
+- OpenClaw research sessions + architecture documentation
+- OpenClaw hooks system (before_prompt_build, before_agent_reply)
+- OpenClaw cron, heartbeat, and session management
+- Tavily, Exa, Firecrawl official documentation
+- OpenClaw observability (OTEL, logging, status)
+
+---
+
+*Section 20 added: 2026-04-23*
+
+---
+
+## 21. Skills System — Complete Reference
+
+### Overview
+
+Skills teach the agent how to use tools. OpenClaw uses **AgentSkills-compatible** skill folders (directory with `SKILL.md` containing YAML frontmatter and instructions).
+
+### Skill Locations and Precedence
+
+OpenClaw loads skills from (highest to lowest):
+
+| Precedence | Location | Scope |
+|------------|----------|-------|
+| 1 | `<workspace>/skills` | Workspace-specific |
+| 2 | `<workspace>/.agents/skills` | Project agent skills |
+| 3 | `~/.agents/skills` | Personal agent skills |
+| 4 | `~/.openclaw/skills` | Shared across all agents |
+| 5 | Bundled skills | Shipped with install |
+| 6 | `skills.load.extraDirs` | Custom extra directories |
+
+### Skill Format (AgentSkills + Pi-compatible)
+
+```markdown
+---
+name: my-skill
+description: What this skill does
+metadata:
+  openclaw:
+    always: true
+    requires:
+      bins: ["node"]
+      env: ["GEMINI_API_KEY"]
+      config: ["browser.enabled"]
+---
+# Instructions follow
+```
+
+**Required frontmatter:** `name` + `description`
+**Metadata:** must be single-line JSON object
+
+### Frontmatter Fields (Critical)
+
+| Field | Type | Default | Purpose |
+|-------|------|---------|---------|
+| `disable-model-invocation` | boolean | `false` | If `true`, skill excluded from model prompt. Only via manual/slash invocation. |
+| `user-invocable` | boolean | `true` | If `false`, skill NOT exposed as slash command |
+| `always` | boolean | `false` | If `true`, always included (skips other gates) |
+| `command-dispatch` | string | — | If set to `"tool"`, bypasses model and dispatches directly |
+| `command-tool` | string | — | Tool name to invoke when `command-dispatch: tool` |
+| `command-arg-mode` | string | `"raw"` | How to pass args for tool dispatch |
+| `emoji` | string | — | Emoji shown in macOS Skills UI |
+| `homepage` | string | — | URL shown as "Website" in Skills UI |
+| `os` | array | — | Platforms where skill is eligible (`darwin`, `linux`, `win32`) |
+| `primaryEnv` | string | — | Env var associated with `apiKey` config |
+
+### Gating (Load-time Filters)
+
+Fields under `metadata.openclaw.requires`:
+
+| Filter | What it checks |
+|--------|---------------|
+| `bins: ["cmd"]` | Binary must exist on PATH |
+| `anyBins: ["a", "b"]` | At least one binary must exist |
+| `env: ["VAR"]` | Env var must exist OR be in config |
+| `config: ["path.to.field"]` | Config path must be truthy |
+| `os: ["linux"]` | Skill only on specified OS |
+
+### Per-Agent Skill Allowlists
+
+Control which skills each agent can see:
+
+```json5
+{
+  agents: {
+    defaults: {
+      skills: ["github", "weather"],  // Baseline for all agents
+    },
+    list: [
+      { id: "writer" },                    // Inherits defaults
+      { id: "docs", skills: ["docs-search"] },  // Replaces defaults
+      { id: "locked-down", skills: [] },   // No skills at all
+    ],
+  },
+}
+```
+
+**Rules:**
+- `agents.defaults.skills`: shared baseline (omit = unrestricted)
+- `agents.list[].skills`: explicit final set for that agent (replaces defaults, doesn't merge)
+- `agents.list[].skills: []`: no skills for that agent
+
+### Environment Injection (Per Agent Run)
+
+When an agent run starts:
+1. OpenClaw reads skill metadata
+2. Applies `skills.entries.<key>.env` or `skills.entries.<key>.apiKey` to `process.env`
+3. Builds system prompt with eligible skills
+4. Restores original environment after run ends
+
+**Scoped to agent run**, not global shell.
+
+### Command Dispatch (Bypass Model)
+
+When `command-dispatch: tool` is set, slash commands bypass the model completely:
+
+```markdown
+---
+name: web-research
+description: Deep research protocol
+metadata:
+  openclaw:
+    command-dispatch: tool
+    command-tool: web_research_dispatch
+    command-arg-mode: raw
+---
+```
+
+The tool is invoked with: `{ command: "<raw args>", commandName: "<slash>", skillName: "<name>" }`
+
+**Use case:** Procedural skills that MUST execute exactly as written, no model interpretation.
+
+### Config Overrides
+
+In `openclaw.json`:
+
+```json5
+{
+  skills: {
+    entries: {
+      "my-skill": {
+        enabled: true,
+        apiKey: { source: "env", provider: "default", id: "GEMINI_API_KEY" },
+        env: { "MY_KEY": "value" },
+        config: { "option": "setting" },
+      },
+    },
+  },
+}
+```
+
+### Skills Watcher (Auto-refresh)
+
+Skills reload automatically when files change:
+
+```json5
+{
+  skills: {
+    load: {
+      watch: true,
+      watchDebounceMs: 250,
+    },
+  },
+}
+```
+
+Changes take effect on **next agent turn** (or next session if snapshot is session-wide).
+
+### Token Impact (Skills List in Prompt)
+
+When skills are eligible, OpenClaw injects compact XML into system prompt.
+
+| Cost | Amount |
+|------|--------|
+| Base overhead (if ≥1 skill) | 195 chars |
+| Per skill | 97 chars + name + description + location |
+
+Token estimate: ~4 chars/token → **~24 tokens per skill**
+
+### Security Notes
+
+- Third-party skills = **untrusted code**. Read before enabling.
+- Prefer sandboxed runs for untrusted inputs.
+- Skill discovery validates paths stay inside configured root.
+- `skills.entries.*.env/apiKey` injects secrets into **host** process.
+
+---
+
+## 22. Skill Design Patterns
+
+### Pattern 1: Manual-Only Skill (No Model Interpretation)
+
+For procedures that must execute exactly as written:
+
+```markdown
+---
+name: web-research
+description: Deep research protocol — follow steps exactly
+metadata:
+  openclaw:
+    disable-model-invocation: true
+    always: false
+---
+
+**SKILL MANUAL — NO interpretar, seguir pasos exactamente**
+
+1. Step one
+2. Step two
+3. ...
+```
+
+**Use when:** The model keeps improvising or misinterpreting procedures.
+
+### Pattern 2: Tool-Dispatched Skill (Full Bypass)
+
+For critical procedures that MUST NOT pass through model:
+
+```markdown
+---
+name: critical-procedure
+description: Execute exactly as specified
+metadata:
+  openclaw:
+    command-dispatch: tool
+    command-tool: procedure_dispatch
+    command-arg-mode: raw
+---
+```
+
+**Use when:** Procedure must run identically every time, no model discretion.
+
+### Pattern 3: Conditional Skill (Model Suggests, Human Approves)
+
+```markdown
+---
+name: suggest-action
+description: Propose action, require confirmation
+metadata:
+  openclaw:
+    always: true
+---
+
+### Suggested Action
+
+[Analysis here]
+
+### Confirm?
+
+Await user approval before executing.
+```
+
+**Use when:** Model proposes, human decides.
+
+### Pattern 4: Gated Skill (Binary/Env Required)
+
+```markdown
+---
+name: advanced-search
+description: Search with external API
+metadata:
+  openclaw:
+    requires:
+      bins: ["curl"]
+      env: ["SEARCH_API_KEY"]
+---
+```
+
+**Use when:** Skill only works with specific tools or credentials.
+
+---
+
+## 23. Converting Improvising Agent → Procedural Agent
+
+### The Problem
+
+Default: Agent reads skill → interprets → improvises → executes differently each time.
+
+### The Solution (Progressive Lockdown)
+
+| Step | Field | Effect |
+|------|-------|--------|
+| 1 | `disable-model-invocation: true` | Model can't auto-invoke skill |
+| 2 | `always: false` | Skill not pre-loaded |
+| 3 | Remove skill from `agents.defaults.skills` | Only available via explicit invocation |
+| 4 | `command-dispatch: tool` | Slash command bypasses model entirely |
+
+### Best Practice for Critical Procedures
+
+1. Use `command-dispatch: tool` to completely bypass model
+2. Create a tool that executes the procedure identically every time
+3. The tool handles all logic — model just triggers it
+4. Model cannot influence HOW the procedure runs
+
+### Example: Research Protocol
+
+**Before (model interprets):**
+```
+Model reads web-research skill → "I'll do a few searches" → improvises → quota exhausted
+```
+
+**After (tool dispatch):**
+```
+Model triggers slash command → tool executes exactly → same result every time
+```
+
+---
+
+*Section 21 added: 2026-04-23*
+*Section 22 added: 2026-04-23*
+*Section 23 added: 2026-04-23*
+
+---
+
+## 24. Automejora — Estado Real y Arquitectura Recomendada
+
+### Estado actual (2026)
+
+OpenClaw tiene capacidad latente de automejora, pero NO la activa por defecto. La documentación confirma:
+
+- **Active Memory** no corre en: heartbeat, background runs, subagentes, ni headless routes
+- **memory_search** puede fallar silenciosamente
+- **Subagents** tienen dificultades con skills compartidos
+- El bucle "error → extracción → validación → promoción → simplificación" NO está automatizado
+
+**Fuente:** Feature requests abiertas documentan: extracción post-turn automática, Memory v2 (memoria jerárquica/ asociativa para patrones lejanos).
+
+---
+
+### Los 4 requisitos para automejora real
+
+| Requisito | Descripción | Implementación actual |
+|-----------|-------------|----------------------|
+| **1. Política escrita** | Obligar a documentar errores y extraer lecciones | `log-error.sh` + ERRORS.md |
+| **2. Memoria separada** | Trabajo vs duradera vs conocimiento | memory/ (diario) + OPENCLAW_EXPERT.md (permanente) |
+| **3. Automatización** | Programar auditorías y revisiones | Cron jobs para nightly audit |
+| **4. Reglas de promoción** | Qué va a AGENTS.md, qué a TOOLS.md, qué a MEMORY.md, qué a backlog | No definido → implementar |
+
+---
+
+### Reglas de promoción (POR DEFINIR)
+
+| Tipo de aprendizaje | Destino | Ejemplo |
+|--------------------|---------|---------|
+| Nueva regla de conducta | `AGENTS.md` | "Scripts siempre antes que modelo" |
+| Nuevo tool o proceso | `TOOLS.md` | Procedimiento de búsqueda |
+| Hecho sobre Dani o sistema | `MEMORY.md` | Preferencias, configuración |
+| Tema para investigar | `Research/*/backlog.md` | Pregunta abierta |
+| Hallazgo verificado | `OPENCLAW_EXPERT.md` | Sección nueva |
+| Error a evitar | `memory/ERRORS.md` | Error documentado |
+| Tarea concreta | `trabajos_equipo/JOB-XXX/` | Proyecto específico |
+
+---
+
+### Anti-patterns a evitar
+
+| Error | Por qué |
+|-------|---------|
+| Depender de Active Memory en background | No corre en heartbeat/subagentes |
+| Depender de memory_search para crítico | Puede fallar silenciosamente |
+| Añadir más proceso sin podar | Sistema se vuelve más lento y torpe |
+| No documentar después de reinicios | Si no está en archivos, no existe |
+| Cambios en聊天 sin promoción | Se pierden después de restart |
+
+---
+
+### Arquitectura recomendada
+
+```
+ERROR DETECTADO
+      ↓
+log-error.sh → memory/ERRORS.md
+      ↓
+Auditoría nocturna (cron) → revisa ERRORS.md
+      ↓
+¿Aprendizaje accionable?
+  → Sí → Clasificar según reglas de promoción
+  → No → Marcar como resuelto
+      ↓
+Promoción a archivo correcto
+(AGENTS.md, TOOLS.md, MEMORY.md, backlog, expertise)
+      ↓
+Poda: ¿Qué se ha quedado obsoleto?
+      ↓
+Simplificación periódica
+```
+
+---
+
+### Qué falta implementar
+
+| Componente | Estado | Prioridad |
+|-----------|--------|----------|
+| `log-error.sh` | ✅ Hecho | — |
+| `ERRORS.md` tracking | ✅ Hecho | — |
+| Reglas de promoción | ❌ No definido | 🔴 Alta |
+| Auditoría automática de errores | ❌ Solo manual | 🔴 Alta |
+| Poda/simplificación periódica | ❌ No existe | 🟡 Media |
+| Active Memory en contextos válidos | ⚠️ Limitado | — |
+
+---
+
+### Fuente
+
+- Investigación ChatGPT Agent sobre automejora OpenClaw
+- Documentación oficial Active Memory
+- Feature requests: Memory v2, extracción post-turn automática
+- Comunidad OpenClaw: informes de bugs memory_search, extraPaths
+
+---
+
+*Sección 24 añadida: 2026-04-23*
+
+## v2026.4 Model Providers (2026-04-26)
+*Source: openclaw-v2026.4-features-step1.md*
+
+### Nuevos providers añadidos
+- **DeepSeek V4 Flash**: default para onboarding
+- **DeepSeek V4 Pro**: disponible en bundled catalog
+- **Qwen**: nuevo provider
+- **Fireworks AI**: nuevo provider  
+- **Stepfun**: nuevo provider
+
+### Mejoras
+- Static model catalogs + manifest-backed rows → startup más rápido
+- Fixed thinking/replay behavior para DeepSeek en follow-up turns
+
+*Nota: Verificar si estos providers están activos en nuestra config*
+
+## Task Management + Durable Flows (v2026.4) (2026-04-26)
+*Source: openclaw-v2026.4-features-step2.md*
+
+### Chat-Native Task Board
+- `/tasks` command — panel de tareas visible en el chat
+- Muestra task details recientes + agent-local fallback counts
+
+### SQLite-Backed Task Flow Ledger
+- Unificación: ACP + subagent + cron + CLI execution bajo un solo ledger SQLite
+- Sistema de control compartido para background work
+
+### Tipos de Flows
+- **Managed Flows** (createManaged()): Para trabajo orquestado
+  - Owner controla orquestación, child task linkage, waiting state
+  - Revision-checked mutations para prevención de conflictos
+  - stateJson persiste entre reinicios
+  - Supports sticky cancel intent
+
+- **Mirrored Flows** (auto-creados): Para tareas detached
+  - Observan tareas externas sin controlarlas
+  - Creados automáticamente para ACP/subagent detached tasks
+
+### Task Flow API
+| Método | Función |
+|--------|---------|
+| `runTask` | Crear y ejecutar tarea hija |
+| `setWaiting` | Pausar flow esperando evento externo |
+| `resume` | Continuar después de waiting |
+| `finish` | Completar flow exitosamente |
+| `fail` | Marcar flow con error |
+| `requestCancel` | Solicitar cancelación inmediata |
+| `cancel` | Detener scheduling inmediatamente |
+
+### Estructura TaskFlow
+```
+TaskFlow {
+  flowId, ownerSession, requesterOrigin,
+  currentStep, stateJson, waitJson,
+  childTasks[], revision,
+  status, blockedSummary,
+  createdAt, updatedAt
+}
+```
+
+### Persistencia y Recuperación
+- **Revision Tracking**: Cada método mutante verifica flow revision para prevenir conflictos
+- **Checkpointing**: Flows pueden pausarse/resumirse en cualquier paso
+- **Cross-Restart Resumption**: Background work continúa después de gateway restart
+
+### Pipelines Multi-Step
+- Ejemplo: Research → Analyze → Report → Archive (A→B→C→D)
+- Construir pipelines de múltiples pasos con dependencia entre tasks
+
+### CLI Commands
+- `openclaw tasks flow list` — listar flows
+- `openclaw tasks flow show <id>` — mostrar detalle
+- `openclaw tasks flow cancel <id>` — cancelar
+
+*Nota: Sistema disponible en v2026.4.1+ — verificar versión actual del gateway*
+
+### Use Cases Aplicados (v2026.4)
+
+**1. Approval Gate Pattern**
+```
+setWaiting(waitJson: {kind: "approval", contentToReview: "..."})
+→ Resume on Dani's approval message via Telegram
+```
+
+**2. Lead Nurturing con Conditional Branching**
+```
+if (stateJson.leadResponse === "interested") → path A
+else if → path B
+else → extend timeline (waitJson kind: timer para reintentos)
+```
+
+**3. Real-Time Alert via Telegram (urgent)**
+```
+taskFlow.setWaiting({urgent: true}) → send alert immediately outside normal flow
+```
+
+**4. Cross-Session Parallel Extraction (JOB-006 style)**
+```
+sessions = ["main", "jobber", "director", "maintenance"]
+for (session of sessions) {
+  child = taskFlow.runTask(session, ...)
+  children.push(child)
+}
+await all_children → synthesize
+```
+
+**5. Document Processing Pipeline con Classification**
+```
+switch(stateJson.documentType):
+  case "invoice": → invoice flow
+  case "contract": → contract flow
+  case "permit": → permit flow
+```
+
+**6. Meeting Automation Lifecycle**
+```
+Schedule → Confirm → Send agenda → Transcribe → 
+Generate summary → Extract tasks → Update CRM
+```
+
+**7. Onboarding con Child Flows Parallel**
+```
+Parent flow manages overall onboarding
+Child flows: email + HubSpot tasks simultaneously
+await all_children
+```
+
+**8. Social Media con Platform-Specific Branching**
+```
+platforms: [linkedin, twitter, instagram]
+for (platform of platforms):
+  draft → parallel drafts
+  → approval → schedule per platform
+```
+
+**9. Incident Response Escalation**
+```
+if fixSuccessful → finish
+else → escalate immediately via urgent notify
+```
+
+**10. Financial Monitoring Pipeline**
+```
+Daily: fetch transactions → analyze → flag anomalies
+Friday: aggregate 7 days → generate PDF report
+```
+
+### Problemas y Limitaciones (v2026.4)
+
+**Críticos (no documentados antes):**
+- No Built-in Branching Logic — todo en capa externa (Lobster/ACPX/plugin)
+- stateJson Size Limits — sin bound checking, объекты grandes en SQLite degradan rendimiento
+- No Automatic State Snapshots — gateway crash durante update = estado parcial perdido
+- No Version History for stateJson — sin mecanismo para ver estados previos
+- No Built-in Timeout for Wait States — flujo puede quedar atrapado eternamente si sistema externo no responde
+- Wait Recovery After Gateway Restart — flujos en wait con timer pierden tiempo restante y retoman inmediatamente al reiniciar
+- No Dead Letter Queue — webhook/callback que nunca llega = flujos acumulados en waiting
+- Child Task Timeout Not Propagated — timeout de subagent/ACP child no notifica al padre; flujo espera indefinidamente
+- No Nested TaskFlow Chains — TaskFlow no puede crear child TaskFlows (no hay parentFlowId en createManaged)
+- Timer Precision — timers no son precisos, dependen de gateway disponible
+
+**Compatibilidad:**
+- Backward Compatibility with Pre-v2026.4 — flows v2026.4+ pueden no ser legibles por versiones antiguas
+- No Flow Import/Export — sin mecanismo para exportar/importar definiciones
+
+**Workarounds documentados:**
+- Monitorizar flujo con script externo
+- Check de estado del padre antes de continuar child tasks
+- Implementar timeout en capa de orquestación
+- Revisión manual post-reinicio para waiting flows
+
+### Soluciones y Workarounds (v2026.4)
+
+**1. External Timeout Monitor**
+```cron
+Cada 5min: list flows in "waiting" → compare elapsed vs timeout → re-resume o fail
+```
+
+**2. Persistent Timer with Checkpoint**
+```js
+// Usar deadline absoluto, NO duración relativa
+waitUntil: absolute_timestamp  // sobrevive gateway restart
+```
+
+**3. Idempotent Children with Parent Check**
+```js
+// Child consulta estado del padre antes de iniciar
+// Y antes de reportar completion
+if (parent.state !== "running") return "SKIP";
+```
+
+**4. Child Cleanup on Parent Cancellation**
+```js
+// Cancel handler envía señal stop a todos los childs
+// Antes de cancelar el parent
+```
+
+**5. Webhook Acknowledgment Pattern**
+```
+Redis queue → background worker poll every 30s
+→ No dead letter accumulation
+```
+
+**6. Flow Health Dashboard**
+```cron
+Cada 15min: flows stuck (>1h waiting) → format report → Telegram
+```
+
+**7. Automated Alerts for Failed Flows**
+```
+cron cada 5min: notify Telegram si flow failed
+```
+
+**8. State Snapshots for Recovery**
+```js
+// Antes de operaciones riesgosas
+snapshot(stateJson, `/tmp/flow_${flowId}_snapshot.json`)
+```
+
+**9. State Separate Large Data**
+```js
+// Guardar referencias/paths en stateJson, NO datos pesados
+stateJson.largeData = "/tmp/flow_data_123.json"  // path, no contenido
+```
+
+**10. Flow Factory Pattern**
+```js
+// Templates de flows con factory function
+createFlowFromTemplate("onboarding", {daniId: "xxx", ...})
+```
+
+### Edge Cases y Mitigaciones (v2026.4)
+
+**Concurrency:**
+- Simultaneous Cancel + Resume → race condition con revision conflict → usar RedisLock
+- Flow Update During Gateway Shutdown → stateJson parcial/corrupto → implementar graceful shutdown
+
+**Wait State:**
+- Circular Waits (Flow A espera B, B espera A) → **DEADLOCK**
+  - Mitigación: detectar ciclos, timeout obligatorio
+- Zero-Duration Timer Wait → tight loops → detectar y reject
+- Very Long Duration > 30 días → timer reset en gateway restart → usar timestamps absolutos
+
+**State:**
+- Referencias circulares en stateJson → JSON.stringify fail → validar estructura antes de guardar
+- Extremely Large stateJson → SQLite degradation → guardar references, no datos
+
+**Child Task:**
+- Child completa ANTES de que parent lo registre → race condition → atomic link + retry
+- Child Failure After Parent Finishes → resultado descartado → implementar dead letter collection
+
+**Time:**
+- Gateway Clock Skew → timers firing early/late → timestamp comparison, no duration
+- Timezone Changes / DST → timer drift → UTC everywhere
+
+**Recovery:**
+- Flow sin next step válido tras restart (code update) → verificar step existence en resume
+- Database Corruption Mid-Flow → SQLite integrity failure → backup + retry
+- Partial Network Failure → estado inconsistente → idempotency + compensation pattern
+
+**Security:**
+- Malicious Flow Definition → long goal/step names para romper UI → sanitize + truncate
+- Flow State Injection → XSS via stateJson → validation + encoding
+
+**External:**
+- Massive Webhook Payload (GB-sized) → memory exhaustion → size limits + streaming parse
+- Invalid JSON from External → flow stuck → timeout + fallback
+
+**Compensation Pattern** para multi-step flows con idempotencia:
+```
+try {
+  step1.execute()
+} catch {
+  compensation.rollback()
+  state.restore_snapshot()
+}
+```
+
+### Creative Uses (v2026.4)
+
+**Para nuestro sistema (aplicables ahora):**
+
+1. **Self-Healing AI Infrastructure**
+   - AI monitoriza sus propios workflows y se auto-recupera
+   - Aplicable a: BRAIN detecta su propio fallo → activa recovery flow
+
+2. **Adaptive Learning System**
+   - Sistema aprende de sus propios workflows y se optimiza
+   - Aplicable a: JOB-XXX que aprende qué funciona mejor
+
+3. **Multi-Agent Negotiation System**
+   - Agentes negocian entre sí por recursos/prioridades
+   - Aplicable a: director-organizacion negocia con ejecutor por tiempo
+
+4. **Human-AI Hybrid Workflows**
+   - Transiciones dinámicas AI↔humano según complejidad
+   - Aplicable a: threshold de complejidad → escalar a Dani
+
+5. **Cross-System Synchronization Layer**
+   - Orquestación multi-sistema externo con rollback
+   - Aplicable a: HubSpot + email + calendar sincronizados
+
+**Futuros (later):**
+- Event-Sourced Agent Memory — replay completo de comportamiento
+- Swarm Intelligence — múltiples sub-agentes paralelos
+- Emotional State Management — tracking emocional en conversaciones
+- Temporal Workflows — razonamiento en dimensiones tiempo
+- Generative AI Pipeline with Quality Gates — generación iterativa
+
+## Hook Security Audit (2026-04-26)
+*Source: hook-security-audit-step1.md*
+
+### Capabilities Table (by severity)
+
+| Capability | Severity | Risk |
+|------------|----------|------|
+| Message injection | HIGH | Can push messages to user |
+| Tool call interception | CRITICAL | before_tool_call can block/modify calls |
+| LLM I/O interception | CRITICAL | before_llm_call, after_llm_call access |
+| Session memory access | HIGH | Can read/write session memory files |
+| Config manipulation | CRITICAL | Can modify gateway configuration |
+
+### Security Model
+
+- **Trust boundary rules**:
+  - Host/config boundary → trusted
+  - Shared agent = shared authority
+  - Session keys = "routing selectors, NOT authorization tokens"
+  - One trusted operator boundary per gateway
+
+### Community Audit Results
+
+- 41% of skills have security vulnerabilities (analyzed 2,890+ skills)
+- 9,515 security findings total, 30.6% HIGH or CRITICAL
+- 36% of plugins had vulnerabilities
+- 76 were actual malware
+- 12% malicious plugins
+
+### Hypotheses Confirmed
+
+| H | Hypothesis | Status |
+|---|------------|--------|
+| H1 | Plugin hooks exfiltrate data via message injection | CONFIRMED |
+| H2 | before_tool_call can block execution | PARTIALLY (buggy) |
+| H3 | Hook supply chain is primary risk | CONFIRMED |
+
+### Plugin: SecureClaw (recommended)
+
+- Security plugin that audits OpenClaw for misconfigurations
+- GitHub: adversa-ai/secureclaw
+
+### Event Types Not Documented in Expert
+
+- command:new, command:reset
+- session:compact:before/after
+- agent:bootstrap
+- gateway:startup
+- message:received
+- before_tool_call
+- agent:end
+
+### Hook Structure
+
+```
+my-hook/
+├── HOOK.md       # metadata
+└── handler.ts    # hook handler
+```
+
+### Hook Security Bugs (Critical)
+
+**BUG #1 — Plugin hooks nunca invocados (Issue #5513)**
+```
+Problema: initializeGlobalHookRunner() captura SNAPSHOT de registry.typedHooks
+Locación: agent_end en src/agents/pi-embedded-runner/run/attempt.ts ~line 839
+Consecuencia: Plugins registrados DESPUÉS de esa llamada son COMPLETAMENTE INVISIBLES
+Afectados: agent_end, before_tool_call, after_llm_call, message_sent
+```
+
+**BUG #2 — before_tool_call return values descartados (Issue #19231)**
+```
+Problema: Hook dispatcheado como fire-and-forget: runHook(...).catch()
+Consecuencia: Returning { cancel: true } NO previene la ejecución de la herramienta
+Evidence: "TOOL EXECUTES ANYWAY — despite { cancel: true }"
+Diferencia: message_sending SÍ funciona (correctamente awaited)
+```
+
+**Impacto de Seguridad:**
+- 6+ proyectos de seguridad publicados (Guard, ClawBands, openclaw-shield) NO pueden funcionar
+- "Tool execution cannot be blocked" — even by design, in practice
+- Plugin malicioso registrado tarde → completamente invisible a controles
+
+**Fix Proposed (3 opciones):**
+1. Late initialization del hook runner
+2. Dynamic registry check en runtime
+3. Event subscription model
+
+**Comparación WORKING vs BROKEN:**
+| Hook | Status | Reason |
+|------|--------|--------|
+| message_sending | ✅ WORKS | Correctamente awaited |
+| gateway:startup | ✅ WORKS | Internal hook system |
+| command:new | ✅ WORKS | Internal hook system |
+| agent_end | ❌ NEVER INVOKED | Snapshot timing |
+| before_tool_call | ❌ NOT WIRED | Fire-and-forget dispatch |
+
+### Compliance Mechanisms (v2026.4)
+
+**Risk Scoring with TTL-based Decay**
+```js
+riskScore.add(activity, {ttl: 3600000})  // 1h decay
+// PRISM implementation
+```
+
+**TrustedClaw — Owner-Governed Guardrails**
+- Agente no puede evasively bypassing
+- Owner-defined constraints
+
+**Session Memory Policy Controls (HIPAA scenarios)**
+- `blockSessionSave` — prevenir persistencia de ciertas conversaciones
+- `redirectPath` — guardar en ubicación alternativa
+
+**References:**
+- Issue #5513: Plugin hooks never invoked
+- Issue #19231: before_tool_call return values ignored
+
+### Hook Bypass Techniques
+
+| Bypass | Mechanism | Impact |
+|--------|-----------|--------|
+| PR1: Timing Snapshot | Hook runner captura snapshot ANTES de que plugins registren | Hooks registradas tarde nunca se invocan |
+| PR2: Fire-and-Forget | `runHook(...).catch()` descarta return value | `{ cancel: true }` ignorado, tool ejecuta igual |
+| PR3: Unwired Hook | `before_tool_call` nunca llamada en steerable-agent-loop.js | No hay forma de interceptar tools |
+| PR8: Internal vs Plugin | `registerInternalHook()` funciona, `api.registerHook()` roto | Atacante evade usando ruta plugin |
+
+**Confirmado:** "Security plugins can block dangerous tool calls" = FALSE
+
+### Hook Security Solutions
+
+| Solution | Description |
+|----------|-------------|
+| SOL1: Fix Hook Runner Timing | Dynamic registry check en lugar de snapshot |
+| SOL2: Await Hook Results | Evaluar return value antes de ejecutar tool |
+| SOL3: Wire up before_tool_call | Conectar hook en steerable-agent-loop.js |
+| SOL4: OpenClaw PRISM | Risk scoring con TTL-based decay |
+| SOL5: SecureClaw | Security plugin (adversa-ai/secureclaw) |
+| SOL6: TrustedClaw | Owner-governed guardrails |
+| SOL7: OpenClaw Doctor | Diagnose misconfigurations |
+| SOL8: Config Hardening | Lock down permissions |
+| SOL9: Network Isolation | Separate network segments |
+| SOL10: Multi-Gateway | Separate gateways por trust level |
+| SOL11: Plugin Vetting | Review process para plugins |
+
+**Workarounds (temporales):**
+- Workaround A/B/C/D disponibles para issues #5513, #5943, #19231
+
+**Matriz:** Complexity vs Effectiveness vs Status para cada solución
+
+### Hook Limitations (EC5-EC15)
+
+- **EC5: Direct Tool Call Bypass** — Cuando hooks rotos, atacante llama tools directamente
+- **EC6: Timing Attacks** — Race conditions en registration timing
+- **EC7: Credential Exfiltration** — Via hook messages (attacker puede leer credenciales)
+- **EC8: Tool Result Tampering** — Post-validation manipulation de resultados
+- **EC9: Registration Priority Conflicts** — Múltiples plugins competing por mismo hook
+- **EC10: Internal vs Plugin Divergence** — Diferencias de comportamiento según ruta usada
+- **EC11: Bundled Hooks Disappear** — Hooks bundled se pierden tras updates
+- **EC12: State Leakage Between Sessions** — Datos filtran entre sesiones
+
+### Hook Creative Uses (12 casos)
+
+| Use Case | Description |
+|----------|-------------|
+| CU1: Observabilidad | Arize integration para monitoring |
+| CU2: Compliance Automation | Automatización de compliance |
+| CU3: Developer Productivity | Mejoras para desarrolladores |
+| CU4: Accessibility Enhancer | Mejoras de accesibilidad |
+| CU5: Game Mechanics | Mecánicas de juego |
+| CU6: Artistic Generation | Generación artística |
+| CU7: Research Assistant | Asistente de investigación |
+| CU8: Personal Finance | Finanzas personales |
+| CU9: Educational Tool | Herramienta educativa |
+| CU10: Hooks-as-a-Service | Modelo SaaS de hooks |
+| CU11: Digital Twin | Gemelo digital |
+| CU12: Emergency Response | Respuesta a emergencias |
+
+**Hipótesis validadas:** H1=11/12 funcionan pese a hooks rotos, H3=no requiere desarrolladores, H4=no necesita modificaciones core
+
+## Active-Memory Embedding (detallado)
+*Source: active-memory-embedding-deep-dive.md*
+
+### Modelo de Dos Compuertas de Activación
+```
+1. Plugin enabled (plugin.activeMemory.enabled = true)
+2. Agent targeted (agent id en lista)
+3. Session eligibility (session tipo válido)
+```
+
+### Query Modes
+
+| Mode | Latencia | Contexto enviado |
+|------|----------|------------------|
+| message | ~10ms | Solo mensaje actual |
+| recent | ~50ms | Mensaje + últimos 5 |
+| full | ~200ms | Sesión completa |
+
+### Prompt Styles (6 tipos)
+
+| Style | Comportamiento |
+|-------|----------------|
+| strict | Prioriza exactitud |
+| balanced | Equilibrio accuracy/recall |
+| contextual | Basado en contexto |
+| recall-heavy | Maximiza recall |
+| precision-heavy | Prioriza precisión |
+| preference-only | Solo preferencias |
+
+### Orden de Resolución de Modelos
+```
+explicit → session → agent → fallback
+```
+
+### Configuración Híbrida BM25+Vector
+```
+Default: 70% vector + 30% BM25
+Configurable via plugin settings
+```
+
+### Infrastructure
+- **sqlite-vec** para aceleración vectorial
+- **Embedding cache** para performance
+- **Session memory indexing** (experimental)
+
+### Edge Cases
+- Persistencia de transcript
+- Session toggle commands
+
+## Agents System Deep (2026-04-26)
+*Source: AGENTS_SYSTEM_DEEP.md*
+
+### Hook Points in Agent Loop
+
+**Internal hooks (Gateway):**
+- agent:bootstrap
+
+**Command hooks:**
+- /new, /reset, /stop
+
+**Plugin hooks:**
+- before_model_resolve, before_prompt_build, before_agent_start, before_agent_reply, agent_end
+- before/after_compaction, before/after_tool_call, before_install
+- tool_result_persist
+- message_received/sending/sent, session_start/end, gateway_start/stop
+
+### sessions_spawn Parameters
+
+```js
+{
+  task: "required",
+  label?: string,
+  agentId?: string,
+  model?: string,
+  thinking?: string,
+  runTimeoutSeconds?: number,
+  thread?: boolean,  // default false
+  mode?: "run" | "session",
+  cleanup?: "delete" | "keep",
+  sandbox?: "inherit" | "require"
+}
+```
+
+### Tool Policy by Depth
+
+| Depth | Access |
+|-------|--------|
+| Depth 0 (agent:main) | FULL ACCESS |
+| Depth 1 leaf | DENIED: sessions_list, sessions_history, sessions_send, sessions_spawn |
+| Depth 1 orchestrator (maxSpawnDepth>=2) | ALLOWED: sessions_spawn, subagents, sessions_list, sessions_history |
+| Depth 2 | Always DENIED sessions_spawn |
+
+### Nested Sub-agent Config
+
+```yaml
+maxSpawnDepth: 1  # default
+maxChildrenPerAgent: 5  # default
+maxConcurrent: 8  # default
+runTimeoutSeconds: 0  # 0=no timeout
+```
+
+### Thread-Bound Sessions Commands
+
+```
+/focus <target>    # enfocar sesión
+/unfocus           # desenfocar
+/agents            # listar agentes
+/session idle <duration|off>
+/session max-age <duration|off>
+```
+
+### Auto-Archive
+
+- archiveAfterMinutes: default 60min
+- transcript renamed: *.deleted.<timestamp>
+- cleanup:delete → archives immediately
+- runTimeoutSeconds does NOT auto-archive (only stops run)
+- browser cleanup: separate best-effort
+
+### Announce System
+
+- `ANNOUNCE_SKIP` or exact `NO_REPLY`/no_reply → suppresses output
+- Cascade stop: `/stop main` → stops depth-1 → cascades to depth-2
+- On timeout: can collapse history into partial-progress summary
+
+### ACP Harness Support
+
+Built-in aliases: claude, codex, copilot, cursor, droid, gemini, iflow, kilocode, kimi, kiro, openclaw, opencode, pi, qwen
+
+### ACP Tools MCP Bridge
+
+```js
+pluginToolsMcpBridge  // injects MCP server named "openclaw-plugin-tools" into ACPX session bootstrap
+```
+
+### ACP Permission Configuration
+
+| Mode | Behavior |
+|------|----------|
+| approve-all | Auto-approve all |
+| approve-reads | Writes/exec require prompts |
+| deny-all | All blocked |
+
+- nonInteractivePermissions: fail (default)
+- Non-interactive ACP sessions fail with AcpRuntimeError if write/exec triggers permission prompt
+
+### ACP Commands
+
+```
+/acp spawn, cancel, steer, close, status, set-mode, set, cwd, permissions, timeout, model, reset-options, sessions, doctor, install
+```
+
+### ACP Spawn Modes
+
+```
+--bind here         # bind current, fail if none
+--bind off          # no binding
+--thread auto       # in thread=bind, outside=create/bind child
+--thread here       # require thread, fail if not
+--thread off        # no binding
+```
+
+### ACP Session Key Format
+
+```
+ACP:     agent:<agentId>:acp:<uuid>
+Subagent: agent:<agentId>:subagent:<uuid>
+```
+
+- ACP runs on host runtime (NOT sandboxed)
+- Sandbox incompatibility: if requester session is sandboxed, ACP spawn blocked with error
+
+### Cross-Agent QMD Memory Search Config
+
+```yaml
+agents.defaults.memorySearch.qmd.extraCollections:
+  - path: ~/agents/family/sessions
+    name: family-sessions
+```
+
+### Allowlist Config
+
+```yaml
+agents.defaults.subagents.allowAgents: default target-agent allowlist
+agents.list[].subagents.allowAgents: per-agent override with [*] to allow any
+agents.defaults.subagents.requireAgentId: blocks sessions_spawn without agentId
+```
+
+### Main DM Route Pinning (SESSIONS_DEEP)
+
+Cuando session.dmScope=main, DMs directos pueden compartir una misma sesión main. Para evitar que lastRoute sea sobreescrito por DMs de no-owner:
+
+**Condiciones de pinned owner:**
+1. allowFrom tiene exactamente una entrada non-wildcard
+2. Entry puede normalizarse a sender ID concreto
+3. Sender del DM inbound NO coincide con ese pinned owner
+
+**Comportamiento:** En mismatch, OpenClaw registra metadata del inbound session pero SKIPea actualizar lastRoute del main session.
+
+Esto previene que DMs de terceros sobrescriban la ruta principal de un agente.
+
+## Cron Deep V2 (2026-04-26)
+*Source: CRON_DEEP_V2.md*
+
+### Arquitectura jobs.json vs jobs-state.json
+
+```
+jobs.json          → definitions (git tracked)
+jobs-state.json    → runtime execution state (gitignored)
+```
+
+### Task Reconciliation
+
+- Active cron task stays live mientras runtime tracks como running
+- Even if old child session row still exists
+- 5-minute grace window antes de marcar task como lost
+
+### Maintenance Sweep (cada 60s)
+
+1. Reconciliation
+2. Cleanup stamping (cleanupAfter = endedAt + 7 days)
+3. Pruning
+
+### Cron Session Retention
+
+```yaml
+cron.sessionRetention: 24h  # default
+# prune isolated run-session entries
+```
+
+### Run Log Pruning
+
+```yaml
+cron.runLog.maxBytes: 2mb  # default
+cron.runLog.keepLines: 2000
+```
+
+### Model Switch Retry
+
+- Persists switched provider/model antes de retry
+- auth profile override when applicable
+- Bound: initial + 2 switch retries = max 3 attempts
+- Exponential backoff
+
+### NO_REPLY en Cron
+
+- Si isolated cron returns solo NO_REPLY token
+- Suppresses direct outbound delivery
+- Tambien suprime fallback queued summary path
+
+### Browser Cleanup (isolated cron)
+
+1. Best-effort close tracked browser tabs/processes para cron:<jobId>
+2. Cleanup failures son ignorados
+
+### Stale Acknowledgement Re-prompt
+
+- Si primer resultado es interim status update
+- Y no hay descendant subagent run todavía responsable
+- OpenClaw re-prompts once para el resultado real antes de delivery
+
+### Model Validation
+
+- Si requested model not allowed → warning + fallback a job's agent/default
+- Plain model override ya no appends agent primary como extra retry target
+
+### Fast Mode
+
+```yaml
+params.fastMode  # si configurado, isolated cron lo usa por defecto
+# stored session fastMode override wins over config
+```
+
+### lightContext: true
+
+```yaml
+payload.lightContext: true
+# Keeps bootstrap context empty
+# SKILL.md files NOT injected cuando sandbox tiene workspaceAccess: none
+# unless explicitly mirrored
+```
+
+### Security
+
+```yaml
+hooks.allowedSessionKeyPrefixes: ['cron:', 'webhook:']
+```
+
+**CRITICAL finding:**
+- `hooks.token_reuse_gateway_token` — severe security misconfiguration
+- Hook ingress token unlocking Gateway auth
+
+### Telegram Forum Topic Format
+
+```
+--to '-1001234567890:topic:123'
+```
+
+### Delivery con Descendants
+
+- Prefers final descendant output sobre stale parent interim text
+- If descendants still running → suppress partial parent update
+
+### Persistent Named Session
+
+```yaml
+sessionTarget: session:daily-brief
+sessionKey: agent:ejecutor:main
+```
+
+### Heartbeat vs Cron (diferencias)
+
+| Aspect | Heartbeat | Cron |
+|--------|-----------|------|
+| Task records | NO | YES |
+
+### Hook Events Adicionales (HOOKS_DEEP补充)
+
+**session:patch**
+- event.context.patch solo contiene campos cambiados (no full session)
+- Solo privileged clients pueden trigger patch events
+
+**session:compact events**
+```
+session:compact:before → messageCount, tokenCount
+session:compact:after → compactedCount, summaryLength, tokensBefore, tokensAfter
+```
+
+### api.runtime (PLUGIN_DEV_DEEP)
+
+```js
+resolveAgentDir()
+resolveAgentWorkspaceDir()
+resolveAgentIdentity()
+resolveThinkingDefault()
+resolveAgentTimeoutMs()
+ensureAgentWorkspace()
+runEmbeddedAgent()
+```
+
+### Model Patterns Precedence
+
+```
+modelPatterns > modelPrefixes (en contracts.modelSupport)
+```
+
+---
+
+## Additional Findings from Continuous Audit (2026-04-27)
+
+### v2026.4.20 Specifics (not in general version coverage)
+
+**Sessions OOM Fix (#69404):** Accumulated cron/executor session backlogs caused OOM that killed gateway before write path could run. v2026.4.20 enforces entry cap + age prune **by default** AND prunes oversized stores at load time. This is the fix for the 240s cron chain timeout. ✅
+
+**Cron State Split (#63105):** Jobs state separated from `jobs.json` into `jobs-state.json`. Isolates session state from job definitions. ✅
+
+**Exec YOLO Preflight Fix:** Python/Node script preflight was incorrectly blocking YOLO exec even with `security=full` + `ask=off`. Fixed in v2026.4.20. ✅
+
+### Active Memory Known Bugs (Critical)
+
+**Dirty Index After Updates (#4868):** After OpenClaw updates, `memory_search` returns empty results despite files existing. Index becomes "dirty" — indexed counts show files present but retrieval fails. Workaround: `openclaw memory index --force`. Prevention: run force reindex after every OpenClaw update. ✅
+
+**Fresh Index Bug (#29112 — OpenClaw 2026.2.26):** `memory_search` returns empty for newly added memory text even after successful forced reindex. SQLite confirms chunk text exists in DB but retrieval path drops it. Status: no known fix as of 2026-04-24. Very severe — agent silently forgets newly added information. ✅
+
+### Browser Automation — Additional Details
+
+**CDP + Playwright Dual-Layer:** OpenClaw controls browsers via Chrome DevTools Protocol (CDP) over WebSocket, with Playwright layered on top for advanced actions (click, type, snapshot, PDF). Without Playwright: only ARIA snapshots and screenshots of `openclaw` profile work. ✅
+
+**Browser Profiles Port Range:** Local managed profiles use CDP ports **18800–18899** (assigned automatically). Remote profiles use explicit `cdpUrl`. ✅
+
+**Remote CDP Discovery Modes:**
+- `wss://` or `ws://` → direct WebSocket connect
+- `https://` or `http://` → calls `/json/version` to discover WebSocket debugger URL then connects ✅
+
+**Browser SSRF Policy (Hardened Defaults):** `browser.ssrfPolicy.dangerouslyAllowPrivateNetwork` is **FALSE by default**. Navigation is SSRF-guarded before navigate + best-effort re-check on final URL. Remote CDP discovery probes are also checked in strict SSRF mode. ✅
+
+**Browser evaluate Security:** `browser.evaluateEnabled=true` by default (security risk — prompt injection can control JS). Disable if not needed. ✅
+
+**Browser Action Limitations (Known):**
+- CSS selectors for `click`/`type` NOT supported — only refs (numeric `12` or role `e12`)
+- Refs are NOT stable across navigations — always snapshot fresh after navigation
+- `existing-session` profile: click left only, type without `slowly`, no `delayMs` on press, no `networkidle`, select single value only, 1 file upload at a time
+- `element screenshot` + `full-page` are mutually exclusive ✅
+
+**Docker Playwright Warning:** Avoid `npx playwright` in Docker — conflicts with npm override. Use CLI bundled Playwright. ✅
+
+### Canvas — Additional Details
+
+**canvasHost HTTP Server:** Canvas host serves agent-editable HTML/CSS/JS at `http://<gateway-host>:<gateway.port>/__openclaw__/canvas/` on the same port as Gateway (default 18789). Lives in `~/.openclaw/workspace/canvas/<session>/...`. Auto-creates `index.html` when directory empty. Also serves A2UI at `/__openclaw__/a2ui/`. ✅
+
+**A2UI Protocol — v0.8 ONLY:** OpenClaw only supports A2UI v0.8. The v0.9 `createSurface` command is NOT supported and will be rejected. v0.8 commands: `beginRendering`, `surfaceUpdate`, `dataModelUpdate`, `deleteSurface`. ✅
+
+**Node Canvas (macOS/iOS/Android):** Uses `WKWebView` + custom URL scheme `openclaw-canvas://<session>/<path>`. One canvas panel visible at a time. `canvas.*` commands on iOS/Android are **foreground-only** — background invocations return `NODE_BACKGROUND_UNAVAILABLE`. ✅
+
+**Canvas Host Security:** Blocks directory traversal — files must live under session root. External `http(s)` URLs allowed only when explicitly navigated. ✅
+
+**Browser Sandbox (Docker):** Separate from canvas host. Runs Chromium in Docker container with dedicated network (`openclaw-sandbox-browser`), CDP source range allowlist (`cdpSourceRange: "10.60.0.0/16"`), and `allowHostControl` flag. Auto-start available with `autoStartTimeoutMs`. ✅
+
+### Broadcast Groups (WhatsApp — Experimental)
+
+**Purpose:** Enable multiple agents to process the same message simultaneously. Keys are WhatsApp peer IDs (group JID or E.164 phone number). ✅
+
+**Configuration:**
+```json5
+{
+  broadcast: {
+    strategy: "parallel",  // or "sequential"
+    "120363403215116621@g.us": ["alfred", "baerbel", "assistant3"]
+  }
+}
+```
+
+**Strategies:** `parallel` = all agents process simultaneously. `sequential` = each agent waits for previous to finish. ✅
+
+### Memory Dreaming — Phase Model + Deep Ranking (Additional Detail)
+
+**3-Phase Model:**
+| Phase | Purpose | Durable write to MEMORY.md? |
+|-------|---------|-------|
+| Light | Sort + stage recent short-term material, dedupe, record reinforcement signals | No |
+| Deep | Score and promote durable candidates using weighted ranking, requires minScore + minRecallCount + minUniqueQueries | YES |
+| REM | Extract patterns, build theme/reflection summaries, record REM signals for deep ranking | No |
+
+**Deep Ranking Signal Weights:**
+| Signal | Weight | Description |
+|--------|--------|-------------|
+| Frequency | 0.24 | How many short-term signals accumulated |
+| Relevance | 0.30 | Average retrieval quality |
+| Query diversity | 0.15 | Distinct query/day contexts |
+| Recency | 0.15 | Time-decayed freshness score |
+| Consolidation | 0.10 | Multi-day recurrence strength |
+| Conceptual richness | 0.06 | Concept-tag density |
+
+**Dreaming CLI:**
+- `openclaw memory promote` — dry run
+- `openclaw memory promote --apply` — execute
+- `openclaw memory promote --limit 5` — cap promotions
+- `openclaw memory status --deep` — inspect deep state
+- `openclaw memory promote-explain "query"` — why something was/didn't promoted
+- `openclaw memory rem-harness` — REM reflection harness ✅
+
+**Default Schedule:** `dreaming.frequency: "0 3 * * *"` (3 AM daily). Timezone configurable. ✅
+
+### Active Memory — Blocking Sub-Agent Details (Additional)
+
+**Query Modes (3 types):**
+| Mode | What sub-agent sees | Timeout |
+|------|-------------------|---------|
+| `message` | Only last user message | 3-5s |
+| `recent` | Last message + tail conversation | 15s |
+| `full` | Full conversation | >15s |
+
+**Prompt Styles (6 types):** `balanced` (default for recent), `strict` (default for message), `contextual`, `recall-heavy`, `precision-heavy`, `preference-only`. ✅
+
+**Hybrid Search Pipeline:** Query → Embedding + Tokenize in parallel → Vector search + BM25 search → Weighted merge → Top results. Both paths run in parallel; if only one available, runs solo. ✅
+
+**Embedding Provider Auto-Detect Order:** `local` (if `memorySearch.local.modelPath` configured) → `openai` → `gemini` → `voyage` → `mistral` → `bedrock`. **Ollama is NOT auto-detected** — must be set explicitly. ✅
+
+**Blocking Sub-Agent Model Resolution:** `explicit plugin model` → `current session model` → `agent primary model` → `config.modelFallback`. Transcript is temporal by default (temp dir, deleted after execution). With `persistTranscripts: true` → saved to `agents/<agent>/sessions/active-memory/<session-id>.jsonl`. ✅
+
+**Session-Memory Hook (bundled with memory-core):** Triggers on `command:new` or `command:reset`. Extracts last N messages (default 25), generates descriptive slug via LLM, saves to `<workspace>/memory/YYYY-MM-DD-slug.md`. Format includes Session Key, Session ID, Source, and message content. ✅
+
+### Model Failover — Additional Hook + Cooldown Details
+
+**before_model_resolve Hook:** Plugin hook type `PluginHookBeforeModelResolveEvent`. Receives `{ prompt: string }` (no session messages). Can return `{ modelOverride?, providerOverride? }`. Runs BEFORE OpenClaw builds the fallback chain — the override becomes the first candidate. Position: hook #1 in model selection pipeline, alongside `catalog`. ✅
+
+**Model-Scoped Cooldowns:** OpenClaw records `cooldownModel` for rate-limit failures when model ID is known. A sibling model in the same provider can still be attempted even if another is in cooldown. Billing/disabled windows still block the entire profile. ✅
+
+**Billing Disabled Backoff:** Credit failures (`insufficient credits`, `credit balance too low`) mark profile as **disabled** with backoff starting at **5 hours**, doubling per failure, capped at **24 hours**. Reset if profile has no failure for 24 hours. Different lane from rate-limit cooldowns. ✅
+
+**Auth Profile Round-Robin:** When no explicit order configured — primary key is profile type (OAuth BEFORE API keys), secondary is `usageStats.lastUsed` (oldest first within type). Cooldown/disabled profiles go to end, ordered by nearest expiry. ✅
+
+**Session Stickiness:** OpenClaw pins chosen auth profile per session to keep provider caches hot. Profile reused until: session reset (`/new`/`/reset`), full compaction (compaction count increments), or profile goes into cooldown/disabled. ✅
+
+### Standing Orders — Runtime Enforcement Reality (Critical Finding)
+
+**KEY DISCOVERY:** Standing Orders are NOT runtime-enforced. They are prose markdown in `AGENTS.md` that the model reads and interprets. There is NO:
+- Code-evaluated trigger conditions
+- Approval gate enforcement by the system
+- Runtime mechanism blocking out-of-scope actions
+- Registration of "this standing order was executed"
+
+**The 4 Components (Scope, Triggers, Approval Gates, Escalation Rules) are ALL prose** — the model interprets them. `approval_gate: "owner review required"` means the model decides to ask, not the system blocking. ✅
+
+**Cron is complementary but independent:** Cron handles mechanical timing (WHEN to fire). Standing orders provide persistent authority (WHAT to do and when approval is needed). A cron job can run WITHOUT a standing order (inline prompt defines the task). Standing orders give PERSISTENT authority so each cron job doesn't repeat the authority. ✅
+
+**exec-approvals.json locations:**
+- Gateway: `~/.openclaw/exec-approvals.json`
+- Per-node: `~/.openclaw/exec-approvals.node.<nodeId>` ✅
+
+**exec-approvals.json fields:**
+| Field | Function |
+|-------|---------|
+| `security` | `deny` (fails closed), `allowlist` (only allowlisted), `full` (everything) |
+| `ask` | `off` (never ask), `on-miss` (ask if no match), `always` (always ask) |
+| `allowAlways` | Commands that always execute without asking |
+| `askAlways` | Commands that always require approval even if in allowlist |
+| `autoAllowSkills` | ⚠️ SECURITY RISK — allows any skill bin without approval |
+| `strictInlineEval` | If true, inline forms (`python -c`, `node -e`) still require approval | ✅
+
+**safeBins (stdin-only, bypass allowlist):** `jq`, `sed`, `awk` and similar tools that only read from stdin can execute without allowlist. Do NOT add interpreters (python, node, ruby) here. ✅
+
+**Approval Telegram workflow:** Native approval buttons via `status: "approval-pending"` in Telegram. Falls back to `/approve` command if buttons unavailable. ✅
+
+### Elevated Exec — Sandbox Escape + workspaceAccess Modes
+
+**Elevated does NOT mean "root":** It runs with gateway process permissions, not root. It **escapes the sandbox completely** — if sandbox is active, elevated ignores it and goes directly to the host. ✅
+
+**Exec hierarchy (precedence):**
+```
+host=auto     → sandbox if active, else gateway host
+host=sandbox  → sandbox (fail-closed if not available)
+host=gateway  → gateway host
+elevated=true → gateway host (IGNORES sandbox entirely)
+``` ✅
+
+**workspaceAccess modes (sandbox):**
+- `"none"` (default) — agent sees neither workspace nor `/agent`
+- `"ro"` — mounts read-only at `/agent`
+- `"rw"` — mounts read/write at `/workspace` ✅
+
+**Docker namespace isolation:** Network (own namespace), PID (isolated processes), Mount (own filesystem copy or bind mount), User (different UID/GID), UTS (own hostname), IPC (semaphore isolation). No seccomp/AppArmor by default — `openclaw security audit` detects dangerous configurations. ✅
+
+### Hooks System — Complete 28 Hook Types + Event Flow
+
+**28 Plugin Hook Types (complete list):**
+```
+before_model_resolve    — model/provider selection override
+before_prompt_build     — system prompt / context mutation
+before_agent_start      — legacy compat (before_model_resolve + before_prompt_build)
+before_agent_reply      — intercept/handle reply before normal dispatch
+llm_input              — inspect/modify LLM input (system + prompt + history)
+llm_output             — inspect LLM output (texts + usage)
+agent_end               — agent run completed (success/error/duration)
+before_compaction       — pre-compaction (messageCount, tokenCount)
+after_compaction        — post-compaction (compactedCount, tokensBefore, tokensAfter)
+before_reset            — pre-reset (sessionFile, reason)
+inbound_claim           — message claimed by agent (before agent runs)
+message_received        — inbound message (from, content, timestamp)
+message_sending         — outbound being sent (to, content) — can cancel
+message_sent            — after message delivered (success/error)
+before_tool_call        — tool call intercept (can block, mutate, require approval)
+after_tool_call         — tool call completed (result, error, duration)
+tool_result_persist     — tool result being written to transcript
+before_message_write    — message write to transcript
+session_start           — new session created
+session_end             — session ended
+subagent_spawning       — subagent about to spawn
+subagent_delivery_target — subagent announce target resolution
+subagent_spawned        — subagent started
+subagent_ended          — subagent completed
+gateway_start           — gateway starting up
+gateway_stop            — gateway shutting down
+before_dispatch         — pre-message dispatch (content, channel, senderId)
+reply_dispatch          — reply dispatch orchestration
+before_install          — plugin install phase
+``` ✅
+
+**Hook Discovery Order (precedence):** 1. Bundled hooks (shipped with OpenClaw) → 2. Plugin hooks (bundled inside installed plugins) → 3. Managed hooks (`~/.openclaw/hooks/`) → 4. Workspace hooks (`<workspace>/hooks/`) ✅
+
+**5 Bundled Internal Hooks:** `boot-md`, `bootstrap-extra-files`, `command-logger`, `session-memory`, `memory-core-short-term-dreaming-cron` ✅
+
+### Skills System — Snapshot Model + always Flag + Per-Agent Control
+
+**Skills are snapshotted once at session start (or hot-reload), NOT dynamically matched per-message.** Model sees the XML skill list on every turn and internally decides when to invoke. No hook fires on skill selection. ✅
+
+**always: true in SKILL.md frontmatter** forces skill inclusion regardless of bins/env/config gates. This is the mechanism for forced application (e.g., compliance skills). ✅
+
+**Per-Agent Skill Allowlists:**
+```json5
+{
+  agents: {
+    defaults: { skills: ["github", "weather"] },  // only these visible
+    list: [
+      { id: "writer" },  // inherits defaults
+      { id: "docs", skills: ["docs-search"] },  // only docs-search
+      { id: "locked-down", skills: [] }  // no skills at all
+    ]
+  }
+}
+```
+
+**Prompt Injection Format:** Skills appear as XML `<skills><skill><name>...</name><description>...</description><location>...</location></skill></skills>` in system prompt. Model reads SKILL.md content when it internally decides to invoke. ✅
+
+**Hooks CANNOT trigger skills** — skills are selected from the eligible pool at session startup. The model decides per-turn based on description + SKILL.md content. ✅
+
+### OpenClaw AS MCP Server — `mcp serve` (NOT MCP Client)
+
+**Purpose:** Exposes OpenClaw channel conversations to external MCP clients (Codex, Claude Code, etc.) via a stdio MCP bridge connecting to Gateway over WebSocket. This is separate from OpenClaw's MCP client registry (which manages outbound MCP server definitions). ✅
+
+**How it works:**
+1. MCP client spawns `openclaw mcp serve` as stdio subprocess
+2. Bridge connects to Gateway WebSocket at `ws://host:18789`
+3. Routed sessions become MCP conversations with transcript/history tools
+4. Live events are queued in memory while bridge is connected (live-only queue — no replay of history) ✅
+
+**9 Bridge Tools:**
+- `conversations_list` — list recent session-backed conversations
+- `conversation_get` — get one conversation by session_key
+- `messages_read` — read recent transcript messages
+- `attachments_fetch` — extract non-text message content blocks metadata
+- `events_poll` — read queued live events since cursor
+- `events_wait` — long-poll until next matching queued event
+- `messages_send` — send text back through existing stored route
+- `permissions_list_open` — list pending exec/plugin approval requests
+- `permissions_respond` — resolve one pending approval ✅
+
+**Event types in live queue:** `message`, `exec_approval_requested`, `exec_approval_resolved`, `plugin_approval_requested`, `plugin_approval_resolved`, `claude_permission_request`. ✅
+
+**Claude channel mode (`mode=on/auto`):** Server advertises Claude experimental capabilities. `notifications/claude/channel` forwards inbound user transcript messages. `notifications/claude/channel/permission` tracks Claude permission requests. ✅
+
+### before_tool_call — block:true Priority + stickyTrue
+
+**Hook priority:** When multiple plugins register `before_tool_call`, they run ordered by priority (highest first). The first to return `{ block: true }` ends the chain immediately — lower priority plugins do NOT execute. If a lower priority plugin returns `{ block: false }` after a higher one already returned `true`, the `true` persists (stickyTrue behavior). ✅
+
+**Registry sort:** `toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0))` ✅
+
+### agent.wait — Timeout Does NOT Stop Agent
+
+When `agent.wait` times out, the RPC returns `{ status: timeout }` but the agent **continues running**. The caller stops waiting; the agent may still emit lifecycle events. ✅
+
+### Heartbeats Use Lane `main` Not `cron`
+
+Heartbeats are processed through the `main` lane (process-wide), NOT the `cron` lane. This means heartbeats count against `agents.defaults.maxConcurrent` (default 4 for lane main). Background cron jobs run in parallel via the `cron` lane without blocking inbound replies. ✅
+
+### Broadcast Groups — collect Mode Coalescing
+
+`collect` mode (default for broadcast groups): coalesces all queued messages into a **single** followup turn when they target the same channel/thread. If messages target different channels/threads, they drain individually to preserve routing. ✅
+
+### Command Queue — Lane-Aware FIFO + Queue Modes (Additional Detail)
+
+**Lane-Aware FIFO:** Each session run goes into a per-session lane (`session:<key>`) guaranteeing one active run per session. Then each session run goes into the global `main` lane (default) capping overall parallelism. Cron and subagent lanes run in parallel without blocking inbound. ✅
+
+**Default Concurrency per Lane:**
+| Lane | Default max concurrent |
+|------|---------------------|
+| `main` | 4 |
+| `subagent` | 8 |
+| Unconfigured | 1 |
+
+**Queue Modes:**
+| Mode | Behavior |
+|------|---------|
+| `steer` | Inject immediately into current run (cancels pending tool calls after next tool boundary). Falls back to followup if not streaming |
+| `followup` | Enqueue for next agent turn after current run ends |
+| `collect` (default) | Coalesce all queued messages into **single** followup turn. If messages target different channels/threads, drain individually |
+| `steer-backlog` | Steer now AND preserve message for followup turn |
+
+**Queue Options:**
+```json5
+{
+  messages: {
+    queue: {
+      mode: "collect",
+      debounceMs: 1000,   // wait for quiet before followup turn
+      cap: 20,           // max queued messages per session
+      drop: "summarize",  // overflow policy: "old" | "new" | "summarize"
+      byChannel: { discord: "collect" }
+    }
+  }
+}
+```
+`summarize` drop policy: keeps bullet list of dropped messages and injects as synthetic followup prompt. ✅
+
+**Per-Session Override:** `/queue collect debounce:2s cap:25 drop:summarize` or `/queue default` to clear. ✅
+
+**Overflow Error Signatures (context overflow → triggers auto-compaction + retry):** `request_too_large`, `context length exceeded`, `input exceeds the maximum number of tokens`, `input token count exceeds the maximum number of input tokens`, `input is too long for the model`, `ollama error: context length exceeded` ✅
+
+### Delegate Architecture — Organizational Agent Pattern
+
+**Delegate definition:** An OpenClaw agent that has its **own identity** (email, display name, calendar), acts **on behalf of** one or more humans (never impersonates them), operates under **explicit permissions** from the organization's identity provider, and follows standing orders in `AGENTS.md`. ✅
+
+**Personal vs Delegate Mode:**
+| | Personal Mode | Delegate Mode |
+|---|---|---|
+| Credentials | User's credentials | Agent has its own credentials |
+| Messages | Come from the human | Come from the delegate, on behalf of |
+| Principals | One | One or many |
+| Trust boundary | Human | Organization policy |
+
+**Capability Tiers:**
+- **Tier 1 — Read-Only + Draft:** Read organizational data, draft messages for human review. Email: read inbox, summarize threads, flag items. Calendar: read events, surface conflicts.
+- Higher tiers add sending permissions and autonomous action. ✅
+
+**Use case:** Executive assistant model — delegate has own credentials, sends "on behalf of" principal, follows defined scope of authority. Extends multi-agent routing from personal use into organizational deployments. ✅
+
+### Context Engine — assemble() + System Prompt Addition
+
+**New finding from CONTEXT_ENGINE_DEEP.md:**
+
+The context engine's `assemble({ sessionId, messages, tokenBudget, availableTools, citationsMode })` returns:
+```typescript
+{
+  messages: Message[],        // subset of conversation history to send
+  estimatedTokens: number,
+  systemPromptAddition?: string  // dynamic guidance injected BEFORE the system prompt
+}
+```
+
+The `systemPromptAddition` allows the engine to inject dynamic recall instructions without static workspace files. ✅
+
+**System prompt is built by OpenClaw (not by the model):** Fixed sections + bootstrap injection + skills. The context engine feeds conversation history separately. ✅
+
+**Bootstrapping file injection order under Project Context:**
+| # | File | Notes |
+|---|------|-------|
+| 1 | `AGENTS.md` | Always injected |
+| 2 | `SOUL.md` | Persona, tone, limits |
+| 3 | `TOOLS.md` | Local tool notes/conventions |
+| 4 | `IDENTITY.md` | Name, emoji, vibe |
+| 5 | `USER.md` | User profile |
+| 6 | `HEARTBEAT.md` | Only if exists + heartbeats enabled |
+| 7 | `BOOTSTRAP.md` | Only on brand-new workspaces (removed after first use) |
+| 8 | `MEMORY.md` | Falls back to `memory.md` (lowercase) |
+
+**Bootstrap limits:** max 20,000 chars per file, 150,000 chars total. Truncation warning configurable (`off`/`once`/`always`). Missing files get a short `[ARCHIVO FALTANTE: filename.md]` marker — session continues. ✅
+
+### v2026.4.20 Changelog — Complete Additions
+
+**Features not previously covered:**
+- **Setup wizard restyle + spinner** — loading spinner during model catalog load
+- **System prompt strengthening** — GPT-5 overlay with completion bias + live-state checks
+- **Tiered model pricing** — bundled Moonshot Kimi K2.6/K2.5 cost estimates
+- **Plugin loader optimization** — reuses alias + Jiti config resolution
+- **Compaction opt-in notices** — start + completion notices during context compaction
+- **BlueBubbles group systemPrompt** — `#69198` closes `#60665`
+- **Plugin detached runtime registration** — `#68915`
+- **sanitizeForLog() optimization** — single regex pass (was multiple)
+- **QA suite fail-by-default** — `--allow-failures` flag added
+- **Mattermost streaming** — `#47838` single draft preview post
+- **Kimi k2.6 defaults** + `thinking.keep="all"` on kimi-k2.6
+
+**Critical fixes table:**
+| Fix | Detail |
+|-----|--------|
+| YOLO preflight Python/Node | Fixed: YOLO exec now runs direct interpreter stdin + heredoc forms correctly |
+| Codex transport normalization | `#45304` + `#42194` — fixes legacy openai-completions overrides |
+| Chrome MCP DevTools → browser-connectivity | Now surfaces as browser-connectivity error (not MCP failure) |
+| Lobster TaskFlow approvalId | `#69559` — approvalId without resume token |
+| MCP NODE_OPTIONS block | `#69540` — blocks interpreter-startup env keys |
+| Usage cache FIFO eviction | `#68842` — bounds cost usage cache |
+| OpenAI Responses think levels | Resolves /think levels per model |
+| Plugin startup deps | Installs into plugin's own runtime directory |
+| Shell ignore non-interactive | Ignores `/usr/bin/false`, `/sbin/nologin` |
+| Setup TUI relaunch | Preserves gateway target + auth |
+| Codex image gen on vision | Avoids re-expose on native vision turns |
+
+### ACP vs Pi Embedded — Two Coding Runtime Models
+
+**ACP (Agent Coding Protocol):** `openclaw acp serve` starts a **standalone bridge process**. External IDEs/editors (Codex, Claude Code, Cursor) talk ACP over stdio → bridge connects to Gateway WebSocket → Gateway routes to agent session. ACP is NOT inside OpenClaw — it's a hosted bridge. OpenClaw owns messaging surface; external editor controls execution. ✅
+
+**Pi Embedded SDK:** `@mariozechner/pi-coding-agent` imported directly via `createAgentSession()` inside the Gateway process. Runs **in-process** with full control over session lifecycle. Tool injection pipeline: base tools → custom replacements → OpenClaw tools → channel tools → policy filtering. All events streamed via `subscribeEmbeddedPiSession()` with no serialization overhead. ✅
+
+**Key distinction:** ACP routes through OpenClaw; Pi runs inside OpenClaw. ✅
+
+### PR #69549 — exec security/ask Schema Visible to Model (DRAFT, CRITICAL)
+
+**Status:** DRAFT PR #69549 — NOT yet merged
+
+**The bug:** Model-visible TypeBox schema for `exec` tool includes `security` and `ask` parameters. The LLM can silently downgrade `security="full"` to `security="allowlist"` per-call. The resolver honors this: `security = minSecurity(configured, params.security ?? configured)`.
+
+**Production evidence:** ~60-80 cron tasks silently failed over days because model lowered security tier, wrapper never ran, tasks showed "succeeded" without effect.
+
+**Why it's a trust-boundary bug:**
+1. `security` is a policy decision, not content — visible schema enables LLM to make policy decisions
+2. Training-prior downgrade (observed) — model with prior of "allowlist for shell" silently fails legitimate commands
+3. Adversarial model downgrade — compromised model can pick `security="deny"` or escalate
+4. Prompt-injection via tool descriptions — schema enumerating valid tiers is a priming vector
+
+**Fix proposed:** Strip `security` and `ask` from exec TypeBox schema. Compute both from agent config only (gateway-side). Remove `params.security`/`params.ask` from resolver.
+
+**Risk for BRAIN:** 🔴 HIGH if using cron jobs with `security="full"` and gpt-5.4 or similar model with strong "allowlist for shell" prior.
+
+**Workaround:** Use `security="allowlist"` with explicit allowlist entries for cron commands. ✅
+
+### Webhook Ingress — Native Gateway HTTP Endpoints
+
+**Endpoint routes:**
+| Method | Route | Function |
+|--------|-------|----------|
+| `POST` | `/hooks/wake` | Enqueue system event in main session |
+| `POST` | `/hooks/agent` | Execute isolated agent turn |
+| `POST` | `/hooks/<name>` | Routing via custom mappings |
+| `GET` | `/hooks/health` | Health check (if exposed) |
+
+**Config keys:**
+```json5
+{
+  hooks: {
+    enabled: true,
+    token: "shared-secret",        // REQUIRED, MUST differ from gateway.auth.token
+    path: "/hooks",               // Cannot be "/"
+    maxBodyBytes: 262144,         // 256KB default
+    defaultSessionKey: "hook:ingress",
+    allowRequestSessionKey: false,
+    allowedSessionKeyPrefixes: ["hook:"],
+    allowedAgentIds: ["hooks", "main"],
+    presets: ["gmail"],
+    transformsDir: "~/.openclaw/hooks/transforms",
+  }
+}
+```
+
+**Auth:** `Authorization: Bearer <token>` or `x-openclaw-token: <token>`. Token MUST differ from `gateway.auth.token` — rejected if equal. ✅
+
+**Security validations:** hooks.enabled=true requires non-empty token; token ≠ gateway auth; path ≠ `/`; if allowRequestSessionKey=true → define allowedSessionKeyPrefixes. ✅
+
+**vs Webhooks Plugin vs Internal Hooks:**
+| | Webhook Ingress | Webhooks Plugin | Internal Hooks |
+|--|----------------|-----------------|----------------|
+| Location | Gateway native | Bundled plugin | Discovered dirs |
+| Protocol | HTTP POST | HTTP POST | TypeScript code |
+| Trigger | External request | External request | Internal events |
+| Persistence | No (stateless) | Yes (TaskFlows) | No (stateless) |
+
+### Model Failover — Candidate Chain Rules + Error Taxonomy
+
+**Candidate chain construction:**
+- Modelo solicitado es siempre el primero
+- `agents.defaults.model.fallbacks` se deduplican pero NO se filtran por allowlist — se tratan como intent explícito del operador
+- Si ya estás en un fallback configurado en la misma familia de provider, se mantiene la chain completa
+- Si vienes de un override (ejecutado desde `/model` o CLI), el primary se appendea al final
+
+**Errors that ADVANCE fallback (transient):**
+- Auth failures, rate limits + cooldown exhaustion
+- Overloaded / provider-busy (`ModelNotReadyException`)
+- Timeout-shaped errors (genéricos de server con texto reconocible como transient)
+- Billing disables (5h → 24h cap)
+- `LiveSessionModelSwitchError` (se normaliza en path de failover)
+- Errores no reconocidos cuando quedan candidatos
+
+**Errors that DO NOT advance fallback:**
+- Aborts explícitos no shaped como timeout
+- **Context overflow errors** (`request_too_large`, `context length exceeded`) — estos pertenecen a **compaction/retry**, no a fallback
+- Error final desconocido sin candidatos restantes
+
+**Key entities:**
+- `FallbackSummaryError` — thrown cuando todos los candidatos fallan, con detalle por intento
+- `LiveSessionModelSwitchError` — normalizado en path de failover, NO para switching manual
+- Context overflow: triggers auto-compaction, retry on context length error
+
+### Context Engine — Assembly + systemPromptAddition
+
+**Context Engine (`assemble()`):** controla cómo se construye conversation context cada turno. Recibe `messages` ya pruned por session layer. Devuelve `{ messages, estimatedTokens, systemPromptAddition? }`. El `systemPromptAddition` permite inyectar guidance dinámica (recall instructions, retrieval hints) sin archivos estáticos.
+
+**Flujo por turno:**
+1. Inbound message → session layer append a transcript `.jsonl`
+2. Context engine: `ingest({ sessionId, message, isHeartbeat })` — optional storage
+3. Session pruning: trim tool results from conversation history (in-memory only)
+4. System prompt: OpenClaw construye desde fixed sections + bootstrap injection + skills
+5. Context engine: `assemble({ sessionId, messages, tokenBudget, ... })`
+6. Los `messages` del engine se combinan con el system prompt
+
+**systemPromptAddition:** campo del context engine que se prepend al system prompt para ese run, permitiendo engine-injected guidance dinámica. Este mecanismo es diferente de bootstrap files — es dinámico por turno.
+
+### Session Maintenance — OOM Prevention
+
+**v2026.4.20 critical fix (#69404):** Accumulated cron/executor session backlogs causando OOM que mata el gateway antes del write path. Solución:
+1. Enforces built-in entry cap + age prune **by default**
+2. Prunes oversized stores **at load time** (antes de procesar)
+3. Previene OOM de session backlog accumulation
+
+**Config:**
+```json5
+{
+  session: {
+    maintenance: {
+      mode: "enforce",
+      pruneAfter: "30d",
+      maxEntries: 500,
+    },
+  },
+}
+```
+Preview: `openclaw sessions cleanup --dry-run`
+
+---
+
+## 13. ACP Agents (Agent Coding Protocol)
+
+### ACP vs Native Subagents
+
+| Area | ACP session | Native sub-agent |
+|------|------------|-----------------|
+| Runtime | ACP backend plugin (acpx) | OpenClaw native runtime |
+| Session key | `agent:<agentId>:acp:<uuid>` | `agent:<agentId>:subagent:<uuid>` |
+| Main commands | `/acp ...` | `/subagents ...` |
+| Sandbox | Host runtime (NOT sandboxed) | Supports sandbox modes |
+
+### ACP Harness Support (acpx built-in aliases)
+`claude`, `codex`, `copilot`, `cursor`, `droid`, `gemini`, `iflow`, `kilocode`, `kimi`, `kiro`, `openclaw`, `opencode`, `pi`, `qwen`
+
+### ACP Permission Modes
+| Mode | Behavior |
+|------|---------|
+| `approve-all` | Auto-approve all file writes and shell commands |
+| `approve-reads` (default) | Auto-approve reads only; writes/exec require prompts |
+| `deny-all` | Deny all permission prompts |
+
+### ACP Commands
+`/acp spawn`, `/acp cancel`, `/acp steer`, `/acp close`, `/acp status`, `/acp set-mode`, `/acp permissions`, `/acp timeout`, `/acp model`, `/acp reset-options`, `/acp sessions`, `/acp doctor`
+
+### ACP Spawn Modes
+`--bind here/off` (conversation binding), `--thread auto/here/off` (thread binding)
+
+### Subagent Orchestrator Pattern (maxSpawnDepth=2)
+- Depth 0: Main agent (always can spawn)
+- Depth 1: Orchestrator (can spawn if maxSpawnDepth>=2)
+- Depth 2: Worker (never can spawn)
+- Cascade stop: `/stop` stops all depth-1 and cascades to depth-2
+
+---
+
+## 14. Cron Deep V2 — Jobs-State.json, Retry Backoff, Webhook Security
+
+### Jobs-State.json (runtime state, separate from jobs.json)
+Job definitions in `jobs.json` (git-tracked). Runtime execution state in `jobs-state.json` (gitignored). This split allows older OpenClaw versions to read jobs.json without stale runtime fields.
+
+### Cron Maintenance Sweep (every 60 seconds)
+1. **Reconciliation** — checks whether active tasks still have authoritative runtime backing
+2. **Cleanup stamping** — sets `cleanupAfter` on terminal tasks (endedAt + 7 days)
+3. **Pruning** — deletes records past their `cleanupAfter` date
+
+### Retry Backoff (detailed)
+- **One-shot (`--at`)**: up to 3 retries with `[60000, 120000, 300000]` ms backoff
+- **Recurring**: exponential `[30s → 1m → 5m → 15m → 60m]`, resets after success
+- **Model switch handoff**: persists switched provider/model before retry (max 3 attempts total)
+
+### Stale Acknowledgement Guard
+If isolated cron returns just interim status (`on it`, `working on it`) with no descendant still responsible → OpenClaw re-prompts once for actual result before delivery.
+
+### Light Context Mode
+`--light-context`: skips workspace bootstrap file injection for isolated jobs. Useful for lightweight jobs that don't need workspace context.
+
+### Cron Webhook Security
+```json5
+{
+  hooks: {
+    allowRequestSessionKey: false,  // default
+    allowedSessionKeyPrefixes: ["cron:", "webhook:"],
+    allowedAgentIds: ["main"],
+    path: "/hooks",  // never "/"
+    token: "dedicated-webhook-token"  // never reuse gateway token
+  }
+}
+```
+
+### Session Retention
+- `cron.sessionRetention` (default `24h`) prunes isolated run-session entries
+- `cron.runLog.maxBytes` + `cron.runLog.keepLines` prune run logs
+
+---
+
+## 15. Hooks Deep — Internal Hooks, Plugin Hooks, Hook Packs
+
+### Internal Hooks (4 bundled)
+| Hook | Events | Purpose |
+|------|--------|---------|
+| `boot-md` | `gateway:startup` | Runs `BOOT.md` on gateway start |
+| `session-memory` | `command:new/reset` | Flushes session context to `memory/` |
+| `bootstrap-extra-files` | `agent:bootstrap` | Injects extra bootstrap files from glob |
+| `command-logger` | `command` | Logs all commands to `~/.openclaw/logs/commands.log` |
+
+### Hook Discovery Order (precedence)
+1. Bundled (shipped with OpenClaw)
+2. Plugin (inside installed plugins)
+3. Managed (`~/.openclaw/hooks/`)
+4. Workspace (`<workspace>/hooks/`) — can add new names, cannot override
+
+### Hook Packs
+NPM packages exporting hooks via `openclaw.hooks` in `package.json`. Install with `openclaw plugins install <spec>`. Copies to `~/.openclaw/hooks/<id>` and enables in `hooks.internal.entries`.
+
+### PROMPT_INJECTION_HOOK_NAMES
+`["before_prompt_build", "before_agent_start"]` — these two hooks get extra security scrutiny for prompt injection. All other hooks treated as non-prompt-injection vectors.
+
+### Internal Hook Handler Signature
+```typescript
+const handler = async (event) => {
+  if (event.type !== "command" || event.action !== "new") return;
+  event.messages.push("Hook executed!");  // optional message to user
+};
+export default handler;
+```
+
+### Plugin Hooks vs Internal Hooks (44+ vs 4)
+| Aspect | Internal | Plugin |
+|--------|----------|--------|
+| Count | 4 | 44+ |
+| Discovery | Directory scan | `api.registerHook()` at startup |
+| Config | `hooks.internal.entries` | Plugin manifest |
+| Context access | Raw event only | Full `ctx.result` via SDK |
+| Modes | void only | void / modifying / claiming |
+
+Plugin hooks: `before_model_resolve`, `before_prompt_build`, `before_agent_reply`, `agent_end`, `before/after_compaction`, `before/after_tool_call`, `tool_result_persist`, `before_install`, `message_received/sending/sent`, `session_start/end`, `gateway_start/stop`
+
+---
+
+## 16. MCP Deep — OpenClaw as MCP Server + Client Registry
+
+### Two Distinct MCP Modes
+
+**Mode 1: OpenClaw as MCP Server** (`openclaw mcp serve`)
+- Starts a stdio MCP server bridging external tools (Codex, Claude Code) to Gateway over WebSocket
+- Session-routed conversations become MCP tools
+- Bridge tools: `conversations_list`, `conversation_get`, `messages_read`, `attachments_fetch`, `events_poll`, `events_wait`, `messages_send`, `permissions_list_open`, `permissions_respond`
+
+**Mode 2: OpenClaw as MCP Client Registry**
+- `openclaw mcp list/set/unset` manages outbound MCP server definitions
+- Servers injected into Pi agent turns at bootstrap
+- Example: `openclaw mcp set context7 '{"command":"uvx","args":["context7-mcp"]}'`
+
+### MCP Client Modes
+`auto` (default) = `on` (standard MCP tools + Claude notifications); `off` (tools only)
+
+---
+
+## 17. Memory Dreaming — 3 Phases, 6 Weighted Signals
+
+### Three Phases
+| Phase | Purpose | Durable Write |
+|-------|---------|---------------|
+| **Light** | Sort and stage recent short-term material | No |
+| **Deep** | Score and promote durable candidates | Yes → `MEMORY.md` |
+| **REM** | Reflect on themes and recurring ideas | No |
+
+### 6 Weighted Signals for Deep Ranking
+| Signal | Weight | Description |
+|--------|--------|-------------|
+| Frequency | 0.24 | How many short-term signals entry accumulated |
+| Relevance | 0.30 | Average retrieval quality for entry |
+| QueryDiversity | 0.15 | Distinct query/day contexts that surfaced entry |
+| Recency | 0.15 | Time-decayed freshness score |
+| Consolidation | 0.10 | Multi-day recurrence strength |
+| ConceptualRichness | 0.06 | Concept-tag density from snippet/path |
+
+### Threshold Gates (all must pass)
+- `minScore` — minimum total weighted score
+- `minRecallCount` — minimum recall events
+- `minUniqueQueries` — minimum distinct queries
+
+### What Dreaming Writes
+- **Machine state**: `memory/.dreams/` (recall store, phase signals, ingestion checkpoints, locks)
+- **Human-readable**: `DREAMS.md` (or `dreams.md`) + optional `memory/dreaming/<phase>/YYYY-MM-DD.md`
+
+### Memory Flush (pre-compaction)
+Silent turn before compaction that reminds agent to save important context to memory files. Runs automatically; not user-visible. Cannot be disabled without disabling compaction.
+
+### Session Memory Search (experimental opt-in)
+```json
+{ agents: { defaults: { memorySearch: { sources: ["memory", "sessions"], experimental: { sessionMemory: true } } } } }
+```
+Indexes session transcripts alongside memory files. Uses strong recency decay (half-life 1 day) so recent facts outrank stale MEMORY.md entries.
+
+---
+
+## 18. Active Memory — Blocking Sub-Agent, Query Modes, Prompt Styles
+
+### Two-Gate Activation Model
+Requires ALL of: plugin enabled + agent targeted + allowed chat type + eligible persistent chat session. NO active memory in heartbeat, subagent, headless, or cron sessions.
+
+### Query Modes
+| Mode | Context sent | Timeout |
+|------|-------------|---------|
+| `message` | Latest user message only | 3-5s |
+| `recent` | Latest + conversational tail | ~15s |
+| `full` | Full conversation | >15s |
+
+### Prompt Styles
+`strict` (message mode default), `balanced` (recent default), `contextual` (full default), `recall-heavy`, `precision-heavy`, `preference-only`
+
+### Model Resolution Order
+`explicit plugin model` → `current session model` → `agent primary model` → `config.modelFallback`
+
+### Transcript Persistence
+Default: temporary (deleted after run). Set `persistTranscripts: true` to keep at `agents/<agent>/sessions/active-memory/<sessionId>.jsonl`
+
+---
+
+## 19. Model Failover Chain — Detailed Rules
+
+### Candidate Chain Rules
+1. Requested model is always first
+2. Configured fallbacks deduplicated but NOT filtered by allowlist (treated as explicit operator intent)
+3. If already in a fallback and same provider family, chain is preserved
+4. If run started from an override (`/model` or CLI), primary appends at end so chain can return to default
+
+### Errors That DO Advance Fallback
+auth failures, rate limits, overloaded/provider-busy (`ModelNotReadyException`), timeout-shaped errors, billing disables, `LiveSessionModelSwitchError` (normalized to failover path)
+
+### Errors That DO NOT Advance Fallback
+Explicit aborts not shaped as timeout, context overflow errors (`request_too_large`, `context length exceeded`) — these belong to compaction logic
+
+### Auth-Profile Failover
+Within each model candidate, OpenClaw tries auth profiles in order before advancing to next model candidate. Rollback only affects fields the fallback wrote.
+
+---
+
+## 20. Norm Compliance — SOUL.md Reality, Bootstrap Order
+
+### SOUL.md Is Prose, Not Code
+No enforcement mechanism. Model reads SOUL.md as narrative. It can comply, ignore, or creatively interpret depending on context saturation, token pressure, or "convenience."
+
+### Bootstrap Injection Order
+1. AGENTS.md (first)
+2. SOUL.md (second)
+3. TOOLS.md
+4. IDENTITY.md
+5. USER.md
+6. HEARTBEAT.md
+7. BOOTSTRAP.md
+8. MEMORY.md
+
+No formal hierarchy between bootstrap files. Model prioritizes by relevance in immediate context.
+
+### SOUL.md Effectiveness Conditions
+- <2000 chars (avoids truncation)
+- Clear, concrete limits ("Never do X" > "Try to avoid X")
+- Distinctive tone the model can "act"
+- NOT a policy changelog
+
+### Subagent Minimal Mode
+Subagents receive `AGENTS.md` + `TOOLS.md` only — NO `SOUL.md`, `USER.md`, `IDENTITY.md`, or `HEARTBEAT.md`. This means orchestrator workers lack BRAIN's personality.
+
+---
+
+## 21. Filesystem Structure — Extensions, Plugins, Credentials
+
+### Key Directory Distinctions
+| Path | Content |
+|------|---------|
+| `~/.openclaw/plugins/` | Bundled plugin code |
+| `~/.openclaw/extensions/` | Third-party installed plugins |
+| `~/.openclaw/hooks/` | Managed internal hooks |
+| `~/.openclaw/credentials/` | OAuth tokens, channel credentials |
+| `~/.openclaw/agents/<id>/agent/` | Per-agent auth profiles + models.json |
+| `~/.openclaw/memory/<agentId>.sqlite` | Per-agent memory index |
+| `~/.openclaw/flows/` | Flow definitions |
+| `~/.openclaw/canvas/` | Canvas UI files |
+| `~/.openclaw/media/` | Inbound/outbound media |
+
+### Environment Variables
+`OPENCLAW_CONFIG_PATH` (config override), `OPENCLAW_STATE_DIR` (state directory), `OPENCLAW_PROFILE` (workspace profile, creates `workspace-<profile>/`)
+
+---
+
+## 22. Sandbox — Modes, Backends, Scope, workspaceAccess
+
+### Sandbox Modes
+| Mode | Behavior |
+|------|---------|
+| `off` | No sandboxing |
+| `non-main` | Sandbox non-main sessions only |
+| `all` | Every session sandboxed |
+
+### Sandbox Backends
+- `docker` (default): local Docker-backed
+- `ssh`: generic SSH-backed remote sandbox
+- `openshell`: OpenShell-backed
+
+### Sandbox Scope
+- `agent` (default): one container per agent
+- `session`: one container per session
+- `shared`: one container shared by all sandboxed sessions
+
+### Workspace Access
+| Mode | Agent sees |
+|------|-----------|
+| `none` (default) | Nothing |
+| `ro` | Read-only at `/agent` |
+| `rw` | Read/write at `/workspace` |
+
+---
+
+## 23. Skills Trigger — always:true, Snapshot Model, Enforcement Methods
+
+### Key Insight: Skills Are NOT Matched Per-Message
+Skills are listed in system prompt as XML compact list at session start. Model decides on its own when to use them based on description. NO dynamic per-message matching. NO hook fires when model selects a skill.
+
+### Skill Snapshot
+Snapshot of eligible skills taken at: session start, hot-reload on skill folder changes, new remote node connect. Reused for all subsequent turns.
+
+### always:true Flag
+Bypasses ALL gating (bins, env, config requirements). Skill included regardless.
+```markdown
+metadata: { "openclaw": { "always": true } }
+```
+
+### command-dispatch: tool
+Bypasses LLM entirely. Executes command directly with `{command, commandName, skillName}`. 100% deterministic.
+
+### Three Enforcement Methods for Compliance
+1. **Skill with `always:true`** — soft guidance (model follows voluntarily)
+2. **Bootstrap files** — zero dev, rules in SOUL.md/AGENTS.md every turn
+3. **`before_prompt_build` plugin hook** — hard enforcement (can modify/cancel)
+
+---
+
+## 24. Standing Orders — Prose Not Code, Anatomy, Cron Dependency
+
+### Critical: No Runtime Enforcement
+Standing orders are text in `AGENTS.md`. Model reads → interprets → acts. NO code evaluation of triggers, no approval gate enforcement, no execution logging.
+
+### Four Anatomy Components
+| Component | What it is | Enforcement |
+|-----------|-----------|-------------|
+| **Scope** | What agent can do | NONE (model decision) |
+| **Trigger** | When to execute | Cron job (timing mechanical) |
+| **Approval Gate** | What needs human sign-off | NONE (model decision) |
+| **Escalation** | When to stop and ask | NONE (model decision) |
+
+### Cron + Standing Orders Pattern
+```
+Cron job (mechanical timing) → Model reads standing order (authority) → Model acts per prose interpretation
+```
+
+### Audit Trail Gaps
+No differentiated logging for "standing order X executed." Cron run logs + session transcript = only traces. No "Approval gate triggered — awaiting human" marker.
+
+---
+
+## 25. Security — Elevated Mode, Exec Approvals, SSRF
+
+### Elevated Mode Escapes Sandbox Completely
+When `elevated: true` is set on exec, sandbox is bypassed entirely and execution goes direct to host. Does NOT use container namespace.
+
+### Exec Matching Algorithm
+- Command resolved to **absolute binary path**
+- Exact path match against `allowAlways` list
+- No basename matching — path must be exact
+- If `security=allowlist` and not in allowlist → denied
+- If `ask=on-miss` and not in allowlist → approval pending
+- If `ask=always` → approval pending always
+
+### safeBins
+Small processing bins (`jq`, `sed`, `awk`) can execute without allowlist. NOT interpreters (python, node). With `strictInlineEval: true`, inline eval forms (`python -c`) still require approval.
+
+### stickyTrue for Tool Blocks
+`{ block: true }` on `before_tool_call` persists across the turn if the tool is re-invoked. Does NOT clear unless explicitly set to `block: false`.
+
+### SSRF Default Blocks
+localhost, 127.0.0.1, ::1, 0.0.0.0, private ranges (10.x, 172.16.x, 192.168.x, 100.64.x), link-local (169.254.x), multicast (224.x). Browser navigation checked before request and best-effort after redirects.
+
+### Personal Assistant Trust Model
+Single trusted operator boundary per gateway. `sessionKey` is a routing key, NOT an auth token. If adversarial-user isolation needed → split trust boundaries (separate gateway + credentials, ideally separate OS users/hosts).
+
+---
+
+## 26. Sessions Deep — Topic/Thread Keys, Maintenance, Cron vs Heartbeat
+
+### Session Key Shapes (platform-specific)
+- **Telegram forum topic**: `agent:<id>:telegram:group:<chatId>:topic:<threadId>`
+- **Discord thread**: `agent:<id>:discord:channel:<channelId>:thread:<threadId>`
+- **ACP**: `agent:<id>:acp:<uuid>`
+- **Sub-sub-agent**: `agent:<id>:subagent:<uuid>:subagent:<uuid>`
+
+### Session Maintenance Enforce
+```json5
+{ session: { maintenance: { mode: "enforce", pruneAfter: "30d", maxEntries: 500, maxDiskBytes: 500_000_000 } } }
+```
+Auto-prunes at startup and during sweep. `warn` mode (default) only reports.
+
+### Cron vs Heartbeat Sessions
+| Aspect | Heartbeat | Cron |
+|--------|-----------|------|
+| Task records | NO | YES |
+| Session | Main session | `isolated`, `main`, `current`, `session:<id>` |
+| Browser cleanup | N/A | Best-effort for `cron:<jobId>` |
+| Stale ack guard | N/A | Yes (isolated only) |
+
+---
+
+## 27. v2026.4.20 — Sessions OOM Fix, Cron State Split
+
+### CRITICAL: Sessions OOM Fix (#69404)
+Accumulated cron/executor session backlogs caused OOM that killed gateway before write path ran → 240s cron chain timeout. v2026.4.20 enforces entry cap + age prune **by default** and prunes oversized stores **at load time**.
+
+### Cron State Split (#63105)
+Runtime execution state moved from `jobs.json` to separate `jobs-state.json`. Jobs definitions remain git-tracked; runtime state is gitignored.
+
+### Exec YOLO Preflight Block (FIXED)
+Python/Node script preflight was incorrectly blocking YOLO exec even with `security=full` + `ask=off`. Fixed in v2026.4.20.
+
+### Other Notable Changes
+- Setup wizard restyle with loading spinner
+- Thinking `keep="all"` on kimi-k2.6
+- BlueBubbles group systemPrompt support
+- Plugin detached runtime registration
+- Compaction opt-in notices (start + completion)
+
+---
+
+## 28. Canvas Architecture — Host, Node, A2UI
+
+### Canvas Host (HTTP, served by Gateway)
+- Served at: `http://<gateway-host>:<gateway.port>/__openclaw__/canvas/`
+- A2UI at: `http://<gateway-host>:<gateway.port>/__openclaw__/a2ui/`
+- Files in: `~/.openclaw/workspace/canvas/<session>/...`
+- Auto-creates `index.html` when directory empty
+- Live reload enabled by default
+- Disable: `OPENCLAW_SKIP_CANVAS_HOST=1` or `canvasHost.enabled: false`
+
+### Node Canvas (macOS/iOS/Android)
+- WKWebView-based lightweight visual workspace
+- Custom URL scheme: `openclaw-canvas://`
+- One Canvas panel visible at a time (session-switched as needed)
+- Remembered size/position per session
+- Disable: Settings → Allow Canvas → returns `CANVAS_DISABLED`
+
+---
+
+## 29. Plugin Development — definePluginEntry, Plugin Shapes
+
+### SDK Entry Points
+```typescript
+// Non-channel plugins
+export default definePluginEntry({
+  id: "my-plugin", name: "My Plugin",
+  register(api) { api.registerTool({ name: "my_tool", ... }); }
+});
+
+// Channel plugins
+export default defineChannelPluginEntry({
+  id: "my-channel", name: "My Channel",
+  plugin: myChannelPlugin,
+  registerCliMetadata(api) { /* cheap CLI metadata */ }
+});
+```
+
+### Four Plugin Layers
+1. **Manifest + discovery** — reads `openclaw.plugin.json`, no code execution
+2. **Enablement + validation** — core decides enabled/disabled/blocked/selected
+3. **Runtime loading** — native plugins loaded via jiti, calls `register(api)`
+4. **Surface consumption** — rest of OpenClaw reads registry
+
+### Plugin Shapes
+- **plain-capability**: one capability type
+- **hybrid-capability**: multiple (e.g., openai = text + speech + media + image)
+- **hook-only**: hooks only, no capabilities
+- **non-capability**: tools/commands/services/routes, no capabilities
+
+Inspect: `openclaw plugins inspect <id>`
+
+
+## Tool Loop Detection (v2026.4)
+*Source: TOOL_LOOP_DETECTION.md*
+
+### Three Detector Types
+
+| Type | Detects |
+|------|---------|
+| Generic repeat | Same tool + same parameters repeated |
+| Known poll no-progress | Polling patterns (e.g. checking sessions_history in tight loop) |
+| Ping-pong | Alternating between two tools/states (read → edit → read → edit) |
+
+### Configuration
+
+```yaml
+loopDetection:
+  enabled: false  # Disabled by default — must explicitly enable
+  historySize: 30
+  warningThreshold: 10
+  criticalThreshold: 20  # 20th matching call is blocked (inclusive)
+  globalCircuitBreakerThreshold: 30  # Stops ALL tool calls when no progress
+  detectors:
+    genericRepeat: true
+    knownPollNoProgress: true
+    pingPong: true
+
+# Per-agent override
+agents:
+  - id: safe-runner
+    loopDetection:
+      enabled: true
+      criticalThreshold: 5
+```
+
+### Behavioral Notes
+
+- Thresholds are inclusive — at criticalThreshold: 20, the 20th matching call is blocked
+- Does NOT affect non-tool actions — only monitors tool calls
+- Can block legitimate repeats — be cautious with polling tools
+- Diagnostic events: `loop_detection_warning`, `loop_detection_blocked`
+
+### Known Bug Reference
+- PR #69336: openai-codex provider hitting Cloudflare 403s → infinite OAuth loops
+
+## Primary Model Override Plugin (Analysis)
+*Source: PRIMARY_MODEL_OVERRIDE_PLUGIN.md*
+
+### Hook Lifecycle Position
+
+```
+session start
+  ↓
+before_model_resolve ← intercept HERE
+  ↓
+model resolution (pi-agent-core ModelRegistry)
+  ↓
+auth profile selection
+  ↓
+agent loop
+```
+
+### Why Plugin Failed (6 Error Categories)
+
+1. TypeScript + ESM import issues (using .ts extension)
+2. .ts files not executable at runtime (Node 22)
+3. openclaw.plugin.json missing or malformed
+4. Wrong package.json openclaw fields
+5. Wrong hook event name (before_model_resolve vs legacy hooks)
+6. CJS vs ESM module type confusion
+
+### What Survives Restart
+
+| Approach | Survives Restart? |
+|----------|-----------------|
+| Session-level /model command | ❌ NO |
+| Runtime model override in memory | ❌ NO |
+| Temporary config patch via RPC | ❌ NO |
+| before_agent_start hook alone | ⚠️ PARTIAL |
+| Soft link to external openclaw.json | ✅ YES |
+| Agent workspace bootstrap file | ⚠️ PARTIAL |
+
+### Solution Approaches
+
+- `agents.defaults.models` creates an **allowlist** — if set, only listed models work
+- `OPENCLAW_DEFAULT_MODEL` env var
+- `openclaw models set` CLI → updates agents.defaults.model in openclaw.json
+- `before_agent_start` is deprecated, use `before_model_resolve`
+
+### before_model_resolve Handler Example
+
+```js
+ctx.result.provider = "minimax";
+ctx.result.model = "MiniMax-M2.7";
+ctx.result.skipDynamicResolution = true;
+```
+
+### Note: Hooks run AFTER bootstrap files are injected, NOT BEFORE config loading
+
+## PR #69336 — openai-codex Fix Details
+*Source: PR_69336_STATUS.md*
+
+### The Bug
+openai-codex hitting Cloudflare 403s → infinite OAuth loops
+
+### The Fix (Regex)
+```
+Old: /^https?:\/\/chatgpt\.com\/backend-api(?:\/v1)?\/?$/i
+New: /^https?:\/\/chatgpt\.com\/backend-api(?:\/codex)?(?:\/v1)?\/?$/i
+```
+Added `(?:\/codex)?` as optional segment.
+
+### Live Test Results
+- `/codex/responses` → HTTP 200 with streaming SSE ✅
+- `/responses` (old alias) → HTTP 403 HTML (Cloudflare block) ❌
+
+### Backward Compatibility
+| Endpoint | Status |
+|----------|--------|
+| /backend-api | ✅ ACCEPTED |
+| /backend-api/codex | ✅ ACCEPTED |
+| /backend-api/codex/v1 | ✅ ACCEPTED |
+| /backend-api/v2 | ❌ REJECTED |
+| /backend-api/codex/v2 | ❌ REJECTED |
+| /api.openai.com/v1 | ❌ REJECTED |
+
+### Related PRs
+- PR #69337: show commentary-phase text when no final_answer blocks
+- PR #69338: arm streaming watchdog on every delta
+- PR #69340: preserve hyphen-separated tokens from line-wrap splitting
+- PR #69431: fixes loopback shared-secret clients classified as remote ("shared_secret_loopback_local")
+
+### Version Status
+- Fix released in: **v2026.4.20-beta.1** (2026-04-21)
+- NOT yet in stable release
+
+### Impact for openai-codex users
+openai-codex/gpt-5.4, gpt-5.4-pro, gpt-5.4-mini are **BROKEN until fix merges**
+Workaround: switch to openai/gpt-5.4 or another provider
+
+## Auto-Updater Checksum Verification
+*Source: auto-updater-checksum-verification-step1.md*
+
+### SHA-256 Checksums + Signature Verification
+- Release packages (macOS) are digitally signed with SHA-256 verification built into the auto-updater
+- Skills published to ClawHub have SHA-256 hashes checked against VirusTotal's database
+- Package downloaded to temp → Checksum computed locally → Compared against expected value from signed metadata → If mismatch → update rejected
+
+### Pre-Apply Checks Flow
+1. Download verification
+2. Signature validation
+3. Hash comparison
+
+### Post-Download Process
+```
+Package → temp directory → SHA-256 computed → compared vs expected → valid/invalid
+```
+
+### Plugin Hash Mismatches
+- System tracks hash changes during updates
+- Mismatches can cause update issues
+
+### Open Question
+- Does the auto-updater verify npm packages from npmjs.com?
+- For npm installs, npm itself handles checksums via package-lock.json — not explicitly documented for OpenClaw's updater (unconfirmed)
+
+## Messages, Providers & Queue Deep Details
+*Source: concepts-messages-providers-queue.md*
+
+### Inbound Dedup Mechanism
+Channels can redeliver same message after reconnects. OpenClaw keeps short-lived cache keyed by `channel/account/peer/session/message id` — duplicate deliveries don't trigger another agent run.
+
+### Provider Plugin Runtime Hooks
+
+```js
+normalizeModelId, normalizeTransport, normalizeConfig, applyNativeStreamingUsageCompat,
+resolveConfigApiKey, resolveSyntheticAuth, shouldDeferSyntheticProfileAuth, resolveDynamicModel,
+prepareDynamicModel, normalizeResolvedModel, contributeResolvedModelCompat, capabilities,
+normalizeToolSchemas, inspectToolSchemas, resolveReasoningOutputMode, prepareExtraParams,
+createStreamFn, wrapStreamFn, resolveTransportTurnState, resolveWebSocketSessionPolicy
+```
+
+### Provider Manifest Auth
+Provider manifests declare `providerAuthEnvVars` and `providerAuthAliases` for generic env-based auth probes.
+
+### contextWindow vs contextTokens
+- `models[].contextWindow` = native model metadata
+- `models[].contextTokens` = effective runtime cap
+
+### Command Queue Modes
+
+| Mode | Behavior |
+|------|----------|
+| steer | Inject immediately into current run (cancels pending tool calls after next tool boundary); falls back to followup if not streaming |
+| followup | Enqueue for next agent turn after current run ends |
+| collect | Coalesce all queued messages into single followup turn (default); if messages target different channels/threads, drain individually |
+| steer-backlog | Steer now AND preserve for followup turn |
+| interrupt (legacy) | Abort active run for session, run newest message |
+| queue (legacy) | Same as steer |
+
+### Lane-Aware FIFO
+
+- Lane-aware FIFO queue drains each lane with configurable concurrency cap
+- Default: unconfigured lanes = 1, main = 4, subagent = 8
+- `runEmbeddedPiAgent` enqueues by session key (lane: `session:<key>`) → one active run per session
+- Each session run queued into global lane (main by default) → overall parallelism capped by `agents.defaults.maxConcurrent`
+
+### Queue Verbose Logging
+- Queued runs emit notice if waited >~2s before starting
+- Typing indicators fire immediately on enqueue (when supported) → UX unchanged while waiting
+
+### /queue collect Command
+`/queue collect` as standalone command (per-session) or via config: `messages.queue.byChannel.discord: 'collect'`
+
+### Channel Overrides
+Channel overrides (`channels.whatsapp.*`, `channels.telegram.*`, etc.) — caps and streaming toggles.
+
+## Streaming, Retry & System Prompt Deep Details
+*Source: concepts-streaming-retry-sysprompt.md*
+
+### Streaming — Two-Layer Architecture
+
+**1. Block streaming (channels):**
+- Emit completed blocks as assistant writes
+- Flow: model output → text_delta/events → chunker (EmbeddedBlockChunker) → channel send (block replies)
+- Break types: `blockStreamingBreak=text_end` (buffer grows) and `blockStreamingBreak=message_end` (chunker flushes)
+
+**2. Preview streaming (Telegram/Discord/Slack):**
+- Update a temporary preview message while generating
+- Message-based: send + edits/appends
+- NOT true token-delta streaming
+
+**Note:** No true token-delta streaming to channel messages today — preview streaming is message-based.
+
+### Retry Policy — Detailed Defaults
+
+| Setting | Value |
+|---------|-------|
+| Attempts | 3 |
+| Max delay cap | 30000 ms |
+| Jitter | 0.1 (10%) |
+| Telegram min delay | 400 ms |
+| Discord min delay | 500 ms |
+
+**Discord behavior:**
+- Retries only on HTTP 429 (rate limit)
+- Uses Discord `retry_after` when available, otherwise exponential backoff
+
+**Telegram behavior:**
+- Retries on transient errors: 429, timeout, connect/reset/closed, temporarily unavailable
+- Markdown parse errors NOT retried (falls back to plain text)
+
+### System Prompt Structure (OpenClaw-owned)
+
+**Compact, fixed sections:**
+- Tooling: structured-tool source-of-truth + runtime tool-use guidance
+- Safety: short guardrail reminder
+- Skills: how to load skill instructions on demand
+- OpenClaw Self-Update: how to inspect config (`config.schema.lookup`), patch (`config.patch`), replace (`config.apply`), and run `update.run` only on explicit user request
+- Workspace: working directory
+
+**Provider plugin contributions:**
+- Can replace small named core sections: `interaction_style`, `tool_call_style`, `execution_bias`
+- Can inject a stable prefix above the prompt cache boundary
+- Can inject a dynamic suffix below the prompt cache boundary
+
+## SOUL.md, TypeBox Protocol & QA System
+*Source: concepts-features-soul-typebox-qa.md*
+
+### SOUL.md Behavioral Guidance
+
+**What to put in SOUL.md (changes how agent feels):**
+- Tone, Opinions, Brevity, Humor, Boundaries, Default level of bluntness
+
+**What NOT to put in SOUL.md:**
+- A life story, A changelog, A security policy dump, A giant wall of vibes with no behavioral effect
+
+**Principle:** Short beats long. Sharp beats vague.
+
+**Why it works:** Aligns with OpenAI's prompt guidance for personality injection.
+
+### TypeBox Protocol — Message Frames
+
+Every Gateway WS message is one of three frames:
+
+| Frame | Structure |
+|-------|-----------|
+| Request | `{ type: "req", id, method, params }` |
+| Response | `{ type: "res", id, ok, payload \| error }` |
+| Event | `{ type: "event", event, payload, seq?, stateVersion? }` |
+
+**Connection flow:**
+```
+Client → req:connect → Gateway
+Client ← res:hello-ok
+Client ← event:tick
+Client → req:health → Gateway
+Client ← res:health
+```
+
+**Important:** First frame must be `connect` request. After that, clients can call methods (`health`, `send`, `chat.send`) and subscribe to events (`presence`, `tick`, `agent`).
+
+### QA E2E Automation System
+
+**Current pieces:**
+1. `extensions/qa-channel` — Synthetic message channel with DM, channel, thread, reaction, edit, and delete surfaces
+2. `extensions/qa-lab` — Debugger UI + QA bus for observing transcript, injecting inbound messages, exporting Markdown report
+3. `qa/` — Repo-backed seed assets for kickoff task + baseline QA scenarios
+
+**QA operator flow:** Two-pane QA site
+- Left: Gateway dashboard (Control UI) with the agent
+- Right: QA Lab, showing Slack-ish transcript + scenario plan
+
+**Run it:** `pnpm qa:lab:up`
+
+## Delegate Architecture, Dreaming & Compaction Details
+*Source: concepts-delegate-dreaming-compaction.md*
+
+### Delegate Architecture
+
+**Goal:** Run OpenClaw as a **named delegate** — an agent with its own identity
+- Has its **own identity** (email address, display name, calendar)
+- Personal mode vs Delegate mode comparison table
+- Problems solved: Accountability + Scope control
+- "Extends: Multi-Agent Routing from personal to organizational deployments"
+
+### Dreaming System
+
+**What it is:** Background memory consolidation system in `memory-core`. Opt-in, disabled by default.
+
+**Phase model:**
+| Phase | Purpose | Durable Writes |
+|-------|---------|----------------|
+| Light | Quick processing | No |
+| Deep | Deeper processing | Yes |
+| REM | Maximum consolidation | Yes |
+
+**Dream Diary:** Human-readable output of what dreaming did
+
+**Machine state:** `memory/.dreams/` contains:
+- Recall store
+- Phase signals
+- Ingestion checkpoints
+- Locks
+
+**Long-term promotion:** Writes only to `MEMORY.md`
+
+**Note:** Phases are internal implementation details, not user-configurable modes.
+
+### Compaction — Overflow Signatures Detected
+
+```
+request_too_large
+context length exceeded
+input exceeds the maximum number of tokens
+input token count exceeds the maximum
+input is too long for the model
+ollama error: context length exceeded
+```
+
+**Important:** Before compacting, OpenClaw automatically reminds the agent to save important context to memory.
+
+## Active Memory & Context Engine Details
+*Source: concepts-active-memory-context-engine.md*
+
+### Active Memory — Complete Config Example
+
+```json
+"active-memory": {
+  enabled: true,
+  config: {
+    enabled: true,
+    agents: ["main"],
+    allowedChatTypes: ["direct"],
+    modelFallback: "google/gemini-3-flash",
+    queryMode: "recent",
+    promptStyle: "balanced"
+  }
+}
+```
+
+### Context Engine — Installation Commands
+
+```bash
+# From npm
+openclaw plugins install @martian-engineering/lossless-claw
+
+# From local path
+openclaw plugins install -l ./my-context-engine
+
+# Then select via config: plugins.slots.contextEngine
+```
+
+### Context Engine — Responsibilities
+
+1. Message selection for context window
+2. History summarization/compaction strategy
+3. Subagent boundary context management
+4. Context budget management
+
+## Memory Overview, Multi-Agent & Session Sanitization
+*Source: concepts-memory-multiagent-session.md*
+
+### Memory — Three Files
+
+- **`MEMORY.md`** — long-term memory. Durable facts, preferences, decisions. Loaded at start of every DM session.
+- **`memory/YYYY-MM-DD.md`** — daily notes. Running context and observations. Today + yesterday's notes auto-loaded.
+- **`DREAMS.md`** (experimental, optional) — Dream Diary + dreaming sweep summaries for human review.
+
+### Memory Tools
+
+- **`memory_search`** — semantic search across notes (finds relevant content even with different wording)
+- **`memory_get`** — reads a specific memory file or line range
+
+### Multi-Agent — Never Reuse agentDir
+
+**Important:** Never reuse `agentDir` across agents (causes auth/session collisions). To share creds, copy `auth-profiles.json` into the other agent's `agentDir`.
+
+### sessions_history — Sanitization
+
+`sessions_history` returns bounded, sanitized view (not raw transcript). Assistant recall strips:
+- `thinking` tags
+- `<relevant-memories>` scaffolding
+- Tool-call XML payloads (`<tool_call>`, `</minimax:tool_call>`, `</minimax:tool_call>`, etc.)
+- Malformed MiniMax tool-call XML
+
+### Session Management — DM Isolation
+
+Without isolation: All users share same conversation context — Alice's private messages visible to Bob.
+
+## CLI Commands: Tasks Flow, Hooks List, Sessions
+*Source: cli-flows-hooks-sessions.md*
+
+### openclaw tasks flow
+
+```bash
+openclaw tasks flow list [--json]
+openclaw tasks flow show <lookup>
+openclaw tasks flow cancel <lookup>
+```
+
+### openclaw hooks list
+
+```bash
+openclaw hooks list
+openclaw hooks list --eligible          # show only eligible hooks
+openclaw hooks list -v --verbose       # detailed info + missing requirements
+```
+
+### openclaw sessions
+
+```bash
+openclaw sessions                       # default agent store
+openclaw sessions --agent work         # specific agent store
+openclaw sessions --all-agents         # aggregate all configured agent stores
+openclaw sessions --active 120         # active sessions in last N minutes
+openclaw sessions --verbose
+openclaw sessions --json
+openclaw sessions --store <path>        # explicit store path
+```
+
+### Session Store Discovery Logic
+
+Gateway/ACP session discovery also includes disk-only stores found under `agents/` root or templated `session.store` root. Discovered stores must resolve to regular `sessions.json` files; symlinks and out-of-root paths skipped.
+
+## TaskFlow Deep Details (Extended)
+*Source: task-flow-deep-dive.md*
+
+### Sticky Cancel Intent
+Cancel intent **persists across restarts** — cancelled flow stays cancelled even if gateway restarts before child tasks terminate.
+
+### State Persistence File Structure
+- Flow state: `~/.openclaw/agents/<agentId>/tasks/flows/<flowId>.json`
+- Revision history: `~/.openclaw/agents/<agentId>/tasks/flows/<flowId>.revisions/`
+
+### Revision Tracking + Conflict Detection
+When multiple sources attempt to advance the same flow:
+- Revision numbers detect concurrent modification
+- OpenClaw can detect and reject conflicting advances
+- Ensures flow state consistency in concurrent scenarios
+
+### Reliability Pattern (4-Layer Separation)
+
+| Layer | Role |
+|-------|------|
+| Cron | timing |
+| Persistent cron session | build on prior context |
+| Lobster | deterministic steps, approval gates, resume tokens |
+| Task Flow | track multi-step run across child tasks, waits, retries, restarts |
+
+### Problem: Flow Visibility Gap
+Flow state is CLI-visible but not prominent in chat UI. Chat-context users may not realize flow is running. Requires `openclaw tasks flow` to inspect.
+
+### Problem: State Persistence Location
+Flow state on Gateway host filesystem. If host disk fails, flow state lost. Backup strategy needed for critical flows.
+
+### Solution: Flow State Backup
+Add flow state directory to backup routine: `~/.openclaw/agents/<agentId>/tasks/flows/` should be included. Test restore procedure periodically.
+
+### Edge Cases
+
+**Flow + Session Reset:**
+If session resets while flow is running, flow continues. Flow is independent of conversation session. `session:market-intel` in cron keeps flow context across runs.
+
+**Approval Gate + Cancel:**
+Step has approval required. Operator requests cancel while approver is considering. Cancel intent honored; approval no longer needed.
+
+### Creative Use Cases (not in standard docs)
+
+1. **Parallel Experimentation** — run multiple flow variants simultaneously
+2. **Cross-Platform Deployment** — deploy same flow across different environments
+3. **Scheduled Knowledge Refresh** — periodic data refresh workflows
+4. **Multi-Region Health Check** — cross-region availability checks
+5. **Automated Code Review Pipeline** — automated review flows
+6. **Customer Lifecycle Journey** — lifecycle event-driven flows
+7. **Event-Driven Recovery** — automated recovery from failures
+
+## Markdown Formatting IR Pipeline
+*Source: concepts-model-failover-oauth-markdown.md*
+
+OpenClaw formats outbound Markdown via a **shared intermediate representation (IR)** before rendering channel-specific output.
+
+**Goals:** Consistency, Safe chunking (split text before rendering so inline formatting never breaks across chunks), Channel fit
+
+**Pipeline:** Parse Markdown → IR → Chunk IR (format-first) → Render per channel
+
+**IR =** plain text + style spans (bold/italic/strike/code/spoiler) + link spans; Offsets = UTF-16 code units (Signal style ranges align with API)
+
+**Chunking:** On IR text before rendering; inline formatting doesn't split across chunks; spans sliced per chunk
+
+**Channel-specific rendering:**
+- **Slack:** `mrkdwn` tokens (bold/italic/strike/code), links as `<url|label>`
+- **Telegram:** HTML tags (`<b>`, `<i>`, `<s>`, `<code>`, `<pre><code>`, `<a href>`)
+- **Signal:** plain text + `text-style` ranges; links become `label (url)` when label differs
+
+**Tables:** Parsed only when channel opts into table conversion.
+
+## OAuth — Expanded Details
+*Source: concepts-model-failover-oauth-markdown.md*
+
+- **Token exchange:** PKCE (Proof Key for Code Exchange) for secure OAuth flow.
+- **Token sink:** OAuth providers commonly mint new refresh tokens during login/refresh. Some can invalidate older refresh tokens when new one is issued for same user/app. OpenClaw handles this.
+- **Multiple accounts/profiles:** Supported via per-session overrides.
+- Provider plugins with OAuth: `openclaw models auth login --provider <id>`
+- **Important:** For Anthropic in production, API key auth is the safer recommended path.
+
+## Model Failover — 2-Stage Structure
+*Source: concepts-model-failover-oauth-markdown.md*
+
+**Two stages:**
+1. Auth profile rotation within the current provider
+2. Model fallback to next model in `agents.defaults.model.fallbacks`
+
+**Runtime flow (for normal text run):**
+1. Currently selected session model
+2. Configured `agents.defaults.model.fallbacks` in order
+3. Configured primary model (end when run started from override)
+
+**Auth profile rotation:** Tries different auth profiles within same provider before moving to next model.
+
+**Session model override:** Fallback override is persisted so concurrent session readers see consistent provider/model.
+
+## Typing Indicators & Model-Specific Defaults
+*Source: concepts-models-workspace-typing.md*
+
+### Typing Indicators
+
+**Config:** `agents.defaults.typingMode` + `typingIntervalSeconds`
+
+**4 Modes:**
+- `never` — no typing indicator ever
+- `instant` — start typing as soon as model loop begins (even if silent reply token)
+- `thinking` — start typing on first reasoning delta (requires `reasoningLevel: "stream"`)
+- `message` — start typing on first non-silent text delta (ignores `NO_REPLY` silent token)
+
+**Firing order (earliest to latest):** `never` → `message` → `thinking` → `instant`
+
+**Behavior by chat type (when `typingMode` unset):**
+- Direct chats: typing starts immediately
+- Group chats with mention: immediate
+- Group chats without mention: only when text streaming starts
+- Heartbeat runs: typing disabled
+
+### Model-Specific Defaults
+
+```js
+agents.defaults.models = allowlist/catalog of models OpenClaw can use (plus aliases)
+agents.defaults.imageModel = used when primary model can't accept images
+agents.defaults.pdfModel = used by pdf tool (falls back to imageModel → session/default model)
+agents.defaults.imageGenerationModel = shared image-generation capability
+agents.defaults.musicGenerationModel = shared music-generation capability
+agents.defaults.videoGenerationModel = shared video-generation capability
+```
+
+**Provider auth failover:** Happens inside a provider before moving to next model.
+
+## Timezone Config & Envelope Headers
+*Source: concepts-timezone-presence-usage.md*
+
+### Envelope Header Config Options
+
+```js
+envelopeTimezone = "utc" | "local" | "user" | IANA timezone (e.g. "Europe/Vienna")
+envelopeTimestamp: "off"  // eliminates absolute timestamps from envelope headers
+envelopeElapsed: "on" | "off"  // controls elapsed time display
+```
+
+## Presence System
+*Source: concepts-timezone-presence-usage.md*
+
+**Concept:** Lightweight, best-effort view of Gateway + clients connected to it
+
+**Presence fields:**
+- `instanceId`, `host`, `ip`, `version`, `deviceFamily`, `modelIdentifier`
+- `mode` — `ui`, `webchat`, `cli`, `backend`, `probe`, `test`, `node`, ...
+- `lastInputSeconds`, `reason` — `self`, `connect`, `node-connected`, `periodic`, ...
+- `ts`
+
+**Sources:** Gateway self-entry, connected clients, node connections
+
+**Usage:** Instances tab in macOS app
+
+**Debugging:** Stale/duplicate instance rows
+
+## Usage Tracking
+*Source: concepts-timezone-presence-usage.md*
+
+**Concept:** Pull usage/quota directly from provider endpoints. Normalize to `% left` even if provider reports consumed/remaining/raw counts.
+
+**Surfaces:**
+- `/status` in chats: emoji-rich status card, session tokens, estimated cost, `X% left`
+- `/usage off|tokens|full`: per-response usage footer
+- `/usage cost`: local cost summary from session logs
+- `openclaw status --usage`: full per-provider breakdown
+- `openclaw channels list`: usage snapshot
+- macOS menu bar: "Usage" section
+
+**Session-level fallback** for status/session_status when live snapshot is sparse
+
+**Supported providers:** Anthropic (OAuth), GitHub Copilot (OAuth), Gemini CLI (OAuth + stats), OpenAI Codex (OAuth), MiniMax (API key u OAuth)
+
+## Cron Deep Details V2
+*Source: CRON_DEEP_V2.md*
+
+### jobs-state.json
+Runtime execution state separate from job definitions. Contains: `activeRun` (runId, childSessionKey, startedAtMs), `retryCount`, `nextRetryAtMs`. Auto-created on first job run, does NOT survive gateway restarts.
+
+### Maintenance Sweep (every 60 seconds)
+- **Reconciliation:** checks if active tasks still have runtime backing
+- **Cleanup stamping:** sets `cleanupAfter = endedAt + 7 days`
+- **Pruning:** deletes records past cleanupAfter
+
+### Retry Backoff Arrays
+- **One-shot:** `[60000, 120000, 300000]` ms
+- **Recurring sequence:** `30s → 1m → 5m → 15m → 60m`
+
+### Isolated Cron Model-Switch Handoff
+- Bounded: initial + 2 switch retries = max 3 attempts
+- Stored session model override updated on each switch
+
+### NO_REPLY Token in Isolated Cron
+If isolated cron returns only the silent token, OpenClaw suppresses direct outbound delivery AND the fallback queued summary path.
+
+### Failure Notification Hierarchy
+`delivery.failureDestination` only supported on `sessionTarget=isolated` unless primary delivery is webhook.
+
+### Stale Acknowledgement Re-prompt
+If first result is just interim status update AND no descendant subagent is still responsible → re-prompts once.
+
+### Browser Cleanup on Isolated Cron Teardown
+Best-effort close of tracked browser tabs/processes. Cleanup failures ignored.
+
+### Light Context Mode — SKILL.md Behavior
+SKILL.md files NOT injected when sandbox has `workspaceAccess=none` unless explicitly mirrored.
+
+### Model Validation Fallback Chain Change
+A plain model override with no explicit per-job fallback list NO LONGER appends agent primary as hidden extra retry target.
+
+### Webhook Security Settings
+- `allowRequestSessionKey`, `allowedSessionKeyPrefixes`, `allowedAgentIds`, path recommendations
+- Critical: `hooks.token_reuse_gateway_token` is CRITICAL in security audit
+
+### Heartbeat vs Cron Comparison
+
+| Feature | Heartbeat | Cron |
+|---------|-----------|------|
+| Creates task records | No | Yes |
+| Session type | Ephemeral | Isolated or persistent |
+| Browser cleanup | No | Yes |
+| Model override | No | Yes |
+
+### cron.sessionRetention and cron.runLog
+- `sessionRetention: "24h"` — prunes isolated run-session entries
+- `runLog.maxBytes` + `keepLines` — prunes `~/.openclaw/cron/runs/<jobId>.jsonl`
+
+### cron.maxConcurrentRuns
+Limit concurrent runs per job.
+
+### OPENCLAW_SKIP_CRON=1
+Environment variable to skip all cron processing (alternative to `cron.enabled: false`).
+
+### jobs.json version:1 Structure
+
+**sessionTarget options:** `main|isolated|current|session:<id>`
+
+**wakeMode:** `now|next-heartbeat`
+
+**payload fields:** `lightContext`, `tools[]`
+
+**state fields:** `consecutiveErrors`, `lastErrorReason`
+
+### Production job examples
+
+**Main-session one-shot with systemEvent Reminder:**
+```json
+{
+  "sessionTarget": "main",
+  "wakeMode": "now",
+  "payload": { "systemEvent": "Reminder", "reminderId": "..." }
+}
+}
+```
+
+**Isolated cron with announce:**
+```json
+{
+  "sessionTarget": "isolated",
+  "wakeMode": "next-heartbeat",
+  "schedule": "0 8 * * 1-5",
+  "payload": { "message": "Morning briefing ready" }
+}
+```
+
+## Hooks Deep Details
+*Source: HOOKS_DEEP.md*
+
+### Gateway Opt-In Requirement
+The Gateway skips internal hook discovery on startup until internal hooks are configured.
+
+### Hook Discovery Order (Precedence)
+
+1. **Bundled hooks** — shipped with OpenClaw
+2. **Plugin hooks** — hooks bundled inside installed plugins
+3. **Managed hooks** — `~/.openclaw/hooks/` (user-installed, shared across workspaces)
+4. **Workspace hooks** — `<workspace>/hooks/` (per-agent, disabled by default until explicitly enabled)
+
+**Key rule:** Workspace hooks can add new hook names but cannot override bundled, managed, or plugin-provided hooks with the same name.
+
+### Bundled Hook: session-memory
+Extracts the last 15 user/assistant messages, generates a descriptive filename slug via LLM, and saves to `<workspace>/memory/YYYY-MM-DD-slug.md`. Requires `workspace.dir` to be configured.
+
+### Bundled Hook: bootstrap-extra-files
+Paths resolve relative to workspace. Only recognized bootstrap basenames are loaded: `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, `USER.md`, `HEARTBEAT.md`, `BOOTSTRAP.md`, `MEMORY.md`.
+
+### Hook Packs — Options
+- `-l, --link`: Link a local directory instead of copying (adds to `hooks.internal.load.extraDirs`)
+- `--pin`: Record npm installs as exact resolved `name@version` in `hooks.internal.installs`
+
+### All 28 Plugin Hooks (by Category)
+
+**Model resolution:** `before_model_resolve`
+
+**Prompt building:** `before_prompt_build`, `before_agent_start`
+
+**Agent reply:** `before_agent_reply`
+
+**Agent lifecycle:** `agent_end`
+
+**Compaction:** `before_compaction`, `after_compaction`
+
+**Tool execution:** `before_tool_call`, `after_tool_call`, `tool_result_persist`
+
+**Install blocking:** `before_install`
+
+**Message flow:** `message_received`, `message_sending`, `message_sent`
+
+**Session lifecycle:** `session_start`, `session_end`
+
+**Gateway lifecycle:** `gateway_start`, `gateway_stop`
+
+### Hook Decision Rules
+
+| Hook | Terminal Action | No-op Action |
+|------|-----------------|--------------|
+| `before_tool_call` | `{ block: true }` | `{ block: false }` |
+| `before_install` | `{ block: true }` | `{ block: false }` |
+| `message_sending` | `{ cancel: true }` | `{ cancel: false }` |
+
+**Important:** `{ block: false }` or `{ cancel: false }` is a no-op and does NOT clear a prior block/cancel.
+
+### Gmail Webhook Integration (Full Config)
+```yaml
+topic: projects/.../topics/gmail-pubsub
+subscription: projects/.../subscriptions/gmail-pubsub
+pushToken: ...
+
+tailscale:
+  mode: "funnel"
+  path: "/gmail-pubsub"
+
+serve:
+  bind: "127.0.0.1"
+  port: 8788
+  path: "/"
+
+renewEveryMinutes: 720
+```
+
+### Security Notes on Webhooks
+- `hooks.enabled=true` requires a non-empty `hooks.token`
+- `hooks.token` must be distinct from `gateway.auth.token`
+- `hooks.path` cannot be `/`
+- If `hooks.allowRequestSessionKey=true`, constrain `hooks.allowedSessionKeyPrefixes`
+
+### Troubleshooting
+```bash
+./scripts/clawlog.sh | grep hook
+```
+
+## Sessions Deep Details
+*Source: SESSIONS_DEEP.md*
+
+### Main DM Route Pinning
+
+When `session.dmScope` is `main`, direct messages may share one main session. To prevent `lastRoute` from being overwritten by non-owner DMs, OpenClaw infers a pinned owner from `allowFrom` when all of these are true:
+- `allowFrom` has exactly one non-wildcard entry
+- Entry can be normalized to a concrete sender ID
+- Inbound DM sender does not match that pinned owner
+
+In mismatch case, OpenClaw still records inbound session metadata but skips updating main session `lastRoute`.
+
+### sessions_history — Sanitization
+
+`sessions_history` returns a bounded, sanitized view, not a raw transcript dump. Assistant recall strips:
+- `thinking` tags
+- `<relevant-memories>` scaffolding
+- Plain-text tool-call XML payloads
+
+### Session Routing by Source
+
+| Source | Behavior |
+|--------|----------|
+| Direct messages | Shared session by default |
+| Group chats | Isolated per group |
+| Rooms/channels | Isolated per room |
+| Cron jobs | Fresh session per run |
+| Webhooks | Isolated per hook |
+
+## Agents System Deep Details
+*Source: AGENTS_SYSTEM_DEEP.md*
+
+### Hook Points in Agent Loop (Gateway hooks)
+
+- `agent:bootstrap` — runs while building bootstrap files before system prompt finalized
+- Command hooks: `/new`, `/reset`, `/stop`
+- Plugin hooks: `before_model_resolve`, `before_prompt_build`, `before_agent_start`, `before_agent_reply`, `agent_end`, `before/after_compaction`, `before/after_tool_call`, `before_install`, `tool_result_persist`, `message_received/sending/sent`, `session_start/end`, `gateway_start/stop`
+
+### Adding New Agents
+
+```bash
+openclaw agents add work
+```
+
+Then add `bindings` to route inbound messages. Verify with:
+
+```bash
+openclaw agents list --bindings
+```
+
+### Subagents — Auto-Archive
+
+- Sub-agent sessions auto-archive after `agents.defaults.subagents.archiveAfterMinutes` (default: 60)
+- Archive renames transcript to `*.deleted.<timestamp>`
+- `cleanup: "delete"` archives immediately after announce
+- `runTimeoutSeconds` does NOT auto-archive; it only stops the run
+
+### Subagents — Authentication
+
+- Sub-agent auth resolved by **agent id**, not session type
+- Session key: `agent:<agentId>:subagent:<uuid>`
+- Auth store loaded from that agent's `agentDir`
+- Main agent's auth profiles merged as **fallback** (additive, not isolated)
+
+### Thread-Bound Sessions
+
+**Slash commands:** `/focus`, `/unfocus`, `/agents`, `/session idle`, `/session max-age`
+
+**Config:** `session.threadBindings` with `idleHours`, `maxAgeHours`
+
+**Channels supported:** Discord (threads), Telegram topics (forum)
+
+### ACP Tools MCP Bridge
+
+ACPX sessions do NOT expose OpenClaw plugin tools by default. Enable with:
+
+```bash
+openclaw config set plugins.entries.acpx.config.pluginToolsMcpBridge true
+```
+
+### ACP Permission Configuration
+
+```js
+permissionMode: "approve-all" | "approve-reads" | "deny-all"
+// Default: permissionMode="approve-reads" and nonInteractivePermissions="fail"
+```
+
+### ACP Spawn Modes
+
+| Mode | Behavior |
+|------|----------|
+| `--bind here` | Bind current conversation in place; fail if none active |
+| `--bind off` | Do not create current-conversation binding |
+| `--thread auto` | In active thread: bind that thread. Outside thread: create/bind child thread |
+
+### Skills Loading Per Agent
+
+Skills are loaded from each agent workspace plus shared roots (`~/.openclaw/skills`), then filtered by effective agent skill allowlist when configured. Use `agents.defaults.skills` for shared baseline, `agents.list[].skills` for per-agent replacement.
+
+### Cross-Agent QMD Memory Search
+
+```js
+{
+  agents: {
+    defaults: {
+      memorySearch: {
+        qmd: {
+          extraCollections: [{ path: "~/agents/family/sessions", name: "family-sessions" }],
+        },
+      },
+    },
+  },
+}
+```
+
+## Standing Orders — Deep Details
+*Source: STANDING_ORDERS_DEEP.md*
+
+### 5-Step Cycle Diagram
+
+```
+1. CRON JOB fires → Creates task record → Wakes isolated agent turn
+2. AGENT reads AGENTS.md → System injects it into every session
+3. MODEL interprets standing order → NO CODE EVALUATION
+4. Model executes autonomously → prose logic decision
+5. CRON RUNNER delivers output
+```
+
+### Standing Orders vs Cron Jobs
+
+- CLI: `openclaw cron add --name daily-inbox-triage --cron '0 8 * * 1-5' --session isolated`
+- They are "complementary but independent"
+
+### Where Standing Orders Live — Bootstrap Details
+
+**Bootstrap files injected:** `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, `USER.md`, `HEARTBEAT.md`, `BOOTSTRAP.md`, `MEMORY.md`
+
+**Limits:**
+- `bootstrapMaxChars`: 20,000 per file
+- `bootstrapTotalMaxChars`: 150,000 total
+- Alternative: standalone `standing-orders.md` referenced from `AGENTS.md`
+
+### Edge Cases
+
+- Missing file marker: session continues silently if `AGENTS.md` missing
+- Execute-Verify-Report is ONLY a convention, not enforced
+- No precedence system for conflicting standing orders
+- Approval gates are narrative, not blocking
+
+### Concrete Implementations (Dani's Ecosystem)
+
+| ID | Program | Description |
+|----|---------|-------------|
+| QW-1 | Inbox Triage Program | Email triage workflow |
+| QW-2 | Morning Briefing Program | Daily briefing workflow |
+| QW-3 | Banking Monitor Program | Account monitoring |
+| QW-4 | Domain & Brand Monitoring | Brand protection |
+| AL-1 through AL-4 | Lateral applications | Subagents, director-org, chaining, contracts |
+
+### Comparison Tables
+
+| Feature | Standing Orders | HEARTBEAT.md | Hooks | Task Flow |
+|---------|-----------------|--------------|-------|-----------|
+| Trigger | Cron | Time-based | Events | Multi-step |
+| Blocking | No | No | Yes | Yes |
+| Code eval | No | No | No | No |
+
+## Norm Compliance Deep Details
+*Source: NORM_COMPLIANCE_DEEP.md*
+
+### SOUL.md Grammar Mechanics
+- SOUL.md is prose injection, not parsed as code
+- No if/then grammars, no keyword triggering, no priority weighting
+- Order of injection: AGENTS.md (1st), SOUL.md (2nd)
+- Effective SOUL.md < 2,000 chars; TOOLS.md already at 54,210 chars (TRUNCATED)
+
+### Enforcement Reality
+No enforcement mechanism exists in code for AGENTS.md. Four failure modes:
+- Context saturation
+- Creative interpretation
+- Compaction blur
+- User override
+
+### Self-Correction via Hooks
+- `before_agent_reply` hook can audit outgoing messages
+- `after_tool_call` hook can catch actions, not just words
+
+### Consistency Strategies
+1. Reduce bootstrap overhead (TOOLS.md truncation)
+2. "What NOT to Do" pattern
+3. HEARTBEAT.md self-check
+4. Cron + standing order as enforcement
+5. `bootstrap-extra-files` separation
+6. Auditor as compliance layer
+
+### Authority Levels Framework
+
+| Level | Name | Rule |
+|-------|------|------|
+| 1 | Autonomous | No approval needed |
+| 2 | Notify Before | Tell Dani, proceed after 5min |
+| 3 | Approve Before | Wait for explicit OK |
+| 4 | Human Only | Never autonomous |
+
+### Multi-Agent Norms Inheritance
+Subagents receive AGENTS.md + TOOLS.md but NOT SOUL.md, IDENTITY.md, USER.md. Inherited norms pattern via explicit context in BRAIN messages.
+
+### Bootstrap Truncation Vulnerability
+- TOOLS.md actual size: 54,210 chars
+- Exceeds `bootstrapMaxChars` (20,000) by 271%
+- Second half NEVER reaches the model
+- **Recommended: reduce TOOLS.md to < 3,000 chars**
+
+### Complete Compliance Framework (4 Layers)
+
+| Layer | Mechanism |
+|-------|-----------|
+| Bootstrap | AGENTS.md + SOUL.md injection |
+| Automatización | Hooks (session-memory, bootstrap-extra-files) |
+| Memoria | MEMORY.md, daily notes |
+| Auditoría | Auditor agent, nightly audit |
+
+### Execution Self-Check Protocol (4 Questions)
+Before reporting completion, verify:
+1. Did I follow the correct workflow?
+2. Did I update the right files?
+3. Did I communicate the result?
+4. Is there anything stuck or pending?
+
+## Memory CLI — Detailed Commands
+*Source: memory-cli.md*
+
+### Weighted Signals for Promotion
+
+| Signal | Weight | Description |
+|--------|--------|-------------|
+| Frequency | 0.24 | Cuántas señales de short-term acumuló |
+| Relevance | 0.30 | Average retrieval quality |
+| Query diversity | 0.15 | Distinct query/day contexts |
+| Recency | 0.15 | Time-decayed freshness |
+| Consolidation | 0.10 | Multi-day recurrence strength |
+| Conceptual richness | 0.06 | Concept-tag density |
+
+### promote-explain Command
+
+```bash
+openclaw memory promote-explain "router vlan"
+openclaw memory promote-explain "router vlan" --json
+```
+
+Explain why a specific text would be promoted.
+
+### Detailed promote Options
+
+```bash
+openclaw memory promote --include-promoted    # include already promoted
+openclaw memory promote --json               # JSON output
+openclaw memory promote --min-recall-count 2
+openclaw memory promote --min-unique-queries 1
+```
+
+### REM Harness
+
+```bash
+openclaw memory rem-harness
+openclaw memory rem-harness --json
+```
+
+## Memory Search Builtin — Deep Details
+*Source: memory-search-builtin.md*
+
+### Chunking Specs
+Indexes MEMORY.md and memory/*.md into chunks (~400 tokens with 80-token overlap).
+
+### Debounced Reindex
+File watching: changes trigger debounced reindex (1.5s).
+
+### MMR (Diversity)
+Reduces redundant results. If multiple notes mention same topic, MMR ensures top results cover different topics.
+
+### Temporal Decay
+Old notes gradually lose ranking weight (half-life 30 days by default). Recent information surfaces first. MEMORY.md never decayed.
+
+### Multimodal Memory (Gemini Embedding 2)
+Index images and audio alongside Markdown. Search queries remain text but match visual/audio content.
+
+### Session Memory (Experimental)
+Opt-in: `memorySearch.experimental.sessionMemory` — index session transcripts so memory_search can recall earlier conversations.
+
+### Provider Table Details
+
+| Provider | Notes |
+|----------|-------|
+| Ollama | NOT auto-detected (must set explicitly) |
+| Bedrock | Auto-detection supported |
+| Local (GGUF) | ~0.6 GB download |
+
+### Hybrid Search Fallback
+When embeddings unavailable: lexical ranking over FTS results instead of raw exact-match ordering.
+
+### CJK Support
+trigram tokenization.
+
+### sqlite-vec
+Optional acceleration for in-database vector queries.
+
+### When to Use — Decision Framework
+
+| Engine | Best For |
+|--------|----------|
+| Builtin | Works out of box, handles keyword + vector well, all providers |
+| QMD | Need reranking, query expansion, or index dirs outside workspace |
+| Honcho | Want cross-session memory with automatic user modeling |
+
+## Hook Security Audit — Step 1
+*Source: hook-security-audit-step1.md*
+
+### Hook Architecture — Three Types
+1. **Internal hooks** — `~/.openclaw/hooks/`
+2. **Plugin hooks** — bundled in plugins
+3. **Webhook ingress** — external webhooks
+
+### Event Types
+- `command:new`, `command:reset`
+- `session:compact:before`, `session:compact:after`
+- `agent:bootstrap`
+- `gateway:startup`, `message:received`
+- `before_tool_call`, `agent:end`
+
+### Hook Capabilities Table
+
+| Capability | Risk Level |
+|------------|------------|
+| Message injection | HIGH |
+| Tool call interception | CRITICAL |
+| LLM I/O interception | CRITICAL |
+| Session memory access | HIGH |
+| Config manipulation | CRITICAL |
+
+### Security Model
+
+- "One trusted operator boundary per gateway"
+- "Host/config boundary trusted" rule
+- "Shared agent = shared authority" rule
+- **"Session keys are routing selectors, NOT authorization tokens"**
+
+### Hook Security Risks
+
+| Risk | Level |
+|------|-------|
+| Malicious plugin exfiltration | CRITICAL |
+| Hook injection | CRITICAL |
+| Session hijacking | HIGH |
+| Data exfiltration | HIGH |
+| Config tampering | CRITICAL |
+
+### Community Audit Stats
+- 41% of skills have security vulnerabilities (ClawSecure)
+- 9,515 security findings, 30.6% HIGH/CRITICAL
+- 36% of plugins had vulnerabilities; 76 were actual malware
+- 12% malicious plugins
+
+### Proposed New Hooks (Issue #36671)
+- `identity context hook`
+- `loop_iteration_start/end`
+- `before_llm_call / after_llm_call`
+- `before_response_emit`
+- `blockSessionSave / redirectPath`
+
+## Hook Security Audit — Step 2 (Known Bugs)
+*Source: hook-security-audit-step2.md*
+
+### Bug #5513 — Plugin Hooks Never Invoked
+`initializeGlobalHookRunner()` creates a **snapshot** of `registry.typedHooks` at initialization time. Any hooks registered after snapshot creation are invisible to the hook runner.
+
+### Bug #19231 — before_tool_call Return Values Discarded
+Dispatch uses fire-and-forget pattern — return value discarded before evaluation:
+```javascript
+runHook("before_tool_call", {...}).catch(err => {
+  logger.error("Hook error", err);
+});
+```
+Tool executes anyway despite `{ cancel: true }`.
+
+### Proposed Fix for before_tool_call
+```javascript
+if (hookRunner?.hasHooks?.("before_tool_call")) {
+  const hookResult = await hookRunner.runBeforeToolCall({...});
+  if (hookResult?.block) {
+    throw new Error(hookResult.blockReason ?? `Tool ${toolCall.name} blocked by plugin`);
+  }
+}
+```
+
+### Hook Status Table (Working vs Broken)
+
+| Hook | Status |
+|------|--------|
+| agent_end | BROKEN — hasHooks returns false |
+| before_tool_call | NOT WIRED |
+| after_tool_call | NOT WIRED |
+| message_sending | WORKS (correctly awaited) |
+| command:new | WORKS |
+| gateway:startup | WORKS |
+
+### Affected Projects
+PRs #6095, #14222, #8448 + ClawBands, openclaw-harness, openclaw-shield
+
+## Hook Security — Use Cases & Architecture
+*Source: hook-security-audit-step3.md*
+
+### 10 Lifecycle Hooks (PRISM Architecture)
+
+Hybrid scanning + TTL decay for zero-trust security model.
+
+### Risk Accumulation with TTL-Based Decay
+
+```js
+decayRate // Risk score decay over time
+```
+
+### Policy Enforcement Rules Matrix
+
+- Paths allowed/blocked
+- Domains allowed/blocked
+- Secrets detection
+
+### Proposed Hooks
+
+| Hook | Purpose |
+|------|---------|
+| `before_llm_call` | Filter LLM input |
+| `after_llm_call` | Filter LLM output |
+| `blockSessionSave` | Control session memory persistence |
+| `redirectPath` | Redirect session saves |
+
+### Gap Analysis — Confirmed Bugs
+
+- `before_tool_call` never invoked (Issue #5513)
+- `before_tool_call` return values discarded (Issue #19231)
+
+### External Sources
+- arxiv.org — security papers
+- Medium — TrustedClaw article
+- Reddit — Rust zero-trust plugin
+
+## Hook Security — Step 4 (Comprehensive Analysis)
+*Source: hook-security-audit-step4.md*
+
+### Root Cause — Snapshot Timing Issue
+`initializeGlobalHookRunner()` called BEFORE plugins finish registering hooks. Snapshot of `registry.typedHooks` doesn't update when new hooks added.
+
+### Broken Code Pattern — Fire-and-Forget
+```javascript
+runHook("before_tool_call", {...}).catch(err => {
+  logger.error("Hook error", err);
+});
+// Tool executes immediately — return value never evaluated!
+```
+
+### Proposed Fix Location
+`steerable-agent-loop.js` line ~254, before `tool.execute()`.
+
+### Fix Options
+1. Call `initializeGlobalHookRunner()` AFTER plugins fully loaded
+2. Make hook runner dynamically check registry instead of snapshot
+3. Use event subscription model instead of pre-registration
+
+### Internal vs Plugin Hooks
+
+| Hook Type | Registration | Invocation | Status |
+|-----------|--------------|------------|--------|
+| Internal | `registerInternalHook()` | Works | ✅ WORKS |
+| Plugin | `api.on()` / `registerHook()` | Broken | ❌ FAILS |
+
+### Problems Matrix
+
+| Problem | Severity | Impact | Workaround |
+|---------|----------|--------|------------|
+| Plugin hooks never invoked | CRITICAL | Security plugins broken | Wait for fix |
+| Return values discarded | CRITICAL | Block doesn't work | Wait for fix |
+| Hook not wired | CRITICAL | Cannot intercept tools | Wait for fix |
+| Supply chain vulnerabilities | HIGH | Malicious plugins | Audit before install |
+| Trust model limitations | HIGH | Multi-user risk | Separate gateways |
+
+### Hypothesis Verdicts
+- H1: Plugin hooks enforce tool execution → **FALSE**
+- H2: Security plugins can block dangerous calls → **FALSE**
+- H3: OpenClaw secure for multi-user → **FALSE (by design)**
+- H4: Installing plugins from ClawHub is safe → **FALSE** (12% malicious)
+
+### Specific Issue Numbers
+- Issue #5513: Plugin hooks never invoked
+- Issue #19231: before_tool_call return values discarded
+- Issue #5943: Wire up before_tool_call hook
+- Issue #36671: Hooks extensions for security plugins
+
+### Regression
+OpenClaw 2026.2.2-3: bundled hooks missing after upgrade (works in 2026.2.1)
+
+## Hook Security — Step 5 (Solutions)
+*Source: hook-security-audit-step5.md*
+
+### SOL1: Hook Runner Initialization Timing
+**Root cause:** `initializeGlobalHookRunner()` called BEFORE plugins register hooks
+
+**Fix options:**
+- Option A: Delay init after plugin load
+- Option B: Dynamic registry with live check
+
+### SOL2: Await Hook Results
+**Broken pattern:** `runHook("before_tool_call", {...}).catch()` discards return values
+
+**Fix:** `await hookRunner.runBeforeToolCall()` with block logic
+
+### SOL3: Wire up before_tool_call Hook
+`before_tool_call` defined but NEVER called in `executeToolCalls()`. Exact code snippet for `steerable-agent-loop.js`.
+
+### Security Tools
+
+| Tool | Source |
+|------|--------|
+| **SecureClaw** | adversa-ai/secureclaw — 360-degree security plugin |
+| **TrustedClaw** | Medium article — owner-controlled boundaries |
+| **openclaw security audit** | Built-in audit command |
+| **openclaw security audit --fix** | Auto-fix mode |
+
+### OpenClaw PRISM
+arxiv.org — zero-fork runtime security with hybrid heuristic + LLM scanning, conversation-scoped risk accumulation with TTL decay, policy-enforced controls.
+
+### Workarounds
+- Use internal hooks instead
+- Custom fork
+- External proxy
+- Zero-trust agent setup
+
+### Solutions Matrix
+See detailed table in artifact with fixes, complexity, and status.
+
+## Hook Security — Step 6 (CVEs & Edge Cases)
+*Source: hook-security-audit-step6.md*
+
+### Known CVEs
+
+| CVE | CVSS | Affected | Issue | Mitigation |
+|-----|------|----------|-------|------------|
+| CVE-2026-33579 | HIGH | OpenClaw < 2026.3.25 | /pair approve doesn't check approver | `gateway.pairing.enabled: false` |
+| CVE-2026-29606 | 7.1 | OpenClaw < 2026.3.25 | HTTP session history auth bypass | Upgrade to 2026.3.25+ |
+| CVE-2026-32067 | HIGH | OpenClaw < 2026.2.26 | Pairing-store access control bypass | Upgrade to 2026.2.26+ |
+| CVE-2026-25253 | 9.8 | OpenClaw | 1-Click RCE via link unfurling | Disable unfurling or restrict domains |
+
+### 1-Click RCE Attack Flow
+1. User clicks malicious link in chat
+2. Link unfurling executes arbitrary code
+3. Attacker gains full system access
+
+### Edge Cases (Security)
+
+| ID | Edge Case | Mitigation |
+|----|-----------|------------|
+| EC5 | Hook bypass via direct tool call | Use internal hooks |
+| EC6 | Timing attack during initialization | Sequence plugin load |
+| EC8 | Hook registration conflicts | Priority handling |
+| EC10 | Tool result tampering after hook | Validate outputs |
+| EC11 | Hook system fingerprinting | Restrict `openclaw hooks list` |
+| EC12 | Legacy vs plugin hook conflicts | Use internal hooks |
+| EC13 | Bundled hooks loading failures | Re-enable after upgrade |
+| EC14 | Cross-session state leakage | Isolate handler state |
+| EC15 | DoS via hook handler | Resource limits |
+
+### Hypotheses Verdicts
+- H1: CVEs rare/theoretical → **FALSE**
+- H2: Broken hooks just inconvenience → **FALSE**
+- H3: Plugin vetting prevents malicious → **FALSE**
+- H4: Upgrading fixes all → **FALSE**
+
+### Security Sources
+- sentinelone.com/vulnerability-database
+- opencve.io (vendor=openclaw)
+- arxiv.org/html/2603.11853v1 (PRISM paper)
+
+## Hook Security — Step 7 (Creative Uses)
+*Source: hook-security-audit-step7.md*
+
+### 12 Creative Hook Use Cases
+
+| ID | Use Case | Hooks Used |
+|----|----------|------------|
+| CU1 | Observability (arize) | message_received, before/after_tool_call, agent_end |
+| CU2 | Compliance (HIPAA, SOC2, GDPR) | before_tool_call, after_tool_call, message_sent |
+| CU3 | Developer Productivity | before_tool_call, after_tool_call |
+| CU4 | Accessibility | Voice/screen reader integration |
+| CU5 | Game Mechanics | Dungeon Master, Trivia, Virtual Pet |
+| CU6 | Artistic Generation | before_tool_call on image_generate |
+| CU7 | Research Assistant | Literature review automation |
+| CU8 | Personal Finance | Financial guardrails |
+| CU9 | Educational Tool | CS101 tutor with guardrails |
+| CU10 | Hooks-as-a-Service | Marketplace of shared hooks |
+| CU11 | Digital Twin | Behavioral simulations |
+| CU12 | Emergency Response | Crisis detection |
+
+### Working Hooks (Despite Brokenness)
+`message_received`, `before_tool_call`, `after_tool_call`, `agent_end`, `loop_iteration_start/end`, `message_sent`, `file_read`, `file_write`
+
+### Workaround Pattern
+Polling instead of event-driven hooks.
+
+### Hypotheses Verdicts
+- H1: No creative uses with broken hooks → **FALSE** (11/12 work)
+- H2: Hooks only for security → **FALSE** (8+ domains)
+- H3: Too low-level for end-users → **FALSE**
+- H4: Creative uses require core modifications → **FALSE**
+
+## Honcho & QMD — Memory Sidecars
+*Source: memory-honcho-qmd.md*
+
+### Honcho Tool Names
+- `honcho_context` — Full user representation across sessions
+- `honcho_search_conclusions` — Semantic search over stored conclusions
+- `honcho_search_messages` — Find messages across sessions
+- `honcho_session` — Current session history and summary
+- `honcho_ask` — Ask about user (LLM-powered, depth='quick'|'thorough')
+
+### Honcho Configuration
+```js
+plugins.entries["openclaw-honcho"].config.apiKey
+plugins.entries["openclaw-honcho"].config.workspaceId
+plugins.entries["openclaw-honcho"].config.baseUrl  // api.honcho.dev (managed) or self-hosted
+```
+
+### Honcho CLI Commands
+```bash
+openclaw honcho setup
+openclaw honcho status
+openclaw honcho ask <question>
+openclaw honcho search <query> [-k N] [-d D]
+```
+
+### Honcho vs Builtin Memory
+
+| Feature | Builtin | Honcho |
+|---------|---------|--------|
+| Storage | Workspace Markdown files | Dedicated service |
+| Cross-session | Manual via memory files | Automatic built-in |
+| User modeling | Manual | Automatic profiles |
+| Multi-agent | Not tracked | Parent/child awareness |
+
+### QMD Environment Variables
+```bash
+QMD_EMBED_MODEL   # Embedding model override
+QMD_RERANK_MODEL  # Reranking model override
+QMD_GENERATE_MODEL # Generation model override
+```
+
+### QMD Operations
+- `qmd update` + `qmd embed` on boot and periodically (default every 5 min)
+- First search triggers GGUF model auto-download (~2 GB)
+- `qmd query` pre-warm suggestion
+
+### QMD Configuration Schema
+```js
+memory.qmd.paths: [{ name, path, pattern }]  // index extra directories
+memory.qmd.scope: { deny/allow rules per chatType }
+memory.qmd.limits.timeoutMs: 4000  // default
+memory.citations: "auto" | "on"  // Source: path#line footer
+memory.qmd.sessions.enabled: true  // index session transcripts
+```
+
+### QMD Search Modes
+- `searchMode: "search"` (default)
+- `"vsearch"` — vector search
+- `"query"` — query mode
+
+### QMD Troubleshooting
+| Problem | Solution |
+|---------|----------|
+| QMD not found | `sudo ln -s ~/.bun/bin/qmd /usr/local/bin/qmd` |
+| First search slow | Pre-warm: `qmd query "test"` |
+| Empty results in groups | Check `memory.qmd.scope` |
+| Broken indexing | Keep `.tmp/` outside indexed QMD roots |
+
+### QMD Prerequisites
+- `npm install -g @tobilu/qmd` or `bun install -g @tobilu/qmd`
+- SQLite with extensions (`brew install sqlite` on macOS)
+- QMD must be on gateway's PATH
+- macOS/Linux out of box; Windows via WSL2
+
+## OpenClaw v2026.4 — New Features (Step 1)
+*Source: openclaw-v2026.4-features-step1.md*
+
+### Google Meet Integration
+- Bundled Google Meet participant plugin
+- Personal Google authentication support
+- Real-time Chrome/Twilio sessions
+- Artifact and attendance workflows for conference records
+- Output options: markdown/file
+
+### Real-Time Voice Capabilities
+- Talk, Voice Call, and Google Meet leverage real-time voice loops
+- Browser WebRTC real-time voice sessions using OpenAI Realtime
+
+### Expanded Model Support
+
+| Provider | Models |
+|----------|--------|
+| DeepSeek | V4 Flash (default onboarding), V4 Pro |
+| Qwen | New provider |
+| Fireworks AI | New provider |
+| Stepfun | New provider |
+
+- Lighter startup times (static model catalogs, manifest-backed rows)
+
+### Video & Music Generation (Built-in)
+- **Video:** XAI Grok Imagine Video, Alibaba Model Studio, Runway
+- **Music:** Built-in generation
+- **Fallback:** Automatic across image/music/video providers
+
+### Task Management — SQLite Ledger
+- Chat-native task board via `/tasks`
+- SQLite ledger for lifecycle management
+- Durable flow orchestration (survives gateway restarts)
+- Multi-step pipelines resume from checkpoint
+
+### Memory Wiki Stack (Experimental)
+- Persisted compaction checkpoints
+- Sessions UI for branching/restoring states
+
+### Amazon Bedrock
+- Bundled Mantle support
+- Auto-discovery
+- Bedrock embeddings for memory
+
+### Emergency Provider Hardening
+- Anthropic policy changes response
+
+### New CLI & Plugins
+- `openclaw info` — hub tasks
+- Bundled webhook ingress plugin
+- ClawHub integrated in skills panel
+
+### Security
+- WebSocket session invalidation on auth token/password rotation
+- Improved host execution sanitization
+- More reliable prompt caching
+
+### Advanced Browser Automation
+- Coordinate clicks support
+- Longer default action budgets
+- Per-profile headless overrides
+- Stable tab reuse and recovery
+
+### Platform Fixes
+- Telegram, Discord, WhatsApp, Slack, Matrix fixes
+- iOS push notifications for execution approvals
+
+## TaskFlow — Problems & Limitations
+*Source: openclaw-v2026.4-features-step4.md*
+
+### TaskFlow Runner Limitations
+
+- **No built-in branching logic** — All decision-making must be in calling layer (Lobster, ACPX, or plugin code)
+- **Revision conflict cascades** — `expectedRevision` conflict handling during setWaiting/resume with retry pattern
+- **Sticky cancel intent** may not stop all operations — active child tasks may still complete
+
+### State Management Problems
+- `stateJson` size limits (SQLite)
+- No automatic state snapshots
+- No version history for `stateJson`
+
+### Wait State Problems
+| Problem | Severity |
+|---------|----------|
+| No built-in timeout for wait states | **HIGH** |
+| Timer lost on gateway restart | **HIGH** |
+| No dead letter queue for failed waits | Medium |
+
+### Child Task Problems
+- Orphaned child tasks if parent fails
+- Child task timeout not propagated to parent
+- No nested TaskFlow chains
+
+### Concurrency Problems
+- Limited concurrent flow control (no system-level limit)
+- Revision-based locking can cause starvation
+
+### External System Integration
+- Webhook reliability for wait states — **HIGH severity**
+- Timer precision issues
+
+### CLI and Visibility
+- Limited flow state visibility
+- No built-in flow visualization
+- No flow import/export
+
+## TaskFlow — Advanced Use Cases (Conceptual)
+*Source: openclaw-v2026.4-features-step7.md*
+
+⚠️ **Nota:** Estos son patrones conceptuales exploratorios, no features implementados confirmados. pseudocódigo ilustrativo, NO API verificada.
+
+### 10 Advanced Use Cases
+
+| Pattern | Description |
+|---------|-------------|
+| Self-Healing AI | Agentes que se monitorizan y curan mutuamente via TaskFlow |
+| Adaptive Learning | Sistema que aprende de sus propios workflows y se auto-optimiza |
+| Multi-Agent Negotiation | Agentes que negocian entre sí (Resource Allocation) |
+| Event-Sourced Memory | Replay completo de comportamiento via TaskFlow |
+| Swarm Intelligence | Múltiples sub-agentes paralelos con síntesis |
+| Human-AI Hybrid | Role-swapping dinámico con escalado por complejidad |
+| Temporal Workflows | Análisis cross-time: past/present/future |
+| Emotional State | Tracking de trayectoria emocional en conversaciones |
+| Cross-System Sync | Orchestration multi-sistema externo (CRM, accounting) |
+| Quality Gates Pipeline | Pipelines de contenido con quality gates iterativos |
+
+### Relevance to OpenClaw
+OPENCLAW_EXPERT.md covers "cómo funciona" TaskFlow. These patterns cover "qué se podría construir encima" with TaskFlow.
+
+## Queue System — Full Details
+*Source: queue.md*
+
+### Queue Options Config
+```json5
+{
+  messages: {
+    queue: {
+      mode: "collect",
+      debounceMs: 1000,
+      cap: 20,
+      drop: "summarize",
+      byChannel: {
+        discord: "collect"
+      }
+    }
+  }
+}
+```
+
+### Per-Session Override Commands
+```bash
+/queue collect
+/queue followup debounce:2s cap:25 drop:summarize
+/queue default
+/queue reset
+```
+
+### Lane Config Table
+
+| Lane | Purpose | Default |
+|------|---------|---------|
+| main | Inbound + main heartbeats | 4 |
+| cron | Background cron jobs | - |
+| subagent | Subagent runs | 8 |
+
+### Queue Guarantees
+- Only applies to auto-reply agent runs using gateway reply pipeline
+- No external dependencies or background worker threads
+- Pure TypeScript + promises
+
+### Troubleshooting
+- Enable verbose logs → search "queued for …ms"
+- For queue depth → enable verbose logs → look at queue timing lines
