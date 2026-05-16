@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Skill System — Research Findings</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 openclaw-skill-system.md</p>
+    <strong>Topic:</strong> OpenClaw Skill System  
+<strong>Priority:</strong> MED  
+<strong>Date:</strong> 2026-04-23 04:25 CET  
+<strong>Research by:</strong> Investigador Scout  
+<strong>Status:</strong> ✅ COMPLETE
+<hr>
+<h2>1. WHAT IS — Definition & Core Concept</h2>
+<h3>Definition</h3>
+<p>An <strong>OpenClaw Skill</strong> is a versioned bundle of files that teaches the agent how and when to use tools. Each skill is a directory containing a <code>SKILL.md</code> with YAML frontmatter and markdown instructions. Skills are the mechanism by which Dani and BRAIN define procedures that must be executed consistently, without variation, without forgetting steps, and without depending on memory.</p>
+<h3>Key Principle (from skill-creator SKILL.md)</h3>
+<blockquote>Skills vs System Prompt: The system prompt can be ignored. The skill cannot. Skills guarantee consistency where memory fails and improvisation introduces variation.</blockquote>
+<h3>Skill Components</h3>
+<p>A skill directory contains:
+<ul><li><strong><code>SKILL.md</code></strong> — Primary file with YAML frontmatter metadata + markdown body with instructions</li>
+<li><strong>Optional supporting files</strong> — scripts, configs, or other files used by the skill</li>
+<li><strong>ClawHub metadata</strong> — version, tags, install requirements for registry publishing</li>
+</ul>
+<h3>Skill Format (SKILL.md)</h3></p>
+<pre><code>---
+name: skill_name
+description: "When to invoke this skill — one line"
+metadata: { "openclaw": { ... } }
+<hr>
+<h1>Skill Name — What it does in one phrase</h1>
+<h2>CUÁNDO INVOCAR</h2>
+[Exactly when to use this skill]
+<h2>QUÉ HACE</h2>
+[What the skill does]
+<h2>PROCEDIMIENTO</h2>
+<ul><li>Step 1</li>
+<li>Step 2</li>
+<li>Step 3</li>
+</ul>
+<h2>FORMATO DE OUTPUT</h2>
+[How output should look — if applicable]
+<h2>EJEMPLO</h2>
+[Real example]
+<h2>REGLA DE ORO</h2>
+[One critical negative rule]
+</code></pre>
+<h3>Key Metadata Fields</h3>
+| Field | Required | Description |
+|-------|----------|-------------|
+| <code>name</code> | Yes | Unique identifier (snake_case) |
+| <code>description</code> | Yes | One-line description shown to the agent |
+| <code>metadata.openclaw.always</code> | No | If <code>true</code>, always include skill (skip other gates) |
+| <code>metadata.openclaw.emoji</code> | No | Emoji for Skills UI |
+| <code>metadata.openclaw.homepage</code> | No | URL for Skills UI |
+| <code>metadata.openclaw.os</code> | No | OS filter (<code>["darwin"]</code>, <code>["linux"]</code>, etc.) |
+| <code>metadata.openclaw.requires.bins</code> | No | Required binaries on PATH |
+| <code>metadata.openclaw.requires.anyBins</code> | No | At least one binary must exist |
+| <code>metadata.openclaw.requires.env</code> | No | Env var must exist or be in config |
+| <code>metadata.openclaw.requires.config</code> | No | Required config keys |
+| <code>metadata.openclaw.primaryEnv</code> | No | Env var for <code>skills.entries.<name>.apiKey</code> |
+| <code>metadata.openclaw.install</code> | No | Installer specs for Skills UI |
+| <code>metadata.openclaw.user-invocable</code> | No | If <code>false</code>, excluded from slash commands |
+| <code>metadata.openclaw.disable-model-invocation</code> | No | Exclude from model prompt |
+| <code>metadata.openclaw.command-dispatch</code> | No | If <code>tool</code>, bypass model and dispatch directly |
+| <code>metadata.openclaw.command-tool</code> | No | Tool name for <code>command-dispatch: tool</code> |
+| <code>metadata.openclaw.skillKey</code> | No | Override key under <code>skills.entries</code> |
+<hr>
+<h2>2. HOW IT WORKS — Loading, Precedence & Execution</h2>
+<h3>6 Load Locations (Precedence Order)</h3>
+<p>Highest to lowest:</p>
+| # | Location | Path | Scope |
+|---|---------|------|-------|
+| 1 | <strong>Workspace skills</strong> | <code><workspace>/skills/</code> | Per-agent |
+| 2 | <strong>Project agent skills</strong> | <code><workspace>/.agents/skills/</code> | Per-workspace agent |
+| 3 | <strong>Personal agent skills</strong> | <code>~/.agents/skills/</code> | Shared agent profile |
+| 4 | <strong>Managed/local skills</strong> | <code>~/.openclaw/skills/</code> | All agents on machine |
+| 5 | <strong>Bundled skills</strong> | Shipped with OpenClaw | Global |
+| 6 | <strong>ExtraDirs</strong> | <code>skills.load.extraDirs</code> configured | Custom shared folders |
+<strong>Rule:</strong> If same skill name exists in multiple locations, highest precedence wins (workspace overrides project overrides personal overrides managed overrides bundled overrides extraDirs).
+<h3>Skills Snapshot Mechanism</h3>
+<ul><li>Skills are snapshotted <strong>per-session at load time</strong> and reused for subsequent turns</li>
+<li>Changes to skills or config take effect on <strong>next new session</strong></li>
+<li>Skills watcher (<code>skills.load.watch: true</code>) can refresh mid-session when <code>SKILL.md</code> files change</li>
+<li>Refreshed list is picked up on <strong>next agent turn</strong></li>
+<li>If effective agent skill allowlist changes mid-session, snapshot refreshes to stay aligned</li>
+</ul>
+<h3>Environment Injection Per Agent Run</h3>
+<p>When an agent run starts, OpenClaw:
+<ul><li>Reads skill metadata</li>
+<li>Applies <code>skills.entries.<key>.env</code> or <code>skills.entries.<key>.apiKey</code> to <code>process.env</code></li>
+<li>Builds system prompt with <strong>eligible</strong> skills</li>
+<li>Restores original environment after run ends</li>
+</ul>
+<strong>Scoped to agent run</strong>, not global shell environment.</p>
+<h3>Skills Watcher</h3>
+<pre><code>{
+  skills: {
+    load: {
+      watch: true,
+      watchDebounceMs: 250,
+    },
+  },
+}
+</code></pre>
+<p>Default: <code>watch: true</code>, debounce: 250ms. Triggers skills snapshot refresh when <code>SKILL.md</code> files change.</p>
+<h3>Skills for System vs User</h3>
+<ul><li><strong>System skills</strong> (bundled with OpenClaw): <code>/data/.openclaw/skills/</code></li>
+<li><strong>User workspace skills</strong>: <code>workspace/skills/</code> or <code><workspace>/skills/</code></li>
+</ul>
+<h3>Agent Skill Allowlists</h3>
+<p>Per-agent skill visibility control:</p>
+<pre><code>{
+  agents: {
+    defaults: {
+      skills: ["github", "weather"],  // baseline
+    },
+    list: [
+      { id: "writer" },  // inherits defaults → github, weather
+      { id: "docs", skills: ["docs-search"] },  // replaces defaults
+      { id: "locked-down", skills: [] },  // no skills at all
+    ],
+  },
+}
+</code></pre>
+<p>Rules:
+<ul><li><code>agents.defaults.skills</code> omitted → unrestricted skills by default</li>
+<li><code>agents.list[].skills</code> omitted → inherits from <code>agents.defaults.skills</code></li>
+<li><code>agents.list[].skills: []</code> → <strong>no skills</strong> for that agent</li>
+<li>Non-empty <code>agents.list[].skills</code> list is <strong>final set</strong> (does not merge with defaults)</li>
+</ul>
+<h3>Per-Skill Configuration</h3></p>
+<pre><code>{
+  skills: {
+    entries: {
+      "image-lab": {
+        enabled: true,
+        apiKey: { source: "env", provider: "default", id: "GEMINI_API_KEY" },
+        env: {
+          GEMINI_API_KEY: "VALUE",
+        },
+        config: {
+          endpoint: "https://example.invalid",
+          model: "nano-pro",
+        },
+      },
+      peekaboo: { enabled: true },
+      sag: { enabled: false },
+    },
+  },
+}
+</code></pre>
+<p>Rules:
+<ul><li><code>enabled: false</code> disables even if bundled/installed</li>
+<li><code>env</code> injected <strong>only if</strong> variable not already in <code>process.env</code></li>
+<li><code>apiKey</code> convenience for <code>primaryEnv</code> declared skills</li>
+<li><code>config</code> optional bag for custom fields</li>
+<li>Keys match <strong>skill name</strong> by default; use <code>metadata.openclaw.skillKey</code> override</li>
+</ul>
+<h3>Token Impact (Skills List in System Prompt)</h3></p>
+<code>formatSkillsForPrompt</code> in pi-coding-agent produces compact XML list:
+<pre><code>Base overhead (only when ≥1 skill): 195 chars
+Per skill: 97 chars + XML-escaped name/description/location
+</code></pre>
+<p>XML escaping (<code>& < > " '</code> → entities) increases lengths.</p>
+<p>Rough estimate: ~4 chars/token → <strong>~24 tokens per skill</strong> overhead plus actual field lengths.</p>
+<h3>ClawHub Integration</h3>
+<strong>Site:</strong> <a href="https://clawhub.ai">clawhub.ai</a>
+<p>Skills can be published to ClawHub for discovery, versioning, and installation:</p>
+<pre><code><h1>Search</h1>
+clawhub search "postgres backups"
+<h1>Install into workspace</h1>
+clawhub install my-skill
+<h1>Update installed</h1>
+clawhub update --all
+<h1>Publish</h1>
+clawhub skill publish ./my-skill --slug my-skill --name "My Skill" --version 1.0.0
+<h1>Sync all local skills</h1>
+clawhub sync --all
+</code></pre>
+<p>Native OpenClaw commands also work:
+<pre><code>openclaw skills search "calendar"
+openclaw skills install <skill-slug>
+openclaw skills update --all
+</code></pre></p>
+<code>openclaw skills install</code> installs into <code><workspace>/skills/</code>. ClawHub CLI installs into <code>./skills</code> under current working directory.
+<strong>ClawHub Security:</strong>
+<ul><li>GitHub account must be ≥1 week old to publish</li>
+<li>Skills with >3 unique reports auto-hidden</li>
+<li>Moderators can hide/unhide/delete/ban users</li>
+</ul>
+<hr>
+<h2>3. USES — What Skills Are Used For</h2>
+<h3>Primary Use Cases</h3>
+| Use Case | Example | Skill Name |
+|---------|---------|-----------|
+| <strong>Procedures that must be consistent</strong> | Log errors, compliance checks | <code>log-error</code>, <code>compliance-check</code> |
+| <strong>Complex tool workflows</strong> | Image generation, browser automation | <code>image-lab</code>, <code>browser</code> |
+| <strong>API integrations</strong> | GitHub, weather, web search | <code>github</code>, <code>weather</code> |
+| <strong>Coding assistance</strong> | Claude CLI, code review | <code>claude-cli</code> |
+| <strong>File processing</strong> | Summarize, PDF analysis | <code>summarize</code> |
+| <strong>Custom procedures</strong> | Nightly routines, report generation | <code>buenas-noches</code> |
+<h3>Skill Categories</h3>
+<ul><li><strong>Bundled skills</strong> — Ship with OpenClaw (github, weather, etc.)</li>
+<li><strong>Managed/local skills</strong> — User-installed in <code>~/.openclaw/skills/</code></li>
+<li><strong>Workspace skills</strong> — Per-agent in <code><workspace>/skills/</code></li>
+<li><strong>Plugin skills</strong> — Shipped inside plugins (lowest precedence)</li>
+<li><strong>ExtraDirs skills</strong> — Shared across agents via config</li>
+</ul>
+<h3>Real-World Skill Examples</h3>
+<p>#### Skill: weather
+<pre><code>---
+name: weather
+description: Get current weather and forecasts via wttr.in or Open-Meteo.
+<hr></p>
+<h1>Weather — Current weather and forecasts</h1>
+<h2>CUÁNDO INVOCAR</h2>
+When user asks about weather, temperature, or forecasts for any location.
+<h2>QUÉ HACE</h2>
+Fetches current weather and forecasts via wttr.in or Open-Meteo.
+<h2>PROCEDIMIENTO</h2>
+<ul><li>Use wttr.in for basic weather (no API key needed)</li>
+<li>Fall back to Open-Meteo if wttr.in fails</li>
+<li>Return temperature, conditions, forecast summary</li>
+</ul></code></pre>
+<p>#### Skill: skill-creator
+<pre><code>---
+name: skill-creator
+description: "OBLIGATORIO — Cuando Dani y BRAIN definen algo que debe hacerse siempre de la misma manera, BRAIN DEBE crear una skill con ese procedimiento."
+<hr></p>
+<h1>Skill Creator — Metodología para crear skills</h1>
+<h2>CUÁNDO INVOCAR</h2>
+When Dani says "esto debe hacerse siempre así" or defines a new procedure.
+<h2>PROCEDIMIENTO</h2>
+<ul><li>Define procedure with Dani (exact steps, format, outputs)</li>
+<li>Name skill (verb + object, e.g., log-error, compliance-check)</li>
+<li>Write SKILL.md with required structure</li>
+<li>Place in correct location (/data/.openclaw/skills/ or workspace/skills/)</li>
+<li>Verify with Dani</li>
+</ul></code></pre>
+<h3>Plugin Skills</h3>
+<p>Plugins can ship skills via <code>openclaw.plugin.json</code>:</p>
+<pre><code>{
+  "skills": ["skills-dir-relative-to-plugin-root"]
+}
+</code></pre>
+<p>Plugin skills merge into same low-precedence path as <code>skills.load.extraDirs</code>. Bundled/managed/agent/workspace skills with same name override plugin skills.</p>
+<hr>
+<h2>4. PROBLEMS — Issues & Limitations</h2>
+<h3>Critical Issues</h3>
+| Issue | Severity | Description |
+|-------|----------|-------------|
+| <strong>Skills run in-process</strong> | CRITICAL | Like hooks/plugins, skills execute with full Gateway privileges. Untrusted skill code = same risk as malicious plugin. |
+| <strong>No sandbox isolation for skill processes</strong> | CRITICAL | <code>skills.entries.<skill>.env</code> applies to <strong>host</strong> process, not sandbox. Sandbox does NOT inherit host <code>process.env</code>. |
+| <strong>skills.entries.env bypasses sandbox</strong> | HIGH | Env injection for skills goes to host process env. For sandboxed sessions, must use <code>agents.defaults.sandbox.docker.env</code> or bake into custom image. |
+| <strong>Token overhead</strong> | MEDIUM | Skills list adds ~195 base + ~97/skill chars to system prompt. Large skill lists = significant context cost. |
+| <strong>No hot reload without watcher</strong> | MEDIUM | Without <code>skills.load.watch: true</code>, skill changes require new session or gateway restart. |
+| <strong>skills snapshot is load-time</strong> | MEDIUM | Even with watcher, snapshot refreshes on next turn — not immediate. Real-time updates not possible. |
+| <strong>Workspace skills win precedence</strong> | MEDIUM | Workspace skills override all lower-precedence copies. Can shadow critical bundled skills silently. |
+| <strong>No version pinning from ClawHub</strong> | MEDIUM | <code>clawhub install</code> gets latest unless <code>--version</code> specified. Can lead to unexpected behavior after updates. |
+<h3>Confirmed Bugs/Limitations from Docs</h3>
+| Issue | Status | Description |
+|-------|--------|-------------|
+| Skills watcher default | ⚠️ | <code>watch: true</code> is default, but depends on <code>skills.load.watch</code> config |
+| Snapshot isolation | ⚠️ | Skills snapshot is per-session — cross-session skill state requires file-based mechanism |
+| Bundle skills lowest precedence | ⚠️ | Plugin-shipped skills are lowest precedence — overridden by everything |
+| <code>skills.install.nodeManager</code> | ⚠️ | Affects skill installs only, not Gateway runtime (still Node, bun not recommended for WhatsApp/Telegram) |
+<h3>Security Considerations</h3>
+| Concern | Risk | Mitigation |
+|---------|------|------------|
+| Third-party skills as untrusted code | CRITICAL | Treat third-party skills as untrusted. Review code before enabling. Prefer sandboxed runs. |
+| <code>skills.entries.<em>.apiKey</code> exposes secrets | HIGH | <code>apiKey</code> and <code>env</code> injection goes to <strong>host process</strong> for that agent turn, not sandbox. Keep secrets out of prompts/logs. |
+| <code>skills.install</code> gateway-backed installs | HIGH | Runs built-in dangerous-code scanner before executing installer metadata. <code>critical</code> findings block by default unless caller sets dangerous override. |
+| Workspace skill shadowing | MEDIUM | Workspace skills can shadow bundled skills with same name. Can be used for local patches/testing but also silent override risk. |
+| <code>skills.allowBundled</code> only affects bundled | LOW | Does not restrict managed/workspace/extraDirs skills — only bundled allowlist. |
+<h3>Known Gaps</h3>
+| Gap | Description |
+|-----|-------------|
+| <strong>No native skill versioning</strong> | Skills don't have automatic version tracking. ClawHub provides versioning for published skills only. |
+| <strong>No built-in skill dependency system</strong> | Skills declare <code>requires.bins</code> but no formal dependency declaration. |
+| <strong>Skills watcher single debounce</strong> | <code>watchDebounceMs: 250</code> applies to all skill folders — no per-skill debounce. |
+| <strong>No skill execution timeout</strong> | Skills are instructions to model — no runtime execution timeout like tools. |
+| <strong>Skills vs hooks interaction unclear</strong> | Hooks run AFTER skills are injected. No direct hook-to-skill activation API. |
+<hr>
+<h2>5. SOLUTIONS — Best Practices & Workarounds</h2>
+<h3>For Secrets in Skills</h3>
+<strong>DO:</strong>
+<pre><code>// Use SecretRef for API keys
+skills: {
+  entries: {
+    "image-lab": {
+      apiKey: { source: "env", provider: "default", id: "GEMINI_API_KEY" }
+    }
+  }
+}
+</code></pre>
+<strong>DON'T:</strong>
+<pre><code><!-- Never put plaintext API keys in SKILL.md -->
+<h1>BAD SKILL</h1>
+Your API key is: sk-1234567890abcdef
+</code></pre>
+<h3>For Sandbox Environment</h3>
+<pre><code>agents: {
+  defaults: {
+    sandbox: {
+      docker: {
+        env: {
+          GEMINI_API_KEY: "from-config"
+        }
+      }
+    }
+  }
+}
+</code></pre>
+<p>OR bake env into custom sandbox image.</p>
+<h3>For Token Optimization</h3>
+<ul><li><strong>Use per-agent skill allowlists</strong> — Don't load all skills for all agents</li>
+<li><strong>Disable unneeded skills:</strong></li>
+</ul><pre><code>skills: {
+  entries: {
+    "large-schema-skill": { enabled: false }
+  }
+}
+</code></pre>
+<ul><li><strong>Use <code>contextInjection: "continuation-skip"</code></strong> — Skip bootstrap re-injection on safe continuation turns</li>
+<li><strong>Consider smaller models for simple tasks</strong> — Less context window pressure</li>
+</ul>
+<h3>For Skill Development Workflow</h3>
+<pre><code><h1>1. Create skill in workspace</h1>
+mkdir -p ~/.openclaw/workspace/skills/my-skill
+<h1>2. Write SKILL.md</h1>
+cat > ~/.openclaw/workspace/skills/my-skill/SKILL.md << 'EOF'
+<hr>
+name: my_skill
+description: "When to use this skill"
+<hr>
+<h1>My Skill</h1>
+...
+EOF
+<h1>3. Test with new session</h1>
+openclaw agent --message "test my skill"
+<h1>4. Publish to ClawHub when ready</h1>
+clawhub skill publish ./my-skill --slug my-skill --version 1.0.0
+</code></pre>
+<h3>For Skills Watcher Performance</h3>
+<pre><code>skills: {
+  load: {
+    watch: true,
+    watchDebounceMs: 500,  // Increase if many skills
+  }
+}
+</code></pre>
+<h3>For Multi-Agent Skill Sharing</h3>
+<p>Put shared skills in <code>~/.openclaw/skills/</code> (managed) for all agents on machine. Or use <code>skills.load.extraDirs</code> for explicit shared folders.</p>
+<h3>For Plugin Skill Override</h3>
+<p>Since plugin skills are lowest precedence, to override a plugin skill:
+<ul><li>Create same-named skill in <code><workspace>/skills/</code></li>
+<li>Or in <code>~/.openclaw/skills/</code></li>
+<li>Or in <code>~/.agents/skills/</code></li>
+</ul>
+<hr></p>
+<h2>6. EDGE CASES — Corner Cases & Unexpected Behaviors</h2>
+<h3>Edge Case: Skill Name Conflicts</h3>
+<p>When same skill name in multiple locations:
+<ul><li>Workspace skills (<code><workspace>/skills/</code>) <strong>always win</strong> over project, personal, managed, bundled, extraDirs</li>
+<li>This is intentional for local patches but can cause silent shadowing of critical skills</li>
+</ul>
+<h3>Edge Case: Sandbox + Skill Env Injection</h3></p>
+<p>When session is <strong>sandboxed</strong>, skill processes run <strong>inside Docker</strong>. The sandbox does <strong>NOT</strong> inherit host <code>process.env</code>.</p>
+<p>Options:
+<ul><li><code>agents.defaults.sandbox.docker.env</code> (or per-agent <code>agents.list[].sandbox.docker.env</code>)</li>
+<li>Bake env into custom sandbox image</li>
+<li>Use workspace-mounted secrets</li>
+</ul>
+<h3>Edge Case: Skill Binary Requirements</h3></p>
+<code>requires.bins</code> checked on <strong>host</strong> at skill load time. If agent is <strong>sandboxed</strong>, binary must also exist <strong>inside container</strong>.
+<p>Install via:
+<pre><code>agents: {
+  defaults: {
+    sandbox: {
+      docker: {
+        setupCommand: "apt-get install -y some-binary"
+      }
+    }
+  }
+}
+</code></pre></p>
+<p>Requires: network egress, writable root FS, root user in sandbox.</p>
+<h3>Edge Case: Installer Preference</h3>
+<p>When multiple installers listed, OpenClaw picks <strong>single preferred option</strong>:
+<ul><li>Homebrew if available + <code>skills.install.preferBrew: true</code></li>
+<li><code>uv</code></li>
+<li>Configured node manager (npm/pnpm/yarn/bun)</li>
+<li>Go or download</li>
+</ul>
+<h3>Edge Case: Empty skills.allowBundled</h3></p>
+<pre><code>skills: {
+  allowBundled: []  // Empty array = NO bundled skills eligible
+}
+</code></pre>
+<p>Only affects <strong>bundled</strong> skills. Managed/workspace/extraDirs skills unaffected.</p>
+<h3>Edge Case: Skill with <code>disable-model-invocation: true</code></h3>
+<p>Skill still available via user invocation (slash command) but <strong>excluded from model system prompt</strong>. Model cannot invoke autonomously — only user can trigger.</p>
+<h3>Edge Case: Skill with <code>command-dispatch: tool</code></h3>
+<p>Slash command <strong>bypasses the model</strong> and dispatches directly to a tool. Tool invoked with:
+<pre><code>{ command: "<raw args>", commandName: "<slash command>", skillName: "<skill name>" }
+</code></pre></p>
+<h3>Edge Case: ClawHub Sync with No Skills Found</h3>
+<code>clawhub sync</code> scans workdir first. If no skills found, falls back to legacy locations (<code>~/openclaw/skills</code>, <code>~/.openclaw/skills</code>).
+<h3>Edge Case: Skill Load with Missing Binary</h3>
+<p>If <code>requires.bins</code> binary not found → skill excluded from eligible set (not an error). Agent doesn't see the skill.</p>
+<h3>Edge Case: skills.entries vs skill name with hyphens</h3>
+<pre><code>skills: {
+  entries: {
+    // Must quote key — JSON5 allows it
+    "my-skill-name": { enabled: true }
+  }
+}
+</code></pre>
+<h3>Edge Case: Installer Multiple Options</h3>
+<p>If all installers are <code>download</code>, OpenClaw surfaces <strong>all download options</strong> instead of collapsing to one preferred option.</p>
+<hr>
+<h2>7. CREATIVE USES — Novel Applications</h2>
+<h3>Creative Use 1: Procedure Enforcement Layer</h3>
+<p>Use skills to enforce procedures that system prompt alone cannot guarantee:
+<ul><li><code>compliance-check</code> skill: Before sending ANY response, check against compliance rules</li>
+<li><code>log-error</code> skill: When BRAIN makes a mistake, immediately log structured error</li>
+<li><code>skill-creator</code> skill: When Dani defines a procedure, immediately create the skill</li>
+</ul>
+<h3>Creative Use 2: Contextual Skill Activation</h3></p>
+<p>Combine <code>before_prompt_build</code> hook + skill pattern for dynamic enforcement:</p>
+<pre><code>// Hook injects enforcement context
+api.registerHook({
+  events: ["before_prompt_build"],
+  handler: async (event) => {
+    event.context.systemPrompt += <code>\n\n# Active Context:\nUse: compliance-check skill</code>;
+  }
+});
+</code></pre>
+<h3>Creative Use 3: Multi-Agent Procedure Library</h3>
+<p>Create <code>~/.openclaw/skills/</code> as shared procedure library across all agents:
+<ul><li>Standard log-error format</li>
+<li>Compliance check procedure</li>
+<li>Research methodology</li>
+<li>Curation process</li>
+</ul>
+Each agent inherits consistent procedures without copy-paste.</p>
+<h3>Creative Use 4: Skill-Based Memory</h3>
+<p>Use skills as structured memory with enforced formats:
+<ul><li><code>memory-update</code> skill: Structured way to update MEMORY.md</li>
+<li><code>memory-search</code> skill: Standard query format for memory_search</li>
+<li><code>daily-note</code> skill: Format for memory/YYYY-MM-DD.md entries</li>
+</ul>
+<h3>Creative Use 5: Temporary Skill Injection</h3></p>
+<p>For one-off complex tasks, create temporary workspace skill:
+<ul><li>Generate skill via subagent</li>
+<li>Write to <code><workspace>/skills/temp-task-skill/</code></li>
+<li>Next turn triggers skill watcher → skill becomes eligible</li>
+<li>Task runs using skill</li>
+<li>Delete skill after completion</li>
+</ul>
+<h3>Creative Use 6: Skill Version Pinning</h3></p>
+<p>For production stability, pin skill versions:
+<pre><code><h1>Install specific version</h1>
+clawhub install my-skill --version 1.2.3</p>
+<h1>Or lock via lockfile</h1>
+<h1>.clawhub/lock.json tracks installed versions</h1>
+</code></pre>
+<p>Then <code>clawhub update --all</code> only updates within compatible range.</p>
+<h3>Creative Use 7: Cross-Platform Skill Bundles</h3>
+<p>Use <code>skills.load.extraDirs</code> for organization-wide skill bundles:
+<pre><code>{
+  skills: {
+    load: {
+      extraDirs: [
+        "~/company/skills/security/",
+        "~/company/skills/compliance/",
+        "~/company/skills/productivity/"
+      ]
+    }
+  }
+}
+</code></pre></p>
+<p>Different directories for different skill categories.</p>
+<hr>
+<h2>NEW QUESTIONS OPENED BY THIS RESEARCH</h2>
+<h3>a) Definition & Scope</h3>
+<ul><li>[ ] Can skills declare dependencies on other skills (skill chaining)? <strong>[MED]</strong></li>
+<li>[ ] What is the maximum recommended number of skills per agent before context overhead becomes problematic? <strong>[MED]</strong></li>
+<li>[ ] Can skills be dynamically enabled/disabled mid-session without gateway restart? <strong>[MED]</strong></li>
+</ul>
+<h3>b) Internal Mechanics</h3>
+<ul><li>[ ] How does the skills watcher handle nested directory changes (subdirectories)? <strong>[LOW]</strong></li>
+<li>[ ] What triggers skills snapshot refresh — only SKILL.md changes or any file in skill directory? <strong>[LOW]</strong></li>
+<li>[ ] Can two skills with same name be loaded from different locations simultaneously (one for model, one for user invocation)? <strong>[LOW]</strong></li>
+</ul>
+<h3>c) Use Cases</h3>
+<ul><li>[ ] Can skills implement persistent state across sessions (file-based)? <strong>[MED]</strong></li>
+<li>[ ] Can skills call other skills recursively? <strong>[MED]</strong></li>
+<li>[ ] What is recommended pattern for skill that generates other skills? <strong>[MED]</strong></li>
+</ul>
+<h3>d) Best Practices</h3>
+<ul><li>[ ] What happens if a skill's <code>requires.bins</code> binary exists on host but not in sandbox — does skill load or fail silently? <strong>[MED]</strong></li>
+<li>[ ] Can skills use <code>skills.entries.<skill>.env</code> for secrets that are also in <code>process.env</code> (override vs preserve)? <strong>[MED]</strong></li>
+<li>[ ] Should skills that need API keys prefer <code>apiKey</code> or <code>env</code> injection? <strong>[LOW]</strong></li>
+</ul>
+<h3>e) Problems & Limitations</h3>
+<ul><li>[ ] Is there a known issue with skills watcher consuming excessive CPU on large skill directories? <strong>[MED]</strong></li>
+<li>[ ] Does skills snapshot refresh trigger compaction or memory flush? <strong>[MED]</strong></li>
+<li>[ ] Can malicious skill bypass dangerous-code scanner for skill installs? <strong>[HIGH]</strong></li>
+</ul>
+<h3>f) Solutions & Workarounds</h3>
+<ul><li>[ ] Can skills implement their own sandboxing via skill-level Docker execution? <strong>[MED]</strong></li>
+<li>[ ] What's best way to debug skill loading issues? <strong>[MED]</strong></li>
+<li>[ ] Can skills be loaded from remote URLs (not local files)? <strong>[MED]</strong></li>
+</ul>
+<h3>g) Edge Cases</h3>
+<ul><li>[ ] What happens when skill name conflicts with built-in tool name? <strong>[MED]</strong></li>
+<li>[ ] Can skills declare <code>metadata.openclaw.requires.config</code> for config paths that don't exist? <strong>[LOW]</strong></li>
+<li>[ ] What happens to in-flight agent runs when skills snapshot refreshes mid-session? <strong>[MED]</strong></li>
+</ul>
+<h3>h) Creative Uses</h3>
+<ul><li>[ ] Could skills implement a real-time collaboration protocol (shared skills across users)? <strong>[LOW]</strong></li>
+<li>[ ] Can skills be used as a plugin system (skills that register new tools/hooks)? <strong>[MED]</strong></li>
+<li>[ ] Could TERRACOTTA business procedures be encoded as skills for consistent execution? <strong>[HIGH — business relevance]</strong></li>
+</ul>
+<hr>
+<h2>Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skills loading, precedence, gating rules</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/creating-skills.md</code> — Skill creation workflow, SKILL.md format</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills-config.md</code> — Skills config schema reference</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/clawhub.md</code> — ClawHub registry, CLI commands, publish/sync workflows</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/architecture.md</code> — Plugin capability model (skills shipped via plugins)</li>
+<li><code>/data/.openclaw/skills/skill-creator/SKILL.md</code> — Internal skill creation methodology (skill about creating skills)</li>
+</ul>
+<hr>
+</em>Research by: Investigador Scout | 2026-04-23 04:25 CET*
+</body>
+</html>

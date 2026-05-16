@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 5: Payment Setup — Stripe, PayPal & Alternatives</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_5.md</p>
+    <h2>Query</h2>
+"solopreneur AI services pricing setup Stripe PayPal payment"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://thebootstrappedfounder.com/payment-platforms-for-solopreneurs/</li>
+<li>https://stripe.com/pricing</li>
+<li>https://www.paypal.com/us/business/solopreneurs</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>Las opciones para solopreneurs</h3>
+| Platform | Fees | Best for |
+|----------|------|----------|
+| Stripe | 2.9% + €0.20 | Tech-savvy, control |
+| PayPal | 3.49% + €0.20 | Simple, familiar |
+| Paddle (MoR) | 5% | Tax handling, compliance |
+| Lemon Squeezy (MoR) | 5% | Digital products, creators |
+<h3>Stripe vs PayPal</h3>
+<strong>Stripe:</strong>
+<ul><li>✅ API documentation unmatched</li>
+<li>✅ Developer-friendly</li>
+<li>✅ Control total</li>
+<li>❌ Requires tech setup</li>
+<li>❌ Tú manejas taxes</li>
+<li>❌ 2.9% + €0.20 por transaction</li>
+</ul>
+<strong>PayPal:</strong>
+<ul><li>✅ Rápido de setup</li>
+<li>✅ Familiar para clientes</li>
+<li>✅ No requiere código</li>
+<li>❌ Fees más altos (3.49%)</li>
+<li>❌ Menos control</li>
+<li>❌ Menos professional</li>
+</ul>
+<strong>Recommendation para Dani:</strong> Stripe + PayPal ambos
+<h3>El modelo Merchant of Record (MoR) — Paddle/LemonSqueezy</h3>
+<strong>Por qué importa:</strong>
+<ul><li>Con Stripe: 100 clientes = 1,200 invoices + 1,200 tax reports al año</li>
+<li>Con MoR: 100 clientes = 12 payouts (no invoices, no tax reports)</li>
+<li>El MoR gestiona todo: taxes, VAT, customer support, refunds</li>
+</ul>
+<strong>Costo extra:</strong> 5% vs 2.9% — pero ahorra tiempo enorme
+<h3>Pricing models para AI services</h3>
+<strong>Modelo 1: Flat subscription (recomendado para Dani)</strong>
+<ul><li>€500/mes — 30 tasks</li>
+<li>€1,500/mes — 100 tasks + setup</li>
+<li>€3,000/mes — unlimited</li>
+</ul>
+<strong>Modelo 2: Hybrid (base + overage)</strong>
+<ul><li>€500 base + €25/task adicional</li>
+<li>Protege margins</li>
+</ul>
+<strong>Modelo 3: Per-project</strong>
+<ul><li>€300-500 por proyecto</li>
+<li>Para workflows específicos</li>
+</ul>
+<strong>Modelo 4: Usage-based (evitar al inicio)</strong>
+<ul><li>€0.50-2 por task</li>
+<li>Dificultad para predecir revenue</li>
+</ul>
+<h3>Setup para Stripe (lo que necesitas)</h3>
+<strong>Step 1: Account business</strong>
+<ul><li>Stripe account: stripe.com</li>
+<li>Necesitas: CIF/NIF, cuenta bancaria</li>
+<li>Verification: 1-2 días</li>
+</ul>
+<strong>Step 2: Payment link (sin código)</strong>
+<ul><li>Crea payment links desde dashboard</li>
+<li>Ejemplo: "Paga tu AI Automation Setup"</li>
+<li>Copia y pega en email, WhatsApp</li>
+</ul>
+<strong>Step 3: Integra en landing page</strong>
+<ul><li>Botón: "Pagar €500"</li>
+<li>Link directo a Stripe payment</li>
+<li>No necesitas web developer</li>
+</ul>
+<strong>Step 4: Para subscriptions</strong>
+<ul><li>Dashboard → Billing → Products</li>
+<li>Crea 3 products (tiers)</li>
+<li>Activa recurring</li>
+</ul>
+<h3>Setup para PayPal</h3>
+<strong>Option 1: Payment links</strong>
+<ul><li>paypal.com/business/payments</li>
+<li>Crea link: paypal.me/tunegocio/500</li>
+<li>Envía por email/WhatsApp</li>
+</ul>
+<strong>Option 2: Facturas</strong>
+<ul><li>invoicing.paypal.com</li>
+<li>Crea factura, envía</li>
+<li>Cliente paga con PayPal o tarjeta</li>
+</ul>
+<h3>Cómo cobrar sin website complejo</h3>
+<strong>El flujo simple:</strong>
+<ul><li>Landing page con tu oferta</li>
+<li>Botón "Book Call" o "Pagar"</li>
+<li>En el call, si dice yes → envías payment link</li>
+<li>Pagado → start project</li>
+</ul>
+<strong>Herramientas:</strong>
+<ul><li>Carrd.co (landing page gratis)</li>
+<li>Stripe payment links</li>
+<li>PayPal.me</li>
+<li>WhatsApp per发送 link</li>
+</ul>
+<hr>
+<h2>Resumen para Dani — ACTION PLAN</h2>
+<strong>Setup payment en 1 día:</strong>
+<strong>Día 1: Stripe (30 min)</strong>
+<ul><li>Ve a stripe.com → Create account</li>
+<li>Verifica tu negocio (CIF, banco)</li>
+<li>Crea payment links para cada tier:</li>
+</ul>   - Starter: stripe.com/pay/ai-setup-starter
+   - Professional: stripe.com/pay/ai-setup-pro
+<ul><li>Copia los links</li>
+</ul>
+<strong>Día 2: PayPal (20 min)</strong>
+<ul><li>paypal.me/tunombre/500</li>
+<li>Activa facturas en invoicing.paypal.com</li>
+<li>Ten listo para clientes que prefieren PayPal</li>
+</ul>
+<strong>Día 3: Integra en landing page</strong>
+<ul><li>Añade botones "Pagar con Stripe" / "Pagar con PayPal"</li>
+<li>Testea que funcione</li>
+</ul>
+<strong>Costo:</strong> €0 (Stripe/PayPal gratis)
+<strong>Tiempo:</strong> 1-2 horas total
+<strong>Nota:</strong> Para 100 clientes, MoR (Paddle/LemonSqueezy) te ahorra 40+ horas/año en taxes. Pero al inicio Stripe está bien.
+</body>
+</html>

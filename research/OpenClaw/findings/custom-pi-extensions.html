@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Custom Pi Extensions — Research Findings</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 custom-pi-extensions.md</p>
+    <strong>Research Date:</strong> 2026-04-23 01:55 CET  
+<strong>Status:</strong> COMPLETE  
+<strong>Topic:</strong> Custom Pi Extensions (pi-hooks) — Extension Architecture
+<hr>
+<h2>What is It?</h2>
+<strong>Custom Pi Extensions</strong> (also called <code>pi-hooks</code>) are modular runtime extensions that hook into OpenClaw's embedded Pi agent (<code>pi-coding-agent</code>) to modify or augment agent behavior during a session. They are <strong>distinct from OpenClaw's hook system</strong> (<code>before_model_resolve</code>, <code>before_prompt_build</code>, etc.) — they operate inside the Pi agent runtime, not at the OpenClaw gateway layer.
+<p>Two extensions ship built-in with OpenClaw:
+<ul><li><strong>compaction-safeguard</strong> — Quality guardrails for session compaction (summarization)</li>
+<li><strong>context-pruning</strong> — Cache-TTL based context pruning ("microcompact"-style)</li>
+</ul>
+<hr></p>
+<h2>How It Works</h2>
+<h3>Architecture</h3>
+<pre><code>createAgentSession()
+  └── ResourceLoader
+        └── additionalExtensionPaths[] → loads .js extension files
+              └── Extension registers via ExtensionAPI (callback-based)
+                    └── Session runtime calls extension hooks at specific points
+</code></pre>
+<h3>Core Files</h3>
+| File | Purpose |
+|------|---------|
+| <code>dist/plugin-sdk/src/agents/pi-hooks/compaction-safeguard.d.ts</code> | Compaction safeguard extension type definition |
+| <code>dist/plugin-sdk/src/agents/pi-hooks/context-pruning.d.ts</code> | Context pruning extension type definition |
+| <code>dist/plugin-sdk/src/agents/pi-hooks/session-manager-runtime-registry.d.ts</code> | Session-scoped runtime registry |
+| <code>dist/agents/pi-embedded-runner/extensions.ts</code> | Extension loading logic |
+| <code>pi.md</code> (docs) | Architecture overview of Pi integration |
+<h3>Loading Mechanism</h3>
+<p>Extensions are loaded via <code>additionalExtensionPaths</code> passed to <code>DefaultResourceLoader</code> during <code>createAgentSession()</code>:</p>
+<pre><code>const resourceLoader = new DefaultResourceLoader({
+  cwd: resolvedWorkspace,
+  agentDir,
+  settingsManager,
+  additionalExtensionPaths,  // ← extension paths pushed here
+});
+await resourceLoader.reload();
+</code></pre>
+<h3>Extension API</h3>
+<p>Each extension receives an <code>ExtensionAPI</code> object from <code>@mariozechner/pi-coding-agent</code>. The extension then registers callbacks for specific lifecycle events:</p>
+<pre><code>// From compaction-safeguard.d.ts
+export default function compactionSafeguardExtension(api: ExtensionAPI): void {
+  // Registers compaction-related callbacks
+}
+</code></pre>
+<pre><code>// From context-pruning.d.ts
+export { default } from "./context-pruning/extension.js";
+export { pruneContextMessages } from "./context-pruning/pruner.js";
+// Exports for use by the extension loader
+</code></pre>
+<h3>Session Manager Runtime Registry</h3>
+<pre><code>// session-manager-runtime-registry.d.ts
+export declare function createSessionManagerRuntimeRegistry<TValue>(): {
+  set: (sessionManager: unknown, value: TValue | null) => void;
+  get: (sessionManager: unknown) => TValue | null;
+};
+</code></pre>
+<p>This creates a per-session registry for extension-specific runtime state — allows extensions to store and retrieve session-scoped data without global state.</p>
+<hr>
+<h2>Built-in Extensions</h2>
+<h3>1. Compaction Safeguard (<code>compaction-safeguard</code>)</h3>
+<strong>Purpose:</strong> Quality guardrails for session compaction (auto-summarization when context overflows)
+<strong>Behavior:</strong>
+<ul><li>Adaptive token budgeting for compaction summaries</li>
+<li>Tool failure tracking and formatting</li>
+<li>File operation summaries in compaction output</li>
+<li>Format: structured fallback summary, preserved recent turns, tool failure sections</li>
+<li>Quality auditing of generated summaries</li>
+</ul>
+<strong>Key functions exported:</strong>
+<ul><li><code>collectToolFailures()</code> — Extract tool failures from messages</li>
+<li><code>formatToolFailuresSection()</code> — Format failures for compaction prompt</li>
+<li><code>splitPreservedRecentTurns()</code> — Split messages into summarizable vs preserved</li>
+<li><code>formatPreservedTurnsSection()</code> — Format preserved turns</li>
+<li><code>readWorkspaceContextForSummary()</code> — Extract "Session Startup" and "Red Lines" from AGENTS.md</li>
+<li><code>auditSummaryQuality()</code> — Validate summary quality</li>
+<li><code>computeAdaptiveChunkRatio()</code> — Adaptive chunk sizing</li>
+<li><code>summarizeInStages()</code> — Multi-stage summarization</li>
+</ul>
+<strong>Triggered by:</strong> <code>resolveCompactionMode(params.cfg) === "safeguard"</code> in <code>extensions.ts</code>
+<strong>Config option:</strong> <code>agents.defaults.contextPruning.mode === "cache-ttl"</code> — but this is for context pruning, not compaction safeguard specifically
+<h3>2. Context Pruning (<code>context-pruning</code>)</h3>
+<strong>Purpose:</strong> Opt-in "microcompact"-style context pruning. Affects <strong>in-memory context only</strong> — does NOT rewrite session history on disk.
+<strong>Key exported items:</strong>
+<ul><li><code>pruneContextMessages()</code> from <code>./context-pruning/pruner.js</code></li>
+<li><code>ContextPruningConfig</code>, <code>ContextPruningToolMatch</code>, <code>EffectiveContextPruningSettings</code> types</li>
+<li><code>computeEffectiveSettings()</code>, <code>DEFAULT_CONTEXT_PRUNING_SETTINGS</code></li>
+</ul>
+<strong>Triggered by:</strong> <code>cfg?.agents?.defaults?.contextPruning?.mode === "cache-ttl"</code> in extensions loading
+<strong>What it does:</strong>
+<ul><li>Tracks cache TTL for context messages</li>
+<li>Prunes messages based on settings (max age, token budget, etc.)</li>
+<li>Per-message pruning decisions based on tool match patterns</li>
+</ul>
+<hr>
+<h2>Extension Points Available</h2>
+<h3>Currently Known Extension Points</h3>
+| Extension | Hook Point | Description |
+|-----------|-------------|-------------|
+| <code>compaction-safeguard</code> | Compaction lifecycle | Intercepts before/during/after compaction |
+| <code>context-pruning</code> | Context assembly | Prunes messages before they're sent to LLM |
+<h3>How Extensions Register</h3>
+<p>Based on the type definitions, extensions appear to use a <strong>callback registration pattern</strong> via <code>ExtensionAPI</code>:</p>
+<pre><code>// Hypothetical extension registration pattern
+function myExtension(api: ExtensionAPI): void {
+  api.onCompactionStart?.((ctx) => { /<em> ... </em>/ });
+  api.onCompactionEnd?.((ctx) => { /<em> ... </em>/ });
+  api.onContextAssemble?.((ctx) => { /<em> ... </em>/ });
+}
+</code></pre>
+<strong>NOTE:</strong> The actual ExtensionAPI interface methods are not publicly documented. The exact callback names need to be determined by inspecting the <code>@mariozechner/pi-coding-agent</code> package or the actual runtime behavior.
+<hr>
+<h2>How to Create Custom Extensions</h2>
+<h3>Step-by-Step Approach</h3>
+<ul><li><strong>Study existing extensions</strong> in <code>dist/plugin-sdk/src/agents/pi-hooks/</code>:</li>
+</ul>   - Study <code>compaction-safeguard.d.ts</code> and its implementation
+   - Study <code>context-pruning.d.ts</code> and its implementation
+<ul><li><strong>Create extension file</strong> in a workspace or custom location:</li>
+</ul>   <pre><code>   // my-extension.ts
+   import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+   
+   export default function myCustomExtension(api: ExtensionAPI): void {
+     // Register callbacks via api
+   }
+   </code></pre>
+<ul><li><strong>Package as JS</strong> — Extensions must be compiled JS (not TS) since they're loaded via <code>ResourceLoader.reload()</code> which resolves paths to <code>.js</code> files</li>
+</ul>
+<ul><li><strong>Configure path</strong> — Via <code>additionalExtensionPaths</code> in the agent session params</li>
+</ul>
+<h3>Requirements</h3>
+<ul><li>Must export a <strong>default function</strong> accepting <code>ExtensionAPI</code></li>
+<li>Must be valid JS (ESM or CJS)</li>
+<li>Must be loadable via <code>import()</code> by ResourceLoader</li>
+<li>Should handle errors gracefully (uncaught exceptions may break extension behavior without crashing the session)</li>
+</ul>
+<h3>Configuration Integration</h3>
+<p>Extensions that need config would read from <code>agents.defaults</code> or custom config paths:</p>
+<pre><code>// In extensions.ts
+if (cfg?.agents?.defaults?.myExtension?.enabled) {
+  paths.push(resolvePiExtensionPath("my-extension"));
+}
+</code></pre>
+<hr>
+<h2>Problems & Limitations</h2>
+<h3>Problems</h3>
+<ul><li><strong>No public SDK documentation</strong> — Extension API types exist in <code>.d.ts</code> files but there's no user-facing docs explaining how to create custom extensions</li>
+<li><strong>Internal API</strong> — <code>ExtensionAPI</code> is from <code>@mariozechner/pi-coding-agent</code> (internal package), not a public OpenClaw API</li>
+<li><strong>No discoverable extension points</strong> — No registry or enumeration of available hooks</li>
+<li><strong>TypeScript compilation required</strong> — Extensions must be pre-compiled to JS</li>
+<li><strong>Extension loading is static</strong> — Paths must be known at session creation, no dynamic registration mid-session</li>
+<li><strong>No error recovery</strong> — If extension throws, behavior is undefined</li>
+</ul>
+<h3>Limitations</h3>
+<ul><li><strong>No cross-extension communication</strong> — Each extension is isolated; session-manager-runtime-registry helps but is per-extension</li>
+<li><strong>No hot-reload</strong> — Changing an extension requires new session</li>
+<li><strong>Disk-only session history</strong> — Context pruning affects in-memory only; doesn't compact the actual session JSONL file</li>
+<li><strong>Version coupling</strong> — Extension API may change between pi-coding-agent versions (currently v0.64.0)</li>
+</ul>
+<hr>
+<h2>Edge Cases</h2>
+<ul><li><strong>Multiple extensions on same hook</strong> — Execution order undefined; likely LIFO or insertion order</li>
+<li><strong>Extension with same name as built-in</strong> — Likely one overwrites the other based on path precedence</li>
+<li><strong>Extension path doesn't exist</strong> — ResourceLoader.reload() likely fails or silently skips</li>
+<li><strong>Extension modifies session state incorrectly</strong> — Could cause context overflow, tool call failures, or compaction loops</li>
+<li><strong>Session reset clears extension state</strong> — SessionManager runtime registry is per-session; reset clears it</li>
+<li><strong>Subagent sessions</strong> — Extensions may or may not be inherited; need to test</li>
+</ul>
+<hr>
+<h2>Creative Uses</h2>
+<ul><li><strong>RAG Context Enrichment</strong> — Hook into context assembly to inject relevant documents from a vector store before each LLM call</li>
+<li><strong>Custom Logging/Audit Trail</strong> — Track all prompts, tool calls, and responses to a separate audit store</li>
+<li><strong>Dynamic Tool Allowlist</strong> — Modify tool policy based on session history or user context</li>
+<li><strong>Conversation Analytics</strong> — Track sentiment, topic changes, engagement metrics</li>
+<li><strong>Adaptive Temperature/Temperature Override</strong> — Adjust model parameters based on conversation phase</li>
+<li><strong>Memory Injection Gateway</strong> — Intercept context and inject relevant MEMORY.md content proactively</li>
+<li><strong>Rate Limiting</strong> — Throttle tool calls or message volume per session</li>
+<li><strong>Content Filtering</strong> — Scan context for sensitive content before LLM call</li>
+<li><strong>Multi-modal Preprocessor</strong> — Transform images/audio before injection</li>
+<li><strong>Session Migration</strong> — Export session state to external format on specific triggers</li>
+</ul>
+<hr>
+<h2>New Questions Generated</h2>
+<ul><li><strong>What are the exact <code>ExtensionAPI</code> callback method names?</strong> — Need to inspect <code>@mariozechner/pi-coding-agent</code> runtime or source</li>
+<li><strong>Can extensions be enabled/disabled per session or per agent?</strong> — Config structure unclear</li>
+<li><strong>What is the full lifecycle of a compaction event?</strong> — When exactly do callbacks fire?</li>
+<li><strong>Can extensions read/write to the session file?</strong> — Would enable truly custom compaction strategies</li>
+<li><strong>What is <code>resolvePiExtensionPath()</code> and how does it resolve paths?</strong> — May be a standard location or config-driven</li>
+<li><strong>Are there memory leaks from extension runtime registries?</strong> — Need to understand cleanup</li>
+<li><strong>Can extensions communicate via shared state?</strong> — Beyond session-manager-runtime-registry</li>
+<li><strong>What happens when extension throws in a callback?</strong> — Is it caught, does it propagate?</li>
+<li><strong>Can extensions modify the tool list dynamically?</strong> — Would enable dynamic capability switching</li>
+<li><strong>Is there a way to debug extension execution?</strong> — No logs or traces mentioned</li>
+</ul>
+<hr>
+<h2>Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/pi.md</code> — Pi Integration Architecture documentation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/plugin-sdk/src/agents/pi-hooks/compaction-safeguard.d.ts</code> — Compaction safeguard type definitions</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/plugin-sdk/src/agents/pi-hooks/context-pruning.d.ts</code> — Context pruning type definitions</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/plugin-sdk/src/agents/pi-hooks/session-manager-runtime-registry.d.ts</code> — Session runtime registry</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/agents/pi-embedded-runner/extensions.ts</code> — Extension loading logic</li>
+<li>Backlog.md — L18 Custom Pi Extensions item</li>
+</ul>
+<hr>
+<em>Research by: Investigador Scout | 2026-04-23 01:55 CET</em>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub + BRAIN — Resumen para Dani</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 SUMMARY_DANI.md</p>
+    <strong>Investigador — 16 mayo 2026</strong>
+<hr>
+<h2>TL;DR</h2>
+<p>Tu cuenta GitHub (DaniBrainClaw) + BRAIN en VPS = <strong>automatización potente sin costo extra</strong>.</p>
+<hr>
+<h2>Lo que puedes hacer AHORA</h2>
+<h3>1. Backup Automático de BRAIN (⭐ prioritario)</h3>
+<strong>Problema:</strong> Si BRAIN se rompe o pierdes config, pierdes todo el contexto.
+<strong>Solución:</strong> Sync automático a GitHub privado todos los días.
+<strong>Archivos que se respaldan:</strong>
+<ul><li><code>AGENTS.md</code>, <code>SOUL.md</code>, <code>USER.md</code>, <code>MEMORY.md</code>, <code>TOOLS.md</code></li>
+<li>Skills personalizados</li>
+<li>Scripts</li>
+<li>Daily memory logs</li>
+</ul>
+<strong>Por qué GitHub:</strong>
+<ul><li>✅ Versioning automático</li>
+<li>✅ Rollback a cualquier fecha</li>
+<li>✅ Gratis (10 GB storage)</li>
+<li>✅ Acceso desde cualquier lugar</li>
+</ul>
+<strong>Tiempo de setup:</strong> ~30 minutos
+<strong>Costo:</strong> $0
+<hr>
+<h3>2. GitHub Pages para Presencia Online</h3>
+<strong>Qué es:</strong> Hosting web gratuito integrado con GitHub.
+<strong>Usos concretos para tus negocios:</strong>
+| Web | Qué podrías hacer |
+|-----|-------------------|
+| <strong>mf3.es</strong> | Portfolio de Mediterranean Fusion |
+| <strong>gp3.es</strong> | Blog técnico de Green Path |
+| <strong> liv-ing.com</strong> | Landing page de servicios |
+| <strong>Tu marca personal</strong> | Portfolio de consultor |
+<strong>Ventajas:</strong>
+<ul><li>SSL gratis</li>
+<li>Dominio custom (opcional)</li>
+<li>Actualizaciones con solo <code>git push</code></li>
+</ul>
+<hr>
+<h3>3. GitHub Actions (Automatización)</h3>
+<strong>Qué es:</strong> Scripts que se ejecutan automáticamente en respuesta a eventos.
+<strong>Para BRAIN:</strong>
+<ul><li>Health check diario (verificar que responde)</li>
+<li>Sync de config cada noche</li>
+<li>Alertas si algo falla</li>
+</ul>
+<strong>Ejemplo práctico:</strong>
+<pre><code><h1>Cada día a las 6 AM</h1>
+<h1>Si BRAIN no responde → crear issue en GitHub</h1>
+<h1>Dani recibe notificación</h1>
+</code></pre>
+<hr>
+<h3>4. Backup de TODOS tus repos</h3>
+<strong>Problema:</strong> Tienes repos en GitHub de varios proyectos. ¿Y si se pierden?
+<strong>Solución:</strong> git-backup — tool que clona todos tus repos automáticamente.
+<strong>Setup:</strong>
+<pre><code>git-backup -config git-backup.yml
+</code></pre>
+<strong>Resultado:</strong> Todos tus repos en un disco local, actualizados.
+<hr>
+<h2>Lo que NO necesitas (por ahora)</h2>
+<h3>CI/CD para AI Agents</h3>
+<ul><li>Interesante pero complejo</li>
+<li>Relevante solo si BRAIN genera código en producción</li>
+<li><strong>Recomendación:</strong> No ahora</li>
+</ul>
+<h3>Git LFS para archivos grandes</h3>
+<ul><li>Tienes 10 GB gratis</li>
+<li>Los archivos de BRAIN son texto (MBs, no GBs)</li>
+<li><strong>Recomendación:</strong> No ahora</li>
+</ul>
+<h3>Agentic Workflows</h3>
+<ul><li>Nuevo, complejo, sin documentación clara</li>
+<li><strong>Recomendación:</strong> Esperar 6-12 meses</li>
+</ul>
+<hr>
+<h2>Plan de Acción</h2>
+<h3>Esta semana (30 min)</h3>
+<ul><li><strong>Crear repo privado:</strong> <code>brain-config-backup</code></li>
+<li><strong>Crear script de sync:</strong></li>
+</ul>   <pre><code>   #!/bin/bash
+   rsync -av ~/.openclaw/ ~/DaniBrainClaw/brain-config-backup/
+   cd ~/DaniBrainClaw/brain-config-backup
+   git add -A
+   git commit -m "Auto-backup: $(date)"
+   git push origin main
+   </code></pre>
+<ul><li><strong>Añadir al cron:</strong> <code>0 3 <em> </em> <em> /path/to/sync.sh</code></li>
+</ul>
+<h3>Este mes (opcional)</h3>
+<ul><li><strong>GitHub Pages:</strong> Crear landing page simple para uno de tus negocios</li>
+<li><strong>git-backup:</strong> Instalar y configurar backup de todos tus repos</li>
+</ul>
+<hr>
+<h2>Números Importantes</h2>
+| Recurso | Límite Free | Uso de BRAIN |
+|---------|-------------|--------------|
+| API requests/hr | 5,000 | <100 (bastante) |
+| Storage | 10 GB | ~50 MB (mínimo) |
+| Repo size | 100 GB | <100 MB |
+| Bandwidth | 100 GB/mo | <1 GB |
+<strong>Conclusión:</strong> GitHub Free es MÁS que suficiente para todo lo que BRAIN necesita.
+<hr>
+<h2>Archivos del Investigación</h2>
+<pre><code>Research/GitHub_BRAIN_Integration/
+├── INDEX.md           → Guía completa
+├── SUMMARY_DANI.md    → Este archivo
+├── sources.md         → 32 fuentes
+└── findings/
+    ├── step_1.md      → Backup sistema
+    ├── step_2.md      → CI/CD agents
+    ├── step_3.md      → GitHub Pages
+    ├── step_4.md      → git-backup
+    └── step_5.md      → Límites API/storage
+</code></pre>
+<hr>
+<h2>Siguiente Paso</h2>
+<strong>Dani, ¿por dónde quieres empezar?</strong>
+<ul><li><strong>Backup ahora</strong> → te doy el script exacto</li>
+<li><strong>GitHub Pages</strong> → creamos landing page</li>
+<li><strong>git-backup</strong> → configuramos todos tus repos</li>
+</ul>
+<hr>
+</em>Investigador — Avísame cuando quieras ejecutar algo.*
+</body>
+</html>

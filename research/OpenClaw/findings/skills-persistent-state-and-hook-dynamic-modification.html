@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skills Persistent State & Hook Dynamic Modification — RESEARCH FINDINGS</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 skills-persistent-state-and-hook-dynamic-modification.md</p>
+    <strong>Research Date:</strong> 2026-04-23
+<strong>Topic:</strong> Can skills implement persistent state across sessions (file-based)? + Can hooks dynamically modify the skills list at runtime?
+<strong>Priority:</strong> MED (#21 + #41)
+<strong>Status:</strong> ✅ COMPLETE
+<hr>
+<h2>1. WHAT IS</h2>
+<p>Two related questions:</p>
+<strong>Q21: Can skills implement persistent state across sessions (file-based)?</strong>
+Skills are instruction bundles that guide the model. The question is whether a skill can retain information from one session to another without relying on memory systems like <code>memory_search</code> or <code>MEMORY.md</code>.
+<strong>Q41: Can hooks dynamically modify the skills list at runtime (without config change)?</strong>
+Hooks run at specific lifecycle events. The question is whether a hook can programmatically add, remove, or swap skills during an active session without editing config files or triggering the watcher.
+<hr>
+<h2>2. HOW IT WORKS</h2>
+<h3>Skills Persistent State — Mechanics</h3>
+<strong>No native state mechanism exists.</strong> Skills are text bundles — they don't have runtime state storage. However, the skills infrastructure provides hooks into existing systems:
+<p>#### A. Workspace file-based state (skill writes files)
+A skill can use the workspace directory (<code>context.workspaceDir</code> via hook context) to read/write state files:
+<pre><code><workspaceDir>/
+  .skills/
+    my-skill/
+      SKILL.md
+      state.json       ← skill can read/write this
+</code></pre></p>
+<p>The skill's <strong>instructions</strong> can include steps like "read state from <code>~/.openclaw/workspace/.skills/my-skill/state.json</code>". Since the workspace is persistent across sessions, files written there survive between sessions.</p>
+<p>#### B. Skills snapshot persistence
+The skills snapshot (<code>sessionEntry.skillsSnapshot</code>) is persisted in the <strong>session store</strong>:
+<pre><code>// session-updates-3NulUPmS.js
+const skillSnapshot = !current.skillsSnapshot || shouldRefreshSnapshot 
+  ? buildSnapshot() 
+  : current.skillsSnapshot;
+await persistSessionEntryUpdate({
+  ...sessionEntry ?? { skillsSnapshot: skillSnapshot },
+  skillsSnapshot: skillSnapshot
+});
+</code></pre></p>
+<p>This means <strong>which skills were eligible</strong> for a session is recorded in the session store JSONL file. However, this is the <em>result</em> of skill loading, not arbitrary custom state.</p>
+<p>#### C. Skill state via hook session:patch
+The <code>session:patch</code> hook fires when session properties are modified. The patch only contains changed fields. This cannot directly add skill state to the snapshot, but a hook could write a workspace file that a skill reads on next execution.</p>
+<h3>Hook Dynamic Skills Modification — Mechanics</h3>
+<strong>No direct API for runtime skills list modification exists.</strong> Here's what the system actually supports:
+<p>#### A. before_prompt_build hook (modifying mode)
+The <code>before_prompt_build</code> hook uses <code>mergeResults</code> mode — handlers are called sequentially, each can modify the result for the next. It runs on:
+<pre><code>return runModifyingHook("before_prompt_build", event, ctx, { mergeResults: mergeBeforePromptBuild });
+</code></pre></p>
+<p>The hook receives <code>context.cfg</code> (full config with all secrets). Modifying <code>context.cfg.skills</code> <strong>at this hook level</strong> does NOT cause the skills snapshot to rebuild in the current turn — the snapshot is already built before this hook runs.</p>
+<p>#### B. Hook execution order context
+The hook runs AFTER the skills snapshot decision is made for the turn. The flow is:
+<ul><li>Session resolution → skills snapshot loaded/built</li>
+<li><code>before_prompt_build</code> hook fires (modifying merge)</li>
+<li>System prompt assembled with current skills list</li>
+<li>Agent run starts</li>
+</ul>
+So modifying <code>context.cfg</code> in <code>before_prompt_build</code> affects <strong>future turns</strong>, not the current one.</p>
+<p>#### C. Watcher + SKILL.md modification
+The skills watcher triggers on <code>SKILL.md</code> file changes:
+<pre><code>// refresh-p9Dzo7mb.js
+const watchEnabled = params.config?.skills?.load?.watch !== false;
+// On change → bumpSkillsSnapshotVersion → "next agent turn picks up new list"
+</code></pre></p>
+<p>A hook could theoretically rename/move <code>SKILL.md</code> files to dynamically enable/disable skills. This works but requires the watcher to be enabled and changes take effect on the <strong>next turn</strong>.</p>
+<p>#### D. session:patch hook
+The <code>session:patch</code> event fires when <code>session:patch</code> is called with changed fields. The context includes:
+<ul><li><code>context.sessionEntry</code> — current session metadata</li>
+<li><code>context.patch</code> — only changed fields</li>
+<li><code>context.cfg</code> — full config</li>
+</ul>
+This hook cannot modify which skills are in the snapshot. It can only react to patch events.</p>
+<hr>
+<h2>3. USES</h2>
+<h3>For Skills Persistent State</h3>
+<ul><li><strong>Counters and accumulators</strong>: Skill tracks "how many times I've executed X" in a local file</li>
+<li><strong>Configuration persistence</strong>: Skill preferences set by user survive across sessions</li>
+<li><strong>Caching</strong>: Skill caches API results to workspace files instead of recomputing</li>
+<li><strong>Workflow state machines</strong>: Multi-step workflows can store progress in JSON state files</li>
+<li><strong>Audit logs</strong>: Skills can append to structured log files in workspace</li>
+</ul>
+<h3>For Hook Dynamic Skills Modification</h3>
+<ul><li><strong>Conditional skill activation</strong>: Enable/disable skills based on time, user identity, or channel</li>
+<li><strong>A/B testing skills</strong>: Hook swaps skill directories mid-session for experimentation</li>
+<li><strong>Emergency disable</strong>: Hook disables misbehaving skill when error rate exceeds threshold</li>
+<li><strong>Progressive skill rollout</strong>: Hook enables new skills for gradually expanding user groups</li>
+<li><strong>Context-aware skills</strong>: Hook adds situation-specific skills based on message content</li>
+</ul>
+<hr>
+<h2>4. PROBLEMS</h2>
+<h3>For Skills Persistent State</h3>
+| Problem | Description |
+|---------|-------------|
+| <strong>No native mechanism</strong> | Skills have no built-in state storage; must use workspace files manually |
+| <strong>No isolation</strong> | Skill state files are in shared workspace; poorly behaved skills could corrupt each other's state |
+| <strong>Race conditions</strong> | Two concurrent agent turns writing same state file could corrupt it |
+| <strong>Session store doesn't help</strong> | <code>sessionEntry.skillsSnapshot</code> is not arbitrary key-value storage; it stores which skills were eligible, not custom skill data |
+| <strong>Security concern</strong> | Workspace is accessible to skills and hooks; state files could contain sensitive data |
+<h3>For Hook Dynamic Skills Modification</h3>
+| Problem | Description |
+|---------|-------------|
+| <strong>No direct API</strong> | No hook or API call can directly add/remove skills from the current session's skills list |
+| <strong>Snapshot already built</strong> | <code>before_prompt_build</code> fires after snapshot decision; changes affect NEXT turn |
+| <strong>Watcher dependency</strong> | Dynamic enable/disable requires <code>skills.load.watch: true</code> — often disabled in production |
+| <strong>No per-session toggle</strong> | Skills are workspace-global; cannot enable for one session but not another |
+| <strong>Config hot-reload required</strong> | Modifying <code>skills.entries.<skill>.enabled</code> may require hot-reload to take effect |
+| <strong>session:patch is read-react</strong> | The <code>session:patch</code> hook only reacts to patches; it cannot initiate changes |
+<hr>
+<h2>5. SOLUTIONS</h2>
+<h3>Solution 1: File-Based State Pattern for Skills</h3>
+<pre><code>// In skill instructions (SKILL.md):
+// ## STATE FILE
+// Location: <workspace>/.skills/my-skill/state.json
+// Format: { "count": 0, "lastRun": "ISO timestamp" }
+<p>// Skill procedure:
+// 1. Read state.json from <workspace>/.skills/my-skill/state.json
+// 2. If not exists, initialize with defaults
+// 3. Increment count, update lastRun
+// 4. Write state.json back
+// 5. Proceed with main logic using state
+</code></pre></p>
+<p>The skill must include file read/write instructions explicitly in its SKILL.md content.</p>
+<h3>Solution 2: Hook-Driven Skills Toggle (Next Turn)</h3>
+<pre><code>// In a plugin hook handler:
+api.registerHook({
+  events: ["before_prompt_build"],
+  handler: async (event) => {
+    const hour = new Date().getHours();
+    if (hour >= 18 || hour < 9) {
+      // Disable non-essential skills outside business hours
+      event.context.cfg.skills = event.context.cfg.skills || {};
+      // Note: This only affects next turn after watcher picks up changes
+    }
+  }
+});
+</code></pre>
+<strong>Reality check:</strong> This requires file modification + watcher trigger. The hook can't directly change the in-memory skills list.
+<h3>Solution 3: Skill Activation via session:patch</h3>
+<pre><code>// Hook that responds to session:patch events
+api.registerHook({
+  events: ["session:patch"],
+  handler: async (event) => {
+    if (event.context.patch?.activatedSkill) {
+      // Write marker file that skill reads on next invocation
+      const fs = await import('fs/promises');
+      const statePath = <code>${event.context.workspaceDir}/.skills/active-skill.txt</code>;
+      await fs.writeFile(statePath, event.context.patch.activatedSkill);
+    }
+  }
+});
+</code></pre>
+<h3>Solution 4: Per-Agent Skill Allowlists (Static Control)</h3>
+<pre><code>// In openclaw.json
+{
+  agents: {
+    defaults: { skills: ["essential", "critical"] },
+    list: [
+      { id: "researcher", skills: ["essential", "research", "web-search"] },
+      { id: "simple", skills: ["essential"] }
+    ]
+  }
+}
+</code></pre>
+<p>This is static and requires config change + restart, but provides clean isolation.</p>
+<h3>Solution 5: Workspace Skill Renaming (Watcher-Based)</h3>
+<pre><code>// A cron job or hook renames skill directories to enable/disable
+import { rename, access } from 'fs/promises';
+<p>async function disableSkill(skillName) {
+  const skillPath = <code>${workspaceDir}/skills/${skillName}</code>;
+  const disabledPath = <code>${workspaceDir}/skills/.disabled-${skillName}</code>;
+  await access(skillPath).catch(() => { return; }); // skip if doesn't exist
+  await rename(skillPath, disabledPath);
+}</p>
+<p>async function enableSkill(skillName) {
+  const disabledPath = <code>${workspaceDir}/skills/.disabled-${skillName}</code>;
+  const skillPath = <code>${workspaceDir}/skills/${skillName}</code>;
+  await access(disabledPath).catch(() => { return; });
+  await rename(disabledPath, skillPath);
+}
+</code></pre></p>
+<p>The watcher picks up the directory change, bumps snapshot version, next turn uses new list.</p>
+<hr>
+<h2>6. EDGE CASES</h2>
+<h3>Edge Case: Concurrent Session State</h3>
+<p>If two sessions of the same agent run concurrently (both writing to <code><workspace>/.skills/my-skill/state.json</code>), file corruption is possible.</p>
+<strong>Mitigation:</strong> Use file locking or per-session state files (e.g., <code>state-{sessionKey}.json</code>).
+<h3>Edge Case: Session Store Contains Stale Skills Snapshot</h3>
+<p>If a session was created with skill X enabled, then X is deleted from disk, the session store still has the old <code>skillsSnapshot</code>. On session resume, <code>shouldRefreshSnapshotForVersion</code> is checked — if version changed, snapshot rebuilds. If version didn't change (X still exists in new location), old snapshot is reused.</p>
+<h3>Edge Case: Hook Modifies cfg Before Snapshot Build</h3>
+<p>The <code>before_prompt_build</code> hook fires AFTER the skills snapshot is built for the current turn. So even if a previous hook modified <code>context.cfg.skills</code>, the current turn's snapshot is already computed.</p>
+<h3>Edge Case: Skills Snapshot Version Collision</h3>
+<p>If watcher bumps version and hook in same turn also bumps, version numbers must be unique enough to trigger refresh. Uses timestamp-based version.</p>
+<h3>Edge Case: Skill State File Lost on Workspace Reset</h3>
+<p>If workspace is reset or deleted, all skill state files are lost. Skills relying on workspace files for state must document this recovery procedure.</p>
+<h3>Edge Case: session:patch Without Privileged Client</h3>
+<p>Only "privileged clients" can trigger <code>session:patch</code> events. A regular message cannot programmatically patch session state. Only gateway-internal or authenticated ACP clients can do this.</p>
+<hr>
+<h2>7. CREATIVE USES</h2>
+<h3>Creative Use 1: Skill-State-Aware Instructions</h3>
+A skill that adjusts its own instructions based on accumulated state:
+<pre><code>If state.json shows "mode: strict", add extra validation steps.
+If "mode: relaxed", skip optional checks.
+</code></pre>
+<h3>Creative Use 2: Hook-Based Skill Roulette</h3>
+A <code>before_prompt_build</code> hook randomly selects one skill from a pool for the current session, giving variety without config changes.
+<h3>Creative Use 3: Cross-Session Skill Memory</h3>
+A dedicated skill (<code>skill-memory</code>) that other skills call via a standard protocol to read/write structured data. All skills use <code>skill-memory</code> instead of managing their own files.
+<h3>Creative Use 4: Emergency Skill Purge</h3>
+A <code>session:patch</code> handler monitors for security incidents and, on detection, can trigger workspace skill directory renaming to disable potentially compromised skills.
+<h3>Creative Use 5: Session-Aware Skill Loading</h3>
+Use <code>context.sessionEntry</code> in <code>before_prompt_build</code> to check which skills were used in previous turns of this session, then dynamically add complementary skills.
+<hr>
+<h2>NEW QUESTIONS</h2>
+<ul><li>[ ] Can skills use <code>context.workspaceDir</code> to read/write files without hook mediation? (Skills instructions could tell model to use exec tool)</li>
+<li>[ ] Is there a race condition risk when multiple sessions write to same workspace skill state file?</li>
+<li>[ ] Can a hook directly call <code>bumpSkillsSnapshotVersion()</code> to force refresh?</li>
+<li>[ ] What's the maximum skills snapshot version before wraparound/collision risk?</li>
+<li>[ ] Can session:patch be used to store custom skill data in session store (not just skillsSnapshot)?</li>
+<li>[ ] Does skills watcher also monitor subdirectories or only top-level skill folders?</li>
+<li>[ ] Can skills snapshot be disabled entirely for ultra-light sessions?</li>
+</ul>
+<hr>
+<h2>Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/session-updates-3NulUPmS.js</code> — <code>persistSessionEntryUpdate</code> with skillsSnapshot persistence</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/agent-command-BRtqb5oD.js</code> — Skills snapshot building and session entry update</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/refresh-p9Dzo7mb.js</code> — Skills watcher implementation, <code>bumpSkillsSnapshotVersion</code></li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Hook event types, <code>before_prompt_build</code> modifying merge, <code>session:patch</code> context</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skills loading, watcher behavior</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/sdk-runtime.md</code> — <code>saveSessionStore</code> API</li>
+</ul>
+<hr>
+<em>Research by: Investigador Scout | 2026-04-23 09:20 CET</em>
+</body>
+</html>

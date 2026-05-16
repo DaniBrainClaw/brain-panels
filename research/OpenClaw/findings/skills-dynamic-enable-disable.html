@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skills Dynamic Enable/Disable Mid-Session — RESEARCH FINDINGS</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 skills-dynamic-enable-disable.md</p>
+    <strong>Research Date:</strong> 2026-04-23
+<strong>Topic:</strong> Can skills be dynamically enabled/disabled mid-session without gateway restart?
+<strong>Priority:</strong> MED (#20)
+<strong>Status:</strong> ✅ COMPLETE
+<hr>
+<h2>1. WHAT IS</h2>
+<p>The ability to enable or disable OpenClaw skills <strong>during an active session</strong> without requiring a gateway restart. This is relevant for:
+<ul><li>Disabling a misbehaving skill immediately</li>
+<li>Enabling skills based on runtime conditions (time, user, channel)</li>
+<li>A/B testing skills without downtime</li>
+</ul>
+<hr></p>
+<h2>2. HOW IT WORKS</h2>
+<h3>Two mechanisms exist:</h3>
+<p>#### A. Config-based enabling/disabling
+<pre><code>{
+  skills: {
+    entries: {
+      myskill: {
+        enabled: false  // disables skill even if bundled/installed
+      }
+    }
+  }
+}
+</code></pre></p>
+<p>#### B. Skills watcher (auto-refresh)
+<pre><code>{
+  skills: {
+    load: {
+      watch: true,           // enable file watching
+      watchDebounceMs: 250   // debounce rapid changes
+    }
+  }
+}
+</code></pre></p>
+<strong>Watcher behavior:</strong>
+<ul><li>Monitors <code>SKILL.md</code> files in skill directories</li>
+<li>On file add/change/unlink, triggers <code>bumpSkillsSnapshotVersion()</code></li>
+<li>New snapshot is picked up on <strong>next agent turn</strong> (not immediate)</li>
+<li>Uses chokidar for file system watching</li>
+</ul>
+<strong>Key insight from code:</strong>
+<pre><code>// refresh-p9Dzo7mb.js
+const watchEnabled = params.config?.skills?.load?.watch !== false;
+// On change → bumpSkillsSnapshotVersion → "next agent turn picks up new list"
+</code></pre>
+<hr>
+<h2>3. USES</h2>
+<ul><li><strong>Emergency skill disable</strong>: Instantly disable a problematic skill without gateway restart</li>
+<li><strong>Conditional skill activation</strong>: Enable skills based on time (via cron), user, or channel</li>
+<li><strong>Development workflow</strong>: Add new skills mid-session for testing</li>
+<li><strong>A/B testing</strong>: Toggle skills on/off between sessions</li>
+</ul>
+<hr>
+<h2>4. PROBLEMS</h2>
+| Problem | Description |
+|---------|-------------|
+| <strong>Watcher only monitors SKILL.md</strong> | The watcher only triggers on <code>SKILL.md</code> file changes, NOT config file changes |
+| <strong>Config changes may require reload</strong> | Changing <code>skills.entries.<skill>.enabled</code> in config may require hot-reload or restart |
+| <strong>No per-session skill toggling</strong> | Skills are global to workspace; cannot enable for one session but not another |
+| <strong>Watcher disabled in production</strong> | Many production deployments disable file watching |
+| <strong>Mid-execution edge case</strong> | If skill is executing when disabled, current call completes but subsequent calls fail |
+<hr>
+<h2>5. SOLUTIONS</h2>
+<h3>Solution 1: Use watcher + SKILL.md modification</h3>
+<ul><li>Set <code>skills.load.watch: true</code></li>
+<li>To disable: rename or delete the skill's SKILL.md (or add a marker file)</li>
+<li>Next agent turn picks up the change</li>
+</ul>
+<h3>Solution 2: Use config hot-reload</h3>
+<ul><li>If gateway is in <code>hot</code> or <code>hybrid</code> reload mode, edit <code>skills.entries.<skill>.enabled</code></li>
+<li>Some config changes may still require restart</li>
+</ul>
+<h3>Solution 3: Use per-agent skill allowlists</h3>
+<pre><code>{
+  agents: {
+    list: [
+      { id: "agent1", skills: ["skill-a", "skill-b"] },
+      { id: "agent2", skills: ["skill-a"] }
+    ]
+  }
+}
+</code></pre>
+This provides session-scoped skill control at config level.
+<h3>Solution 4: Use <code>disableModelInvocation</code> for soft-disable</h3>
+<pre><code>{
+  skills: {
+    entries: {
+      myskill: {
+        disableModelInvocation: true
+      }
+    }
+  }
+}
+</code></pre>
+This keeps skill available via slash command but removes it from model prompt.
+<hr>
+<h2>6. EDGE CASES</h2>
+<ul><li><strong>Skill executing when disabled</strong>: Current tool call completes; subsequent calls fail with "skill not available"</li>
+<li><strong>Watcher race conditions</strong>: Rapid add/change/unlink events are debounced (default 250ms)</li>
+<li><strong>Remote nodes</strong>: Skills from remote nodes can trigger refresh when node becomes eligible</li>
+<li><strong>Config + watcher conflict</strong>: If config disables skill AND watcher is enabled, config takes precedence at load time</li>
+<li><strong>Snapshot version</strong>: Each refresh increments <code>snapshotVersion</code>; model sees new list on next turn</li>
+</ul>
+<hr>
+<h2>7. CREATIVE USES</h2>
+<ul><li><strong>Time-based skill activation</strong>: Use cron to modify skill directory (rename SKILL.md) at specific times</li>
+<li><strong>User-segmented skills</strong>: Have different SKILL.md files for different users, swap via hook</li>
+<li><strong>Skill A/B testing</strong>: Alternate SKILL.md content between two skills with same name</li>
+<li><strong>Emergency kill switch</strong>: Create a "dead man's switch" that disables all non-essential skills</li>
+</ul>
+<hr>
+<h2>NEW QUESTIONS</h2>
+<ul><li>[ ] Can hooks dynamically modify the skills list at runtime (without config change)?</li>
+<li>[ ] Is there a tool command to reload skills without file changes?</li>
+<li>[ ] What happens to in-flight skill executions when SKILL.md is deleted?</li>
+<li>[ ] Can skills be enabled/disabled per-session (not just global to workspace)?</li>
+<li>[ ] Does config hot-reload apply to <code>skills.entries</code> changes?</li>
+</ul>
+<hr>
+<h2>Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skills watcher documentation (line 317+)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills-config.md</code> — <code>enabled</code> and <code>disableModelInvocation</code> fields</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/refresh-p9Dzo7mb.js</code> — Skills watcher implementation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/skills-DYF-hmoJ.js</code> — Snapshot building logic</li>
+</ul>
+<hr>
+<em>Research by: Investigador Scout</em>
+</body>
+</html>

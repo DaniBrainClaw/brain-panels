@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L26 — Workspace Hooks vs Managed Hooks Discovery Precedence</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 workspace-managed-hooks-discovery-precedence.md</p>
+    <strong>Research Date:</strong> 2026-04-23
+<strong>Priority:</strong> MED
+<strong>Status:</strong> RESOLVED ✅
+<h2>Summary</h2>
+<p>Workspace hooks (<code><workspace>/hooks/</code>) and managed hooks (<code>~/.openclaw/hooks/</code>) are discovered together but resolved through a two-phase system: <strong>sort by precedence</strong> then <strong>merge by override rules</strong>. The critical finding: <strong>managed hooks always take precedence over workspace hooks for the same name</strong>, because workspace hooks can only override other workspace hooks.</p>
+<hr>
+<h2>1. What Are Workspace Hooks and Managed Hooks?</h2>
+<h3>Workspace Hooks</h3>
+<ul><li><strong>Location:</strong> <code><workspace>/hooks/</code> directory within each workspace</li>
+<li><strong>Source identifier:</strong> <code>"openclaw-workspace"</code></li>
+<li><strong>Default state:</strong> <strong>DISABLED BY DEFAULT</strong> (requires explicit <code>enabled: true</code> in config)</li>
+<li><strong>Purpose:</strong> Per-workspace custom automation logic</li>
+</ul>
+<h3>Managed Hooks</h3>
+<ul><li><strong>Location:</strong> <code>~/.openclaw/hooks/</code> (the config directory)</li>
+<li><strong>Source identifier:</strong> <code>"openclaw-managed"</code></li>
+<li><strong>Default state:</strong> <strong>ENABLED BY DEFAULT</strong></li>
+<li><strong>Purpose:</strong> User-managed hooks that persist across workspaces</li>
+</ul>
+<hr>
+<h2>2. How Discovery Works</h2>
+<p>The discovery process is in <code>discoverWorkspaceHookEntries()</code> in <code>workspace-OPw5btC5.js</code>:</p>
+<pre><code>function discoverWorkspaceHookEntries(workspaceDir, opts) {
+  // 1. Extra dirs (from hooks.internal.load.extraDirs config)
+  const extraHooks = extraDirs.flatMap(dir => loadHookEntriesFromDir({ dir, source: "openclaw-managed" }));
+  
+  // 2. Bundled hooks (built-in OpenClaw hooks)
+  const bundledHooks = loadHookEntriesFromDir({ dir: bundledHooksDir, source: "openclaw-bundled" });
+  
+  // 3. Plugin hooks (from plugins)
+  const pluginHooks = pluginHookDirs.flatMap(({ dir, pluginId }) => loadHookEntriesFromDir({ dir, source: "openclaw-plugin", pluginId }));
+  
+  // 4. Managed hooks (from ~/.openclaw/hooks/)
+  const managedHooks = loadHookEntriesFromDir({ dir: managedHooksDir, source: "openclaw-managed" });
+  
+  // 5. Workspace hooks (from <workspace>/hooks/)
+  const workspaceHooks = loadHookEntriesFromDir({ dir: workspaceHooksDir, source: "openclaw-workspace" });
+  
+  return [...extraHooks, ...bundledHooks, ...pluginHooks, ...managedHooks, ...workspaceHooks];
+}
+</code></pre>
+<strong>Discovery order:</strong> extraHooks → bundledHooks → pluginHooks → managedHooks → workspaceHooks
+<hr>
+<h2>3. How Resolution Works (Two-Phase)</h2>
+<p>After discovery, <code>resolveHookEntries()</code> in <code>config-Nq7s3Dxw.js</code> processes all hooks through two phases:</p>
+<h3>Phase 1: Sort by Precedence</h3>
+<pre><code>const ordered = entries.map((entry, index) => ({
+  entry,
+  index
+})).toSorted((a, b) => {
+  const precedenceDelta = getHookSourcePolicy(a.entry.hook.source).precedence 
+                        - getHookSourcePolicy(b.entry.hook.source).precedence;
+  return precedenceDelta !== 0 ? precedenceDelta : a.index - b.index;
+});
+</code></pre>
+<strong>Precedence values (lower = higher priority):</strong>
+| Source | Precedence | Default Enable |
+|--------|------------|----------------|
+| openclaw-bundled | 10 | default-on |
+| openclaw-plugin | 20 | default-on |
+| openclaw-managed | 30 | default-on |
+| openclaw-workspace | 40 | <strong>explicit-opt-in</strong> |
+<h3>Phase 2: Merge by Override Rules</h3>
+<pre><code>const merged = new Map();
+for (const { entry } of ordered) {
+  const existing = merged.get(entry.hook.name);
+  if (!existing) {
+    merged.set(entry.hook.name, entry);
+    continue;
+  }
+  if (canOverrideHook(entry, existing)) {
+    merged.set(entry.hook.name, entry);  // New hook wins
+    continue;
+  }
+  // Otherwise, existing hook is kept
+  opts?.onCollisionIgnored?.({ name, kept: existing, ignored: entry });
+}
+</code></pre>
+<h3>Override Rules (<code>canOverrideHook</code>)</h3>
+<pre><code>function canOverrideHook(candidate, existing) {
+  const candidatePolicy = getHookSourcePolicy(candidate.hook.source);
+  const existingPolicy = getHookSourcePolicy(existing.hook.source);
+  return candidatePolicy.canOverride.includes(existing.hook.source) 
+      && existingPolicy.canBeOverriddenBy.includes(candidate.hook.source);
+}
+</code></pre>
+| Candidate can override → | bundled (10) | plugin (20) | managed (30) | workspace (40) |
+|---------------------------|-------------|-------------|--------------|---------------|
+| <strong>bundled (10)</strong> | ✅ | ❌ | ❌ | ❌ |
+| <strong>plugin (20)</strong> | ✅ | ✅ | ❌ | ❌ |
+| <strong>managed (30)</strong> | ✅ | ✅ | ✅ | ❌ |
+| <strong>workspace (40)</strong> | ❌ | ❌ | ❌ | ✅ |
+<hr>
+<h2>4. Key Finding: Managed Hooks ALWAYS Win Over Workspace Hooks</h2>
+<p>When a hook with the same name exists in both managed and workspace:</p>
+<ul><li><strong>Sorting phase:</strong> managed (30) sorts before workspace (40) because 30 < 40</li>
+<li><strong>Merge phase:</strong> managed is added to merged map first</li>
+<li><strong>Override check:</strong> workspace's <code>canOverride</code> includes only <code>"openclaw-workspace"</code> — NOT <code>"openclaw-managed"</code></li>
+<li><strong>Result:</strong> workspace hook is <strong>ignored</strong> with warning: <code>"Ignoring openclaw-workspace hook "X" because it cannot override openclaw-managed hook code"</code></li>
+</ul>
+<strong>Critical implication:</strong> You cannot override a managed hook with a workspace hook for the same name.
+<hr>
+<h2>5. Discovery Locations Summary</h2>
+| Hook Type | Directory | Config Path |
+|-----------|-----------|-------------|
+| Bundled | (internal) | — |
+| Plugin | <code><plugin>/hooks/</code> | Auto-loaded by plugin |
+| Extra | Configured in <code>hooks.internal.load.extraDirs</code> | <code>"openclaw-managed"</code> source |
+| Managed | <code>~/.openclaw/hooks/</code> | <code>"openclaw-managed"</code> source |
+| Workspace | <code><workspace>/hooks/</code> | <code>"openclaw-workspace"</code> source |
+<hr>
+<h2>6. Security Notes</h2>
+<ul><li><strong>Workspace hooks disabled by default</strong> — must explicitly enable via config</li>
+<li><strong>Both are "trusted local code"</strong> — no sandboxing, full Gateway privileges</li>
+<li><strong>Warning logged when loading:</strong> <code>"Loading workspace hook code into the gateway process. Workspace hooks are trusted local code."</code></li>
+<li><strong>No audit logging</strong> for which hooks are active or accessed</li>
+</ul>
+<hr>
+<h2>7. Practical Implications</h2>
+<h3>If you want a hook to run:</h3>
+<ul><li><strong>Managed hooks</strong> (<code>~/.openclaw/hooks/</code>): Always enabled by default, cannot be overridden by workspace hooks</li>
+<li><strong>Workspace hooks</strong>: Require explicit <code>enabled: true</code> in config, always lose to managed hooks with same name</li>
+</ul>
+<h3>Hook enable config location:</h3>
+<pre><code>// For managed hooks (same config path as before)
+hooks.internal.entries.<hookKey>.enabled = true/false
+<p>// For workspace hooks (same path, but already disabled by default)
+// Must also set enabled: true in config
+hooks.internal.entries.<hookKey>.enabled = true
+</code></pre></p>
+<h3>Testing if hooks are loaded:</h3>
+<pre><code>openclaw hooks status
+<h1>Shows: source, enabled state, managed-by-plugin status</h1>
+</code></pre>
+<hr>
+<h2>8. Edge Cases</h2>
+<ul><li><strong>Same hook name in managed + workspace</strong>: managed wins, workspace ignored</li>
+<li><strong>Same hook name in plugin + managed</strong>: managed wins (30 < 20 in precedence? No wait — let me re-check)</li>
+</ul>
+Wait, I need to re-check. Plugin has precedence 20, managed has 30. Lower number = higher priority. So plugin sorts BEFORE managed. But managed's <code>canOverride</code> includes plugin. So managed CAN override plugin hooks?
+<p>Let me verify:
+<ul><li><code>canOverrideHook(candidate=managed, existing=plugin)</code>:</li>
+</ul>  - candidatePolicy.canOverride includes "openclaw-plugin" → YES
+  - existingPolicy.canBeOverriddenBy includes "openclaw-managed" → YES
+  - Result: managed CAN override plugin</p>
+<p>So the merge order (after sorting by precedence) determines which one gets added first to the merged map. But even if plugin is added first (lower precedence = 20), managed (30) comes later and CAN override plugin.</p>
+<strong>Correct understanding:</strong>
+<ul><li>Sort order for merging: bundled(10) → plugin(20) → managed(30) → workspace(40)</li>
+<li>But override rules allow higher precedence to override lower in some cases</li>
+<li>managed (30) can override plugin (20) because managed.canOverride.includes("plugin") AND plugin.canBeOverriddenBy.includes("managed")</li>
+</ul>
+<hr>
+<h2>NEW RESEARCH QUESTIONS GENERATED</h2>
+<ul><li>[ ] <strong>What's the practical difference between <code>openclaw-managed</code> (extraDirs) and <code>openclaw-managed</code> (managedHooksDir)?</strong> — Both have same source identifier but different loading mechanisms [LOW]</li>
+<li>[ ] <strong>Can a workspace hook be promoted to managed status?</strong> — No automatic migration path [LOW]</li>
+<li>[ ] <strong>Is there a hook naming collision detection tool?</strong> — <code>openclaw hooks status</code> shows conflicts but doesn't prevent them [MED]</li>
+<li>[ ] <strong>What happens when a plugin ships a hook with same name as a bundled hook?</strong> — Plugin (20) can override bundled (10) [MED]</li>
+</ul>
+<hr>
+<h2>Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/workspace-OPw5btC5.js</code> — <code>discoverWorkspaceHookEntries()</code> function (lines 236-271)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/config-Nq7s3Dxw.js</code> — <code>resolveHookEntries()</code>, <code>canOverrideHook()</code>, <code>HOOK_SOURCE_POLICIES</code> (lines 4-95)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/hooks-cli-DUQiYAeY.js</code> — Hook collision error handling</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/hooks-status-DvOjzvmc.js</code> — Hook status display</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Hook documentation</li>
+</ul>
+<hr>
+<strong>Status:</strong> COMPLETE ✅ — 2026-04-23 12:25 CET
+</body>
+</html>

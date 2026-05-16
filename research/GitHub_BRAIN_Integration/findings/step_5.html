@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub + BRAIN Integration — Query 5: GitHub API Programmatic File Storage Free Tier Limits</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_5.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<strong>Query:</strong> "github api programmatic file storage free tier limits"
+<strong>Resultados:</strong> ~20 found
+<hr>
+<h2>Fuentes</h2>
+<ul><li><strong>Repository limits</strong> — docs.github.com (oficial)</li>
+<li><strong>About storage and bandwidth usage</strong> — docs.github.com (LFS)</li>
+<li><strong>Rate limits for the REST API</strong> — docs.github.com (oficial)</li>
+</ul>
+<hr>
+<h2>Límites de Repository (GitHub Free)</h2>
+| Recurso | Límite |
+|---------|--------|
+| <strong>Repositorios</strong> | Sin límite público, ilimitado privado (con Pro) |
+| <strong>Tamaño archivo</strong> | 100 MB (soft limit), 10 GB recomendado |
+| <strong>Tamaño repo</strong> | 100 GB (límite rígido) |
+| <strong>Ancho de banda</strong> | 100 GB/month (soft), 1 TB (hard) |
+<h3>Nota importante:</h3>
+<ul><li>Free tier: repos públicos ilimitados, 1 private repo (con restricciones)</li>
+<li>Pro ($4/month): repos privados ilimitados</li>
+</ul>
+<hr>
+<h2>Git LFS (Large File Storage)</h2>
+<h3>Free tier:</h3>
+| Plan | Bandwidth | Storage |
+|------|-----------|---------|
+| <strong>GitHub Free</strong> | 10 GiB | 10 GiB |
+| <strong>GitHub Pro</strong> | 10 GiB | 10 GiB |
+| <strong>GitHub Team</strong> | 250 GiB | 250 GiB |
+| <strong>GitHub Enterprise</strong> | 250 GiB | 250 GiB |
+<h3>Qué es Git LFS:</h3>
+<ul><li>Para archivos grandes (imágenes, videos, datasets)</li>
+<li>Lo guarda como pointer en Git, archivo real en LFS</li>
+<li>Descarga bajo demanda</li>
+</ul>
+<h3>Cómo funciona:</h3>
+<pre><code><h1>En vez de guardar 500MB en git, guarda solo pointer</h1>
+<h1>El archivo real está en LFS storage</h1>
+<p>git lfs track "<em>.psd"
+git add large-file.psd
+git commit -m "Add large file"
+git push
+</code></pre></p>
+<h3>Límites de Git LFS:</h3>
+<ul><li><strong>Storage:</strong> 10 GB gratis (facturado por hora)</li>
+<li><strong>Bandwidth:</strong> 10 GB/month gratis</li>
+<li><strong>Si excedes storage (sin pago):</strong> No puedes hacer push de nuevos archivos LFS</li>
+<li><strong>Si excedes bandwidth:</strong> LFS deshabilitado hasta el siguiente mes</li>
+</ul>
+<hr>
+<h2>Rate Limits — GitHub REST API</h2>
+<h3>Sin autenticar:</h3>
+<ul><li><strong>60 requests/hour</strong></li>
+<li>Solo datos públicos</li>
+</ul>
+<h3>Con personal access token (autenticado):</h3>
+<ul><li><strong>5,000 requests/hour</strong></li>
+<li>Acceso a repos privados</li>
+</ul>
+<h3>Con GitHub App (Enterprise Cloud):</h3>
+<ul><li><strong>15,000 requests/hour</strong></li>
+</ul>
+<h3>Para Git LFS (separado):</h3>
+<ul><li><strong>3,000 requests/minute</strong> (autenticado)</li>
+<li><strong>300 requests/minute</strong> (sin autenticar)</li>
+</ul>
+<h3>Search API (más restrictivo):</h3>
+<ul><li><strong>30 requests/minute</strong></li>
+<li>10 requests/minute sin autenticar</li>
+</ul>
+<hr>
+<h2>GraphQL API Limits</h2>
+<h3>Rate limit:</h3>
+<ul><li><strong>5,000 points per hour</strong> (autenticado)</li>
+<li>Basado en complejidad de queries, no número de requests</li>
+</ul>
+<h3>Límite de ejecución:</h3>
+<ul><li><strong>30 segundos</strong> por query</li>
+<li><strong>10 minutos</strong> para mutations</li>
+</ul>
+<h3>Límite de resultado:</h3>
+<ul><li><strong>100 items</strong> por request (paginar con <code>first</code>, <code>last</code>)</li>
+</ul>
+<hr>
+<h2>Storage para Archivos Grandes — Alternativas</h2>
+<h3>Si Git LFS se queda corto:</h3>
+| Opción | Storage | Costo | Notas |
+|--------|---------|-------|-------|
+| <strong>GitHub Gists</strong> | 100 MB por gist | Gratis | Bueno para snippets |
+| <strong>GitHub Releases</strong> | 2 GB por release | Gratis | Para binaries |
+| <strong>Google Drive</strong> | 15 GB gratis | Gratis | Para archivos grandes |
+| <strong>AWS S3</strong> | 5 GB gratis | ~$0.023/GB | Para producción |
+| <strong>Backblaze B2</strong> | 10 GB gratis | $0.006/GB | Más barato que S3 |
+<hr>
+<h2>Guía para BRAIN: Cuánto storage necesita</h2>
+<h3>Archivos de config (预期用):</h3>
+<ul><li>AGENTS.md, SOUL.md, USER.md, MEMORY.md → ~1 MB total</li>
+<li>Scripts y skills → ~10 MB</li>
+<li><strong>Total estimado:</strong> < 50 MB</li>
+</ul>
+<h3>Conclusión:</h3>
+<ul><li><strong>GitHub Free es suficiente</strong> para backup de config de BRAIN</li>
+<li>No necesita Git LFS para archivos de texto</li>
+<li>Si necesita guardar datasets o archivos grandes, usar alternativa</li>
+</ul>
+<hr>
+<h2>Límites por Plan — Resumen</h2>
+| Recurso | Free | Pro | Team |
+|---------|------|-----|------|
+| Repos públicos | Ilimitados | Ilimitados | Ilimitados |
+| Repos privados | 1 | Ilimitados | Ilimitados |
+| Colaboradores | Ilimitados | Ilimitados | Ilimitados |
+| Git LFS Storage | 10 GB | 10 GB | 250 GB |
+| Git LFS Bandwidth | 10 GB/mo | 10 GB/mo | 250 GB/mo |
+| API requests | 60/hr (no auth) / 5,000/hr (auth) | Same | Same |
+<hr>
+<h2>Recomendación para Dani</h2>
+<h3>Para uso normal de BRAIN:</h3>
+<ul><li><strong>GitHub Free es suficiente</strong></li>
+<li>Repo privado <code>brain-config-backup</code> con ~50 MB de config</li>
+<li>5,000 API requests/hour es más que suficiente para automatización</li>
+</ul>
+<h3>Para casos especiales:</h3>
+<ul><li>Si necesitas guardar archivos > 100 MB → usar Git LFS</li>
+<li>Si necesitas más de 10 GB storage → pagar Pro ($4/month) o usar S3</li>
+<li>Si necesitas más API calls → implementar cacheo o usar GraphQL</li>
+</ul>
+<hr>
+</em>Investigador — Query 5 completada. Investigación finalizada.*
+</body>
+</html>

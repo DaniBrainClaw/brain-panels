@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes Agent Analysis — Step 3: Self-Improvement Mechanism</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_3.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<hr>
+<h2>Fuentes</h2>
+<ul><li><strong>Self-Improving AI Guide</strong> — hermes-agent.ai/blog/self-improving-ai-guide</li>
+<li><strong>Inside Hermes Agent</strong> — mranand.substack.com</li>
+<li><strong>Five Pillars: Memory, Skills, Soul, Crons, Self-Improvement</strong> — mindstudio.ai</li>
+</ul>
+<hr>
+<h2>Qué es Self-Improvement en Hermes</h2>
+<h3>Definición:</h3>
+<blockquote>"Hermes improves at the <strong>agent layer</strong> — it gets better at choosing the right workflow, loading the right skill, respecting project conventions, and avoiding mistakes the user already corrected."</blockquote>
+<strong>No es fine-tuning del modelo base.</strong> El modelo puede seguir siendo Claude, GPT, local, o cualquier provider. Hermes mejora la <strong>capa agent</strong> envolviendo ese modelo en memory, tools, skills, session recall, cron, y verification habits.
+<hr>
+<h2>El Ciclo de Mejora (Closed Learning Loop)</h2>
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│                    EL LOOP                              │
+│                                                          │
+│  1. Understand task + inspect environment                │
+│           ↓                                              │
+│  2. Act with tools (no guessing)                        │
+│           ↓                                              │
+│  3. Verify result (tests, checks, output)               │
+│           ↓                                              │
+│  4. Save durable facts → MEMORY.md                      │
+│           ↓                                              │
+│  5. Convert procedures → Skills                         │
+│           ↓                                              │
+│  6. Load skills next time automatically                 │
+│           ↓                                              │
+│  7. Goto 1 (contexto mejorado)                         │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>Periodic Nudge — El Trigger Automático</h2>
+<h3>Qué es:</h3>
+Cada ciertos intervalos, Hermes recibe un <strong>internal system-level prompt</strong> que le pregunta:
+<blockquote>"¿Mirando hacia atrás, hay algo que vale la pena persistir?"</blockquote>
+<h3>Cómo funciona:</h3>
+<ul><li><strong>Fire without user input</strong> — no necesita que Dani le diga nada</li>
+<li>El agente escanea actividad reciente</li>
+<li>Si cruza threshold → escribe a MEMORY.md</li>
+<li>Memory stays <strong>curated</strong>, no se convierte en dump de cada interacción</li>
+</ul>
+<h3>Threshold triggers:</h3>
+<ul><li>5+ tool calls en una tarea</li>
+<li>Recovery from error</li>
+<li>User correction (Dani le dice que no lo haga así)</li>
+<li>Non-obvious workflow that worked</li>
+</ul>
+<hr>
+<h2>Skill Creation — De Experiencia a Skill</h2>
+<h3>Cuándo crea skills:</h3>
+Después de completar una tarea, Hermes revisa si el path que usó merece documentarse.
+<h3>Criterios:</h3>
+<pre><code>IF task involved:
+  - 5+ tool calls, OR
+  - Recovery from error, OR
+  - User correction, OR
+  - Non-obvious successful workflow
+THEN:
+  create skill in ~/.hermes/skills/
+</code></pre>
+<h3>El skill file:</h3>
+<pre><code>---
+name: deployment-workflow
+description: Deploy project via GitHub push
+version: 1.0.0
+platforms: [linux]
+metadata:
+  hermes:
+    tags: [devops, deployment]
+    category: workflow
+<hr>
+<h1>Deployment Workflow</h1>
+<h2>When to Use</h2>
+User asks for landing page fix
+<h2>Procedure</h2>
+<ul><li>Inspect repo structure</li>
+<li>Edit correct file</li>
+<li>Run lint and build</li>
+<li>Commit and push</li>
+</ul>
+<h2>Pitfalls</h2>
+<ul><li>Don't use hosting CLI directly</li>
+<li>Check lint before commit</li>
+</ul>
+<h2>Verification</h2>
+Run 'git log' to confirm push
+</code></pre>
+<h3>Open Standard:</h3>
+Skills siguen <a href="https://agentskills.io/specification">agentskills.io</a> — son <strong>portables</strong> across agents compatibles.
+<hr>
+<h2>Skill Self-Improvement — Patching, Not Rewriting</h2>
+<h3>El agente NO reescribe skills completo:</h3>
+<ul><li>Usa <code>patch</code> por default (no <code>edit</code>)</li>
+<li>Solo cambia la parte que mejoró</li>
+<li>Más token-efficient</li>
+<li>Menos risk de romper lo que ya funciona</li>
+</ul>
+<h3>6 skill actions:</h3>
+<pre><code>skill_manage(action="create")   # Nueva skill
+skill_manage(action="patch")   # Actualizar parte (PREFERRED)
+skill_manage(action="edit")    # Reescribir completo
+skill_manage(action="delete")  # Borrar
+skill_manage(action="write_file")   # Archivos adicionales
+skill_manage(action="remove_file")  # Borrar archivos
+</code></pre>
+<hr>
+<h2>Memory Management — Curated, Not Unlimited</h2>
+<h3>Límites estrictos:</h3>
+| Store | Limit | Typical entries |
+|-------|-------|-----------------|
+| memory | 2,200 chars | 8-15 entries |
+| user | 1,375 chars | 5-10 entries |
+| <strong>Total</strong> | <strong>3,575 chars</strong> | ~800 tokens |
+<h3>Por qué límites?</h3>
+<ul><li>Previene memory bloat</li>
+<li>Fuerza curación activa</li>
+<li>Mantiene token bill control</li>
+</ul>
+<h3>Lo que NO se guarda:</h3>
+<ul><li>Temporary task progress</li>
+<li>PR numbers</li>
+<li>Stale run logs</li>
+<li>Raw secrets</li>
+<li>Anything that expires quickly</li>
+</ul>
+<h3>Lo que SÍ se guarda:</h3>
+<ul><li>User communication preferences</li>
+<li>Stable environment paths</li>
+<li>Project deployment conventions</li>
+<li>Tool quirks and integration gotchas</li>
+<li>Corrections user should not repeat</li>
+</ul>
+<hr>
+<h2>Session Archive — Episodic Memory</h2>
+<h3>Stack:</h3>
+<ul><li><strong>SQLite</strong> como archive</li>
+<li><strong>FTS5</strong> para full-text search</li>
+<li><strong>LLM summarization</strong> antes de inject</li>
+</ul>
+<h3>Cómo funciona:</h3>
+<ul><li>Cada sesión se archivea</li>
+<li>FTS5 index permite búsqueda</li>
+<li>Agent busca cuando necesita contexto pasado</li>
+<li>Retrieved results → LLM summarization</li>
+<li>Solo lo <strong>relevante</strong> entra al contexto actual</li>
+</ul>
+<h3>Deliberate vs Always-On:</h3>
+<ul><li><strong>Session search</strong> = on-demand retrieval</li>
+<li><strong>Prompt memory</strong> = always-on, every session</li>
+</ul>
+<hr>
+<h2>Failure Modes — Qué sale mal</h2>
+<h3>Síntomas:</h3>
+<ul><li>Agent cita stale facts después de un project change</li>
+<li>Skills contienen comandos que ya no funcionan</li>
+<li>Memory guarda temporary run logs en vez de stable preferences</li>
+<li>Agent claims success sin testing</li>
+</ul>
+<h3>Fix:</h3>
+<pre><code><h1>Remove stale memories</h1>
+memory(action="remove", old_text="stale fact")
+<h1>Patch skill immediately</h1>
+skill_manage(action="patch", old_text="old command", new_text="new command")
+<h1>Require verification before completion</h1>
+</code></pre>
+<hr>
+<h2>Adaptive Reasoning Effort</h2>
+<h3>Concepto:</h3>
+No todas las tareas requieren el mismo "thinking budget".
+<h3>Ejemplo:</h3>
+<ul><li>Small formatting edit → consume reasoning mínimo</li>
+<li>Multi-repo debugging → deep reasoning</li>
+</ul>
+<h3>Beneficio:</h3>
+<ul><li>Token efficiency</li>
+<li>Speed para tareas simples</li>
+<li>Depth para tareas complejas</li>
+</ul>
+<hr>
+<h2>Reinforcement Learning (Atropos)</h2>
+<h3>Qué es:</h3>
+Research en training próximo generation de tool-calling models.
+<h3>Rol:</h3>
+<ul><li>Batch trajectory generation</li>
+<li>Trajectory compression</li>
+<li>RL training with Atropos</li>
+</ul>
+<h3>Importante:</h3>
+<blockquote>"Most users do not need RL to benefit from self-improvement today."</blockquote>
+<p>Para day-to-day work, el path confiable es <strong>structured memory + skills</strong>.</p>
+<hr>
+<p>##对比 BRAIN</p>
+<h3>Qué tiene Hermes que BRAIN NO tiene (todavía):</h3>
+| Feature | Hermes | BRAIN |
+|---------|--------|-------|
+| <strong>Periodic nudge</strong> | ✅ Auto-memoria curation | ❌ No existe |
+| <strong>Autonomous skill creation</strong> | ✅ Crea skills después de complex tasks | ❌ Skills manuales |
+| <strong>Skill self-patching</strong> | ✅ Mejora skills durante uso | ❌ No existe |
+| <strong>FTS5 session search</strong> | ✅ Full-text search + LLM summary | ❌ Solo búsqueda básica |
+| <strong>4-layer memory</strong> | ✅ Separated concerns | ❌ 2-3 archivos simples |
+| <strong>Adaptive reasoning</strong> | ✅ Controla thinking depth | ❌ No existe |
+| <strong>Built-in cron</strong> | ✅ Natural language scheduling | ❌ System cron |
+| <strong>Skill conditional activation</strong> | ✅ Fallback skills system | ❌ No existe |
+| <strong>RL training pipeline</strong> | ✅ Atropos research | ❌ No disponible |
+<hr>
+<h2>Qué puede BRAIN aprender de Hermes</h2>
+<h3>Implementable en BRAIN:</h3>
+<ul><li><strong>Periodic nudge</strong> — BRAIN podría hacer memory review periódico</li>
+<li><strong>Skill auto-creation</strong> — después de 5+ tool calls, sugerir crear skill</li>
+<li><strong>Memory límites estrictos</strong> — forzar curación activa</li>
+<li><strong>Skill patching</strong> — en vez de rewrite completo</li>
+<li><strong>FTS5 session search</strong> — buscar en sesiones pasadas</li>
+</ul>
+<h3>NO implementable fácilmente:</h3>
+<ul><li><strong>RL training</strong> — requiere research infrastructure</li>
+<li><strong>200+ model support</strong> — BRAIN es MiniMax-focused</li>
+<li><strong>20+ messaging platforms</strong> — overkill para Dani</li>
+</ul>
+<hr>
+<em>Investigador — Step 3 completado.</em>
+</body>
+</html>

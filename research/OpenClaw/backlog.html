@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Backlog — OpenClaw</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 backlog.md</p>
+    <strong>Last Updated:</strong> 2026-04-23 08:02 CET
+<h2>Priority Queue (Highest → Lowest)</h2>
+<h3>HIGH Priority</h3>
+<ul><li><strong>[HOOKS]</strong> ~~Can hooks trigger infinite loops (hook A → hook B → A)? Is there protection?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → NO protection exists; session:patch creates direct recursion; solution patterns documented</li>
+<li><strong>[SKILLS]</strong> ~~Could TERRACOTTA business procedures be encoded as skills for consistent execution?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → YES with Master Skill Pattern; no native dependency system; manual sub-skill installation required</li>
+<li><strong>[HOOKS]</strong> ~~Can hooks access environment variables with secrets?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → env vars injected only to host process for agent run, not accessible to hooks</li>
+<li><strong>[SKILLS]</strong> ~~Can malicious skill bypass dangerous-code scanner for skill installs?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → Scanner blocks Gateway-backed installs; CLI bypasses scanner; real risk is post-install skill privileges</li>
+<li><strong>[SKILLS]</strong> ~~Does the dangerous-code scanner analyze SKILL.md content itself or only installer metadata?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → Scanner ONLY scans code files (.js/.ts/.jsx/.tsx); SKILL.md is NEVER analyzed; critical security gap</li>
+<li><strong>[SKILLS]</strong> ~~Are skills sandboxed post-install or do they run with full agent privileges?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → NO sandboxing; skills are text; sandboxing applies to TOOLS only; R-002 in threat model</li>
+<li><strong>[SKILLS]</strong> ~~Does scanner re-run on skill updates or only on fresh installs?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → ONLY on fresh Gateway-backed installs; CLI installs (clawhub) bypass scanner</li>
+<li><strong>[SKILLS]</strong> ~~Can a skill with no installer metadata still execute malicious code via SKILL.md content?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → YES - SKILL.md content is embedded in system prompt; scanner doesn't analyze it</li>
+<li><strong>[SKILLS]</strong> ~~Can skills declare dependencies on other skills (skill chaining)?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → NO native dependency system; skills are TEXT only; model executes via slash commands</li>
+<li><strong>[SKILLS]</strong> ~~Can skills call other skills recursively?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → NO technical blocking; skills are TEXT instructions; no recursion counter; potential infinite loops</li>
+</ul>
+<h3>MED Priority</h3>
+<ul><li><strong>[SKILLS]</strong> ~~What is the complete list of patterns the dangerous-code scanner detects? Useful for red-teaming~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → 8 patterns: LINE_RULES (dangerous-exec, dynamic-code-execution, crypto-mining, suspicious-network) + SOURCE_RULES (potential-exfiltration, obfuscated-code[hex/base64], env-harvesting)</li>
+<li><strong>[SKILLS]</strong> ~~Could SKILL.md scanning be added to the dangerous-code scanner? What patterns would it look for?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → YES - proposed implementation: extend SCANNABLE_EXTENSIONS to .md, add MARKDOWN_PATTERNS</li>
+<li><strong>[SKILLS]</strong> ~~Can organizations implement custom scanner integration via before_install hooks that scans SKILL.md?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → YES via before_install hook; reads SKILL.md directly; returns {block:true} to prevent install; CLI bypass remains</li>
+<li><strong>[HOOKS]</strong> ~~What is exact difference between internal hooks (5) vs plugin hooks (28+)?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → TWO SYSTEMS: Internal=standalone dirs (4 bundled, registration order, NO prompt injection); Plugin=SDK registered (44+ provider runtime hooks, priority-based, controlled via PROMPT_INJECTION_HOOK_NAMES)</li>
+<li><strong>[HOOKS]</strong> ~~Can plugin hooks be dynamically registered/unregistered at runtime?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → NO — plugin hooks tied to plugin lifecycle; no public API; internal hooks have register/unregister but only used during plugin load/unload</li>
+<li><strong>[HOOKS]</strong> ~~What is exact hook execution order when multiple hooks fire on same event?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → Two-level sort: source precedence (bundled<plugin<managed<workspace) then priority+index; three execution modes: void (parallel), modifying (sequential+merge), claiming (first-wins)</li>
+<li><strong>[HOOKS]</strong> ~~What happens if hook handler throws uncaught exception - does it crash gateway?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → Depends on failure policy: fail-open (log + continue, most hooks) or fail-closed (throw + halt, before_tool_call); handler errors caught individually</li>
+<li><strong>[HOOKS]</strong> ~~Can hooks access gateway internal state (session store, config)?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → YES — via context.cfg (full config with all secrets) and context.sessionEntry (session metadata); no direct disk access to session store</li>
+<li><strong>[SKILLS]</strong> ~~What is maximum recommended number of skills per agent before context overhead becomes problematic?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → ~50-100 (conservative), ~200 (aggressive) for MiniMax M2.7; ~24-45 tokens/skill; recommendations documented</li>
+<li><strong>[SKILLS]</strong> ~~Can skills be dynamically enabled/disabled mid-session without gateway restart?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → YES with watcher + SKILL.md changes (picked up next turn), or config hot-reload; watcher only monitors SKILL.md files; <code>disableModelInvocation</code> for soft-disable; no per-session toggle</li>
+<li><strong>[SKILLS]</strong> ~~Can skills implement persistent state across sessions (file-based)?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → NO native mechanism; skills are TEXT only; file-based state possible via workspace files + skill instructions to read/write; race conditions with concurrent sessions; session store stores skillsSnapshot (not arbitrary state)</li>
+<li><strong>[SKILLS]</strong> ~~What is maximum recommended chain depth for skill chaining patterns?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → NO recursion counter; model executes via slash commands; no automatic resolution; potential infinite loops if model follows recursive instructions</li>
+<li><strong>[SKILLS]</strong> ~~What is recommended skill description length to minimize overhead?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → Keep under 100 characters; 195 base chars + 97/skill overhead</li>
+<li><strong>[SKILLS]</strong> ~~Can hooks dynamically modify the skills list at runtime (without config change)?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → NO direct API; before_prompt_build fires AFTER snapshot decision; changes affect NEXT turn only; watcher-based renaming is workaround</li>
+<li><strong>[SKILLS]</strong> ~~Can per-agent skill allowlists be changed dynamically via hook?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → NO — hook fires AFTER snapshot built; can only modify systemPrompt/prependContext; config changes affect NEXT turn</li>
+<li><strong>[SKILLS]</strong> ~~Can skills overhead be profiled in production?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → YES via /context list/detail; NO dedicated profiler command; manual tracking required<strong></li>
+</ul>
+<ul><li></strong>[SKILLS]<strong> ~~Can hooks dynamically modify the skills list at runtime (without config change)?~~ </strong>[RESOLVED ✅ 2026-04-23]<strong> → NO direct API; before_prompt_build fires AFTER snapshot decision; changes affect NEXT turn only; watcher-based renaming is workaround</li>
+<li></strong>[SKILLS]<strong> ~~Is there a tool command to reload skills without file changes?~~ </strong>[RESOLVED ✅ 2026-04-23]<strong> → NO dedicated reload command; workarounds: touch SKILL.md, rename folder, config hot-reload for enable/disable</strong></li>
+<li><strong>[SKILLS]</strong> ~~What happens to in-flight skill executions when SKILL.md is deleted?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → In-flight turn completes; next turn excludes skill; model cannot re-read deleted SKILL.md<strong></li>
+<li></strong>[SKILLS]<strong> ~~Can skills be enabled/disabled per-session (not just global to workspace)?~~ </strong>[RESOLVED ✅ 2026-04-23]<strong> → NO per-session toggle; changes are global to workspace; new sessions use updated config</strong></li>
+<li><strong>[SKILLS]</strong> ~~Does config hot-reload apply to <code>skills.entries</code> changes?~~ <strong>[RESOLVED ✅ 2026-04-23]</strong> → YES for enable/disable/env/apiKey changes; NO for extraDirs/watch settings (require restart)<strong></li>
+</ul>
+<h3>LOW Priority</h3>
+<ul><li></strong>[HOOKS]<strong> How do workspace hooks differ from managed hooks in discovery precedence? </strong>[MED — RESOLVED ✅ 2026-04-23]<strong></li>
+<li></strong>[HOOKS]<strong> What's recommended approach for hook-to-hook communication? </strong>[MED — RESOLVED ✅ 2026-04-23]<strong></li>
+<li></strong>[SKILLS]<strong> How does skills watcher handle nested directory changes (subdirectories)? </strong>[MED]<strong></li>
+<li></strong>[SKILLS]<strong> What triggers skills snapshot refresh — only SKILL.md changes or any file in skill directory? </strong>[MED]<strong></li>
+<li></strong>[HOOKS]<strong> What is max recommended handlers per hook before performance degrades? </strong>[MED]<strong></li>
+<li></strong>[HOOKS]<strong> Can hook execution order be traced at runtime without debug mode? </strong>[MED]<strong></li>
+<li></strong>[HOOKS]<strong> Can plugins from different sources enforce ordering constraints? </strong>[MED]<strong></li>
+<li></strong>[HOOKS]<strong> What happens to in-flight hook executions when gateway restarts? </strong>[MED]<strong></li>
+<li></strong>[HOOKS]<strong> Is there a performance benchmark for hook overhead? </strong>[MED]<strong></li>
+<li></strong>[HOOKS]<strong> Does claim-first-wins pattern support priority among claiming hooks? </strong>[MED]<strong></li>
+<li></strong>[HOOKS]<strong> Is there any audit logging for hooks accessing <code>context.cfg</code>? </strong>[MED]<strong></li>
+<li></strong>[HOOKS]<strong> Can hooks modify gateway configuration at runtime (write-back to cfg)? </strong>[MED]<strong></li>
+<li></strong>[HOOKS]<strong> What is performance impact of passing full config object to every hook? </strong>[MED]<strong></li>
+<li></strong>[HOOKS]<strong> Can workspace hooks be dynamically enabled/disabled per-agent without affecting other agents? </strong>[MED]<strong></li>
+<li></strong>[HOOKS]<strong> Can hooks access session store files directly on disk (not just in-memory context)? </strong>[MED]<strong></li>
+<li></strong>[HOOKS]<strong> Is there a way to scope hook config access to only necessary fields (principle of least privilege)? </strong>[MED]<strong></li>
+</ul>
+<h3>NEW QUESTIONS FROM L26 RESEARCH</h3>
+<ul><li></strong>[HOOKS]<strong> What's the practical difference between <code>openclaw-managed</code> (extraDirs) and <code>openclaw-managed</code> (managedHooksDir)? → Both have same source identifier but different loading mechanisms </strong>[LOW]<strong></li>
+<li></strong>[HOOKS]<strong> Can a workspace hook be promoted to managed status? → No automatic migration path </strong>[LOW]<strong></li>
+<li></strong>[HOOKS]<strong> Is there a hook naming collision detection tool? → <code>openclaw hooks status</code> shows conflicts but doesn't prevent them </strong>[MED]<strong></li>
+<li></strong>[HOOKS]<strong> What happens when a plugin ships a hook with same name as a bundled hook? → Plugin (20) can override bundled (10) </strong>[MED]**</li>
+</ul>
+<hr>
+<h2>In Progress</h2>
+<ul><li>None currently</li>
+</ul>
+<h2>Completed (Recent)</h2>
+<ul><li>L41: Hook Exception Handler Behavior ✅ (2026-04-23 12:40)</li>
+<li>L39: Skills Overhead Profiling & Reload Mechanisms ✅ (2026-04-23 11:46)</li>
+<li>L40: Workspace Hooks vs Managed Hooks Discovery Precedence ✅ (2026-04-23 12:30)</li>
+<li>L34: Dangerous Code Scanner Patterns (Red-Teaming) ✅ (2026-04-23 07:41)</li>
+<li>L33: Plugin Hook Dynamic Registration + State Access ✅ (2026-04-23 07:09)</li>
+<li>L14: Hook Types Difference ✅ (2026-04-23 06:48)</li>
+<li>L16: Hook Execution Order ✅ (2026-04-23 06:31)</li>
+<li>L32: Skills Dependencies & Chaining ✅ (2026-04-23 06:15)</li>
+<li>L33: Terracotta Business Procedures as Skills ✅ (2026-04-23 06:15)</li>
+<li>L31: Scanner Scope: SKILL.md vs Installer Metadata ✅ (2026-04-23 05:50)</li>
+<li>L30: Skills Sandbox & Post-Install Privilege Model ✅ (2026-04-23 05:25)</li>
+<li>L27: OpenClaw Skill System ✅ (2026-04-23 04:25)</li>
+<li>L26: OpenClaw Config System ✅ (2026-04-23 03:45)</li>
+<li>L25: Extension Security Model ✅ (2026-04-23 03:30)</li>
+<li>L22: Extension to Extension Communication ✅ (2026-04-23 03:30)</li>
+</ul>
+<hr>
+<h2>Notes</h2>
+<ul><li>backlog.md cleaned up 2026-04-23 06:48 — duplicate entries removed, numbering fixed</li>
+<li>All HIGH priority items now resolved</li>
+<li>Next research candidate: MED #27 (hook-to-hook communication) or MED #28 (skills watcher nested dirs) or MED #30 (hook performance)</li>
+</ul>
+</body>
+</html>

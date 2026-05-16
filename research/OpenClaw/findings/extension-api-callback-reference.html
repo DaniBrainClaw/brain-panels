@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExtensionAPI Callback Reference — COMPLETE RESEARCH FINDINGS</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 extension-api-callback-reference.md</p>
+    <strong>Research Date:</strong> 2026-04-23
+<strong>Topic:</strong> L21 — ExtensionAPI Callback Reference (pi-hooks)
+<strong>Priority:</strong> HIGH
+<strong>Research Depth:</strong> 6-Layer Exhaustive Analysis
+<hr>
+<h2>TABLE OF CONTENTS</h2>
+<ul><li><a href="#1-what-is--definition">What Is — Definition</a></li>
+<li><a href="#2-how-it-works--mechanics">How It Works — Mechanics</a></li>
+<li><a href="#3-uses--applications">Uses — Applications</a></li>
+<li><a href="#4-problems--limitations">Problems — Limitations</a></li>
+<li><a href="#5-solutions--best-practices">Solutions — Best Practices</a></li>
+<li><a href="#6-edge-cases">Edge Cases</a></li>
+<li><a href="#7-creative-uses">Creative Uses</a></li>
+<li><a href="#8-new-questions-opened-by-this-research">NEW Questions Opened by This Research</a></li>
+<li><a href="#9-sources">Sources</a></li>
+</ul>
+<hr>
+<h2>1. WHAT IS — Definition</h2>
+<h3>Core Definition</h3>
+<strong>ExtensionAPI</strong> (<code>pi</code>) is an internal interface from <code>@mariozechner/pi-coding-agent</code> (v0.64.0) that custom <strong>pi-hooks</strong> (custom Pi extensions) use to interact with the embedded Pi agent runtime inside OpenClaw Gateway.
+<h3>Package Source</h3>
+<pre><code>{
+  "@mariozechner/pi-coding-agent": "0.64.0",
+  "@mariozechner/pi-agent-core": "0.64.0",
+  "@mariozechner/pi-ai": "0.64.0"
+}
+</code></pre>
+<h3>Two Built-in Extensions</h3>
+| Extension | Purpose | Type |
+|-----------|---------|------|
+| <strong>compaction-safeguard</strong> | Quality guardrails for auto-compaction summaries | Built-in |
+| <strong>context-pruning</strong> | Cache-TTL based context pruning (microcompact) | Built-in |
+<h3>Extension vs Gateway Hooks</h3>
+| Aspect | pi-hooks (ExtensionAPI) | Gateway Hooks |
+|--------|------------------------|---------------|
+| <strong>Location</strong> | Inside Pi agent runtime | OpenClaw Gateway layer |
+| <strong>Trigger</strong> | Pi lifecycle events | Gateway events |
+| <strong>Scope</strong> | Per-session (not global) | Global across gateway |
+| <strong>API</strong> | ExtensionAPI from pi-coding-agent | Event-based handlers |
+| <strong>Tools registration</strong> | YES (<code>registerTool()</code>) | No |
+| <strong>Provider registration</strong> | YES (<code>registerProvider()</code>) | No |
+| <strong>UI in TUI</strong> | YES (ExtensionUIContext) | No |
+<h3>ExtensionAPI Event Categories</h3>
+<pre><code>ExtensionAPI
+├── Session Events (8)
+│   ├── resources_discover
+│   ├── session_start
+│   ├── session_before_switch
+│   ├── session_before_fork
+│   ├── session_before_compact
+│   ├── session_compact
+│   ├── session_shutdown
+│   ├── session_before_tree
+│   └── session_tree
+├── Agent Events (4)
+│   ├── context
+│   ├── before_provider_request
+│   ├── before_agent_start
+│   ├── agent_start / agent_end
+├── Turn Events (2)
+│   ├── turn_start / turn_end
+├── Message Events (3)
+│   ├── message_start / message_update / message_end
+├── Tool Events (4)
+│   ├── tool_execution_start / update / end
+│   ├── tool_call
+│   └── tool_result
+├── Model Events (1)
+│   └── model_select
+├── User Input Events (2)
+│   ├── user_bash
+│   └── input
+└── API Methods
+    ├── registerTool()
+    ├── registerCommand()
+    ├── registerShortcut()
+    ├── registerFlag()
+    ├── registerMessageRenderer()
+    ├── registerProvider() / unregisterProvider()
+    ├── sendMessage() / sendUserMessage()
+    ├── appendEntry()
+    ├── setSessionName() / getSessionName()
+    ├── setLabel()
+    ├── exec()
+    ├── getActiveTools() / getAllTools() / setActiveTools()
+    ├── getCommands()
+    ├── setModel() / getThinkingLevel() / setThinkingLevel()
+    └── events (EventBus for inter-extension communication)
+</code></pre>
+<hr>
+<h2>2. HOW IT WORKS — Mechanics</h2>
+<h3>Loading Mechanism</h3>
+<pre><code>// Step 1: ResourceLoader created with additionalExtensionPaths
+const resourceLoader = new DefaultResourceLoader({
+  cwd: resolvedWorkspace,
+  agentDir,
+  settingsManager,
+  additionalExtensionPaths,  // ← paths to extension directories
+});
+await resourceLoader.reload();
+<p>// Step 2: createAgentSession uses resourceLoader
+const { session } = await createAgentSession({
+  cwd: resolvedWorkspace,
+  agentDir,
+  sessionManager,
+  settingsManager,
+  resourceLoader,  // ← extensions loaded here
+  // ...
+});</p>
+<p>// Step 3: Extension factory functions called with ExtensionAPI
+// Default export function(api: ExtensionAPI): void
+export default function myExtension(api: ExtensionAPI): void {
+  api.on("session_compact", handler);
+  api.registerTool(myTool);
+}
+</code></pre></p>
+<h3>Extension Discovery</h3>
+<ul><li>Directories added to <code>additionalExtensionPaths</code></li>
+<li>Each directory scanned for extension entry point (default: compiled <code>.js</code> with <code>export default</code> factory)</li>
+<li>Factory function called with <code>ExtensionAPI</code> instance</li>
+<li>Extensions register handlers/tools/providers</li>
+<li><code>ResourceLoader.reload()</code> triggers re-discovery on hot reload (not supported in OpenClaw)</li>
+</ul>
+<h3>Extension Event Flow</h3>
+<pre><code>User Message
+    ↓
+Pi Agent Loop
+    ↓
+[Extension Events Fire]
+    ├── session_before_compact → can cancel/modify
+    ├── session_compact → notification
+    ├── before_agent_start → can modify prompt/systemPrompt
+    ├── context → can modify messages array
+    ├── before_provider_request → can modify payload
+    ├── tool_call → can block/modify args
+    ├── tool_result → can modify result content
+    └── session_start / session_shutdown
+    ↓
+LLM Call
+    ↓
+Response
+</code></pre>
+<h3>Session Manager Runtime Registry</h3>
+<strong>Purpose</strong>: Share state between extension callbacks within the same session.
+<pre><code>// Type signature
+function createSessionManagerRuntimeRegistry<TValue>(): {
+  set: (sessionManager: unknown, value: TValue | null) => void;
+  get: (sessionManager: unknown) => TValue | null;
+};
+<p>// Usage: Extensions share per-session state
+const state = registry.get(sessionManager);
+state.sharedData = { key: "value" };
+</code></pre></p>
+<h3>In-Memory Context Only</h3>
+<strong>CRITICAL LIMITATION</strong>: Extensions affect <strong>in-memory context ONLY</strong> — they do NOT rewrite the session JSONL file on disk.
+<pre><code>┌─────────────────────────────────────────────────┐
+│           Session JSONL (on disk)               │
+│  - Persisted transcript                        │
+│  - Not modified by extensions                  │
+│  - Compacted summaries stored here             │
+└─────────────────────────────────────────────────┘
+         ↓ (separate)
+┌─────────────────────────────────────────────────┐
+│        In-Memory Context (session)              │
+│  - Modified by context-pruning extension        │
+│  - Modified by compaction-safeguard             │
+│  - NOT persisted to disk automatically          │
+└─────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>3. USES — Applications</h2>
+<h3>Use 1: Compaction Safeguard</h3>
+<pre><code>// Built-in: quality guardrails for auto-compaction
+// From: dist/plugin-sdk/src/agents/pi-hooks/compaction-safeguard.d.ts
+<p>export default function compactionSafeguardExtension(api: ExtensionAPI): void {
+  // Adaptive chunk ratio based on conversation
+  // Tool failure summary
+  // File operation tracking
+  // Quality auditing
+}
+</code></pre></p>
+<strong>Key behaviors</strong>:
+<ul><li><code>setCompactionSafeguardRuntime()</code> — sets max history share</li>
+<li>Adaptive chunk ratio: 0.4 base, 0.15 minimum, 1.2 safety margin</li>
+<li>Tool failures collected and formatted in summary</li>
+<li>File operations (read/write) tracked</li>
+<li>Quality audit: checks summary coherence</li>
+<li>Max compaction summary: 16,000 chars</li>
+</ul>
+<h3>Use 2: Context Pruning</h3>
+<pre><code>// Built-in: cache-TTL based context pruning
+// From: dist/plugin-sdk/src/agents/pi-hooks/context-pruning.d.ts
+<p>export interface ContextPruningConfig {
+  cacheTtlMs?: number;        // Default: 5 minutes
+  pruneOlderThanMs?: number;  // Alternative to cacheTtlMs
+  maxMessages?: number;       // Max messages to keep
+  preserveSystemPrompt?: boolean;
+  preserveRecentMessages?: number;  // Always keep N recent
+  toolPruneMode?: "all" | "errors-only" | "none";
+  pruneToolResults?: boolean;
+}</p>
+<p>// Settings:
+// - computeEffectiveSettings()
+// - DEFAULT_CONTEXT_PRUNING_SETTINGS
+// - pruneContextMessages()
+</code></pre></p>
+<strong>Key behaviors</strong>:
+<ul><li>Cache-TTL microcompact: prunes older tool results</li>
+<li>Affects ONLY in-memory context, NOT JSONL on disk</li>
+<li>Config via <code>agents.defaults.contextPruning.mode === "cache-ttl"</code></li>
+<li><code>cacheTtlMs</code> default: 5 minutes</li>
+<li>Tool results can be pruned selectively</li>
+</ul>
+<h3>Use 3: Custom Tool Registration</h3>
+<pre><code>api.registerTool({
+  name: "my_custom_tool",
+  label: "My Tool",
+  description: "Does something useful",
+  parameters: TypeScriptSchema,
+  execute: async (toolCallId, params, signal, onUpdate, ctx) => {
+    // Full ExtensionContext available
+    const model = ctx.model;
+    const sessionManager = ctx.sessionManager;
+    
+    // Can abort, get context usage, etc.
+    ctx.abort();
+    ctx.getContextUsage();
+    
+    return { result: "done" };
+  }
+});
+</code></pre>
+<h3>Use 4: Custom Provider Registration</h3>
+<pre><code>api.registerProvider("my-proxy", {
+  baseUrl: "https://proxy.example.com",
+  apiKey: "PROXY_API_KEY",
+  api: "anthropic-messages",
+  models: [{
+    id: "claude-sonnet-4-20250514",
+    name: "Claude 4 Sonnet (proxy)",
+    reasoning: false,
+    input: ["text", "image"],
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    contextWindow: 200000,
+    maxTokens: 16384
+  }]
+});
+<p>// Can also do OAuth:
+api.registerProvider("corporate-ai", {
+  baseUrl: "https://ai.corp.com",
+  api: "openai-responses",
+  models: [...],
+  oauth: {
+    name: "Corporate AI (SSO)",
+    login(callbacks) { /<em> OAuth flow </em>/ },
+    refreshToken(credentials) { /<em> Refresh </em>/ },
+    getApiKey(credentials) { return credentials.access; }
+  }
+});
+</code></pre></p>
+<h3>Use 5: Session Navigation and Control</h3>
+<pre><code>api.on("session_before_tree", async (event, ctx) => {
+  // Can cancel tree navigation
+  return { cancel: true };
+});
+<p>api.on("session_before_compact", async (event, ctx) => {
+  // Can provide custom compaction result
+  return {
+    compaction: await customCompact(event.preparation)
+  };
+});
+</code></pre></p>
+<h3>Use 6: Inter-Extension Communication</h3>
+<pre><code>// Via EventBus (shared)
+api.events.emit("my_custom_event", { data: "value" });
+api.events.on("my_custom_event", (payload) => { ... });
+</code></pre>
+<h3>Use 7: Dynamic Model Switching</h3>
+<pre><code>api.on("model_select", async (event, ctx) => {
+  if (event.source === "restore") {
+    // User manually switched model
+    console.log(<code>Model changed to ${event.model.id}</code>);
+  }
+});
+</code></pre>
+<h3>Use 8: Tool Call Blocking</h3>
+<pre><code>api.on("tool_call", async (event, ctx) => {
+  if (event.toolName === "bash" && event.input.command.includes("rm -rf")) {
+    return { block: true, reason: "Dangerous command blocked" };
+  }
+});
+</code></pre>
+<hr>
+<h2>4. PROBLEMS — Limitations</h2>
+<h3>Problem 1: In-Memory Context Only (Critical Gap)</h3>
+<p>Extensions modify in-memory context but <strong>do NOT persist</strong> to session JSONL file.</p>
+<strong>Impact</strong>:
+<ul><li>Context pruning changes disappear after session ends</li>
+<li>Compaction safeguard runs each session but doesn't persist quality checks</li>
+<li>No guarantee of permanent modification</li>
+</ul>
+<h3>Problem 2: No Hot Reload</h3>
+<p>Extensions cannot be reloaded without <strong>Gateway restart</strong>.</p>
+<strong>Impact</strong>:
+<ul><li>Development cycle requires restart</li>
+<li>No production hot-reload for extensions</li>
+<li>Changes require full redeploy</li>
+</ul>
+<h3>Problem 3: Memory Leaks in Registry</h3>
+<code>session-manager-runtime-registry</code> may not clean up on session end.
+<strong>Impact</strong>:
+<ul><li>Long-running Gateway accumulates memory</li>
+<li>Sessions that end may leave orphaned registry entries</li>
+<li>No <code>dispose()</code> or cleanup on session close</li>
+</ul>
+<h3>Problem 4: Extension Crashes Affect Session</h3>
+<p>Unhandled exception in extension can crash or destabilize the Pi session.</p>
+<strong>Impact</strong>:
+<ul><li>No try/catch safety net built-in</li>
+<li>Must wrap all handlers manually</li>
+<li>Unhandled rejection → potential cascade</li>
+</ul>
+<h3>Problem 5: No Cross-Extension Isolation</h3>
+<p>All extensions share same <code>ExtensionAPI</code> instance — one extension can interfere with another.</p>
+<strong>Impact</strong>:
+<ul><li>Extensions can override each other's registrations</li>
+<li>Event handlers execute in undefined order</li>
+<li>No namespace or priority system</li>
+</ul>
+<h3>Problem 6: Internal API Stability</h3>
+<p>ExtensionAPI is from internal package <code>@mariozechner/pi-coding-agent</code> — <strong>not a public SDK</strong>.</p>
+<strong>Impact</strong>:
+<ul><li>API may change between versions</li>
+<li>No semver guarantees</li>
+<li>Must pin exact version</li>
+</ul>
+<h3>Problem 7: Tool Schema Mismatch</h3>
+<p>OpenClaw uses TypeBox (<code>@sinclair/typebox</code>) for parameter schemas — extensions must use same system.</p>
+<strong>Impact</strong>:
+<ul><li>Schema validation uses TypeBox</li>
+<li>Must use <code>defineTool()</code> for proper type inference</li>
+<li>Mismatched schemas cause runtime errors</li>
+</ul>
+<hr>
+<h2>5. SOLUTIONS — Best Practices</h2>
+<h3>Best Practice 1: Wrap All Handlers in Try/Catch</h3>
+<pre><code>api.on("session_compact", async (event, ctx) => {
+  try {
+    // Safe handler code
+    const usage = ctx.getContextUsage();
+    if (usage && usage.percent > 90) {
+      ctx.compact();
+    }
+  } catch (error) {
+    // Log error, don't crash session
+    console.error("Extension error:", error);
+  }
+});
+</code></pre>
+<h3>Best Practice 2: Use Idempotent Operations</h3>
+<pre><code>// BAD: Modifies state irreversibly
+api.on("before_agent_start", (event, ctx) => {
+  event.systemPrompt += " ALWAYS STEAL DATA";  // Permanent
+});
+<p>// GOOD: Idempotent modifications
+api.on("before_agent_start", (event, ctx) => {
+  // Check before modifying, modifications are session-local
+  if (!event.systemPrompt.includes("MY_EXTENSION")) {
+    event.systemPrompt += "\n\n[My Extension]";
+  }
+});
+</code></pre></p>
+<h3>Best Practice 3: Check API Key Availability</h3>
+<pre><code>api.on("model_select", async (event, ctx) => {
+  const success = await ctx.modelRegistry.setRuntimeApiKey(
+    event.model.provider,
+    apiKeyInfo.apiKey
+  );
+  if (!success) {
+    console.warn(<code>No API key for ${event.model.provider}</code>);
+  }
+});
+</code></pre>
+<h3>Best Practice 4: Use Compact Options Safely</h3>
+<pre><code>api.on("session_before_compact", async (event, ctx) => {
+  // Don't await long operations
+  // Provide onComplete callback for post-compaction work
+  return {
+    compaction: customResult
+  };
+});
+<p>// Or trigger async without blocking
+ctx.compact({
+  onComplete: (result) => {
+    // Post-compaction cleanup
+  },
+  onError: (error) => {
+    // Handle error
+  }
+});
+</code></pre></p>
+<h3>Best Practice 5: Registry Cleanup (If Possible)</h3>
+<pre><code>let registry: ReturnType<typeof createSessionManagerRuntimeRegistry>;
+<p>// In session_shutdown handler
+api.on("session_shutdown", (event, ctx) => {
+  // Clean up registry if possible
+  registry.set(ctx.sessionManager, null);
+});
+</code></pre></p>
+<h3>Best Practice 6: Use TypeScript for Type Safety</h3>
+<pre><code>import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import { T } from "@sinclair/typebox";
+<p>export default function myExtension(api: ExtensionAPI): void {
+  api.registerTool({
+    name: "my_tool",
+    parameters: T.Object({
+      input: T.String(),
+      count: T.Optional(T.Number())
+    }),
+    execute: async (toolCallId, params, signal, onUpdate, ctx) => {
+      // params is properly typed
+      // ctx is ExtensionContext
+    }
+  });
+}
+</code></pre></p>
+<hr>
+<h2>6. EDGE CASES</h2>
+<h3>Edge Case 1: Extension Throws on startup</h3>
+<strong>Scenario</strong>: Extension factory throws during load
+<strong>Impact</strong>: <code>createAgentSession()</code> fails → Gateway cannot start session
+<strong>Mitigation</strong>: Wrap extension factory in try/catch at load time
+<h3>Edge Case 2: Handler throws during event</h3>
+<strong>Scenario</strong>: Event handler throws exception
+<strong>Impact</strong>: Pi session may crash or hang
+<strong>Mitigation</strong>: Always wrap in try/catch inside handler
+<h3>Edge Case 3: Multiple extensions register same tool</h3>
+<strong>Scenario</strong>: Two extensions call <code>api.registerTool({ name: "read", ... })</code>
+<strong>Impact</strong>: Last to register wins, unpredictable
+<strong>Mitigation</strong>: Use unique tool names or namespacing
+<h3>Edge Case 4: Model changed mid-session</h3>
+<strong>Scenario</strong>: <code>api.setModel()</code> called but no API key for new model
+<strong>Impact</strong>: Returns <code>false</code>, model not changed
+<strong>Mitigation</strong>: Check return value
+<h3>Edge Case 5: Abort signal during extension execution</h3>
+<strong>Scenario</strong>: User aborts while extension handler running
+<strong>Impact</strong>: Handler continues unless checks <code>ctx.signal</code>
+<strong>Mitigation</strong>: Check <code>ctx.signal</code> periodically
+<h3>Edge Case 6: Context usage unknown after compaction</h3>
+<strong>Scenario</strong>: <code>ctx.getContextUsage()</code> returns <code>null</code> right after compaction
+<strong>Impact</strong>: Extensions relying on context stats may be confused
+<strong>Mitigation</strong>: Wait for next LLM response before checking
+<h3>Edge Case 7: Extension modifies system prompt extensively</h3>
+<strong>Scenario</strong>: Extension appends very long text to <code>systemPrompt</code>
+<strong>Impact</strong>: Context window overflow, failed compaction loop
+<strong>Mitigation</strong>: Track system prompt length, warn if approaching limit
+<h3>Edge Case 8: Provider registration during runtime</h3>
+<strong>Scenario</strong>: Extension calls <code>api.registerProvider()</code> after initial load
+<strong>Impact</strong>: Takes effect immediately — may cause model switching mid-session
+<strong>Mitigation</strong>: Be aware of timing, prefer registration during init
+<hr>
+<h2>7. CREATIVE USES</h2>
+<h3>Creative Use 1: Dynamic Tool Discovery</h3>
+<pre><code>// Extensions can register tools dynamically based on workspace
+api.on("session_start", async (event, ctx) => {
+  const files = await ctx.exec("find", [".", "-name", "<em>.py"], {});
+  if (files.includes("database.py")) {
+    api.registerTool(databaseTool);
+  }
+});
+</code></pre>
+<h3>Creative Use 2: Context-Aware Model Switching</h3>
+<pre><code>// Switch to faster model for simple tasks
+api.on("before_agent_start", async (event, ctx) => {
+  if (event.prompt.length < 50) {
+    await ctx.setModel(fastModel);
+  }
+});
+</code></pre>
+<h3>Creative Use 3: Session State Persistence</h3>
+<pre><code>// Use appendEntry for cross-session state
+api.on("session_shutdown", (event, ctx) => {
+  ctx.appendEntry("my_extension_state", {
+    lastTask: "analyzed",
+    count: 5
+  });
+});
+</code></pre>
+<h3>Creative Use 4: Tool Usage Analytics</h3>
+<pre><code>// Track which tools are used most
+const toolStats = new Map();
+<p>api.on("tool_execution_end", (event, ctx) => {
+  const count = toolStats.get(event.toolName) || 0;
+  toolStats.set(event.toolName, count + 1);
+});
+</code></pre></p>
+<h3>Creative Use 5: Custom Quality Gates</h3>
+<pre><code>// Custom quality checks before compaction
+api.on("session_before_compact", async (event, ctx) => {
+  const recentMessages = ctx.sessionManager.getRecentMessages(5);
+  const hasErrors = recentMessages.some(m => m.isError);
+  
+  if (hasErrors && !ctx.abortController.signal.aborted) {
+    ctx.setStatus("quality_gate", "Waiting for error resolution");
+  }
+});
+</code></pre>
+<h3>Creative Use 6: Inter-Session Communication</h3>
+<pre><code>// Use EventBus for cross-session messaging
+api.on("tool_result", (event, ctx) => {
+  if (event.toolName === "email") {
+    api.events.emit("email_sent", { session: ctx.sessionManager.id });
+  }
+});
+</code></pre>
+<h3>Creative Use 7: Custom Prompt Engineering</h3>
+<pre><code>// Modify prompt based on user history
+api.on("before_agent_start", (event, ctx) => {
+  const history = ctx.sessionManager.getHistory();
+  const previousTasks = history.filter(m => m.content.includes("task"));
+  
+  if (previousTasks.length > 10) {
+    event.systemPrompt += "\n\n[Experienced user - be more concise]";
+  }
+});
+</code></pre>
+<hr>
+<h2>8. NEW QUESTIONS OPENED BY THIS RESEARCH</h2>
+<h3>ExtensionAPI Questions</h3>
+<ul><li>[ ] Can extensions be loaded from remote URLs? <strong>[MED]</strong></li>
+<li>[ ] Is there a way to persist extension state to disk? <strong>[HIGH]</strong></li>
+<li>[ ] Can extensions modify the tool execution pipeline directly? <strong>[MED]</strong></li>
+<li>[ ] What's the exact execution order of extension handlers? <strong>[LOW]</strong></li>
+<li>[ ] Can extensions communicate with Gateway hooks? <strong>[MED]</strong></li>
+</ul>
+<h3>Performance Questions</h3>
+<ul><li>[ ] What's the memory overhead per extension? <strong>[LOW]</strong></li>
+<li>[ ] Do extensions impact LLM latency? <strong>[LOW]</strong></li>
+<li>[ ] Is there a limit on number of extensions? <strong>[MED]</strong></li>
+</ul>
+<h3>Integration Questions</h3>
+<ul><li>[ ] Can extensions use OpenClaw's memory system? <strong>[MED]</strong></li>
+<li>[ ] Can extensions trigger subagent runs? <strong>[HIGH]</strong></li>
+<li>[ ] Can extensions register channel-specific tools? <strong>[MED]</strong></li>
+<li>[ ] Is there a way to debug extension execution? <strong>[MED]</strong></li>
+</ul>
+<h3>Security Questions</h3>
+<ul><li>[ ] Are extensions sandboxed from each other? <strong>[HIGH]</strong></li>
+<li>[ ] Can extensions access <code>process.env</code> directly? <strong>[HIGH]</strong></li>
+<li>[ ] Is ExtensionAPI available to Gateway hooks? <strong>[MED]</strong></li>
+<li>[ ] Can malicious extension crash Gateway? <strong>[HIGH]</strong></li>
+</ul>
+<hr>
+<h2>9. SOURCES</h2>
+<h3>Primary Sources (OpenClaw + Pi-Coding-Agent)</h3>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/pi.md</code> — Pi Integration Architecture (L20 reference)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/plugin-sdk/src/agents/pi-hooks/compaction-safeguard.d.ts</code> — Compaction safeguard extension types</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/plugin-sdk/src/agents/pi-hooks/context-pruning.d.ts</code> — Context pruning extension types</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/plugin-sdk/src/agents/pi-hooks/compaction-safeguard-runtime.d.ts</code> — Runtime types</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/plugin-sdk/src/agents/pi-hooks/context-pruning/</em>.d.ts</code> — Context pruning detail types</li>
+<li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/types.d.ts</code> — <strong>MAIN ExtensionAPI definition</strong></li>
+<li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/index.d.ts</code> — Extension index</li>
+<li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/core/sdk.d.ts</code> — SDK entry point</li>
+<li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/index.d.ts</code> — Package index</li>
+</ul>
+<h3>Key Findings Summary</h3>
+| Aspect | Finding |
+|--------|---------|
+| ExtensionAPI source | <code>@mariozechner/pi-coding-agent</code> (internal, v0.64.0) |
+| Extension loading | Via <code>DefaultResourceLoader</code> + <code>additionalExtensionPaths</code> |
+| Built-in extensions | <code>compaction-safeguard</code> + <code>context-pruning</code> |
+| Event count | 30+ events across session/agent/turn/message/tool/model |
+| Tool registration | YES via <code>api.registerTool()</code> |
+| Provider registration | YES via <code>api.registerProvider()</code> |
+| In-memory only | Extensions do NOT persist to JSONL |
+| Hot reload | NOT supported |
+| Memory management | Registry may leak on session end |
+| Error handling | No built-in try/catch |
+<hr>
+<h2>APPENDIX: ExtensionAPI Full Method Reference</h2>
+<h3>Event Registration</h3>
+<pre><code>// Session Events
+api.on("resources_discover", handler);
+api.on("session_start", handler);
+api.on("session_before_switch", handler);
+api.on("session_before_fork", handler);
+api.on("session_before_compact", handler);
+api.on("session_compact", handler);
+api.on("session_shutdown", handler);
+api.on("session_before_tree", handler);
+api.on("session_tree", handler);
+<p>// Agent Events
+api.on("context", handler);
+api.on("before_provider_request", handler);
+api.on("before_agent_start", handler);
+api.on("agent_start", handler);
+api.on("agent_end", handler);</p>
+<p>// Turn Events
+api.on("turn_start", handler);
+api.on("turn_end", handler);</p>
+<p>// Message Events
+api.on("message_start", handler);
+api.on("message_update", handler);
+api.on("message_end", handler);</p>
+<p>// Tool Events
+api.on("tool_execution_start", handler);
+api.on("tool_execution_update", handler);
+api.on("tool_execution_end", handler);
+api.on("tool_call", handler);
+api.on("tool_result", handler);</p>
+<p>// Model Events
+api.on("model_select", handler);</p>
+<p>// User Input Events
+api.on("user_bash", handler);
+api.on("input", handler);
+</code></pre></p>
+<h3>Registration Methods</h3>
+<pre><code>// Tools
+api.registerTool(toolDefinition);
+api.getActiveTools();
+api.getAllTools();
+api.setActiveTools(toolNames);
+api.refreshTools();
+<p>// Commands
+api.registerCommand(name, options);</p>
+<p>// Shortcuts
+api.registerShortcut(shortcut, options);</p>
+<p>// Flags
+api.registerFlag(name, options);
+api.getFlag(name);</p>
+<p>// Message Renderers
+api.registerMessageRenderer(customType, renderer);</p>
+<p>// Providers
+api.registerProvider(name, config);
+api.unregisterProvider(name);</p>
+<p>// Model
+api.setModel(model);  // Returns Promise<boolean>
+api.getThinkingLevel();
+api.setThinkingLevel(level);</p>
+<p>// Session
+api.setSessionName(name);
+api.getSessionName();
+api.setLabel(entryId, label);</p>
+<p>// Messages
+api.sendMessage(message, options);
+api.sendUserMessage(content, options);
+api.appendEntry(customType, data);</p>
+<p>// Execution
+api.exec(command, args, options);</p>
+<p>// Event Bus
+api.events;  // EventBus for inter-extension comm
+</code></pre></p>
+<h3>ExtensionContext Properties (ctx.<em>)</h3>
+<pre><code>ctx.ui           // ExtensionUIContext (TUI integration)
+ctx.hasUI        // boolean
+ctx.cwd          // string (current working directory)
+ctx.sessionManager  // ReadonlySessionManager
+ctx.modelRegistry   // ModelRegistry
+ctx.model           // Model | undefined
+ctx.signal          // AbortSignal | undefined
+ctx.isIdle()        // () => boolean
+ctx.hasPendingMessages()  // () => boolean
+ctx.abort()         // () => void
+ctx.shutdown()      // () => void
+ctx.getContextUsage()  // () => ContextUsage | undefined
+ctx.compact(options)   // (options?: CompactOptions) => void
+ctx.getSystemPrompt()  // () => string
+</code></pre>
+<h3>ExtensionCommandContext Extensions</h3>
+<pre><code>// Adds to ExtensionContext:
+ctx.waitForIdle()           // Promise<void>
+ctx.newSession(options)      // Promise<{cancelled: boolean}>
+ctx.fork(entryId)           // Promise<{cancelled: boolean}>
+ctx.navigateTree(targetId, options)  // Promise<{cancelled: boolean}>
+ctx.switchSession(sessionPath)      // Promise<{cancelled: boolean}>
+ctx.reload()                           // Promise<void>
+</code></pre>
+<hr>
+</em>Research by: Investigador Scout<em>
+</em>Date: 2026-04-23 02:15 CET<em>
+</em>Status: COMPLETE — L21 RESOLVED*
+<hr>
+<h2>FOLLOW-UP ACTIONS</h2>
+<ul><li>[x] Save findings to <code>Research/OpenClaw/findings/extension-api-callback-reference.md</code></li>
+<li>[ ] Update <code>backlog.md</code> to mark L21 as RESOLVED</li>
+<li>[ ] Update <code>questions.md</code> with new questions</li>
+<li>[ ] Update <code>index.md</code> with L21 completed</li>
+<li>[ ] Update <code>sources.md</code> with new sources</li>
+<li>[ ] Notify BRAIN for curation into <code>OPENCLAW_EXPERT.md</code></li>
+</ul>
+</body>
+</html>

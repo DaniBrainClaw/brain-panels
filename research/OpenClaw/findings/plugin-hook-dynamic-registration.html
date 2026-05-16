@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plugin Hook Dynamic Registration — Research Findings</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 plugin-hook-dynamic-registration.md</p>
+    <strong>Topic:</strong> Can plugin hooks be dynamically registered/unregistered at runtime? + Can hooks access gateway internal state?
+<strong>Priority:</strong> MEDIUM (from backlog.md #15, #18)
+<strong>Date:</strong> 2026-04-23 07:09 CET
+<strong>Research by:</strong> Investigador Scout
+<strong>Status:</strong> ✅ COMPLETE
+<hr>
+<h2>1. WHAT IS — Definition & Core Concept</h2>
+<h3>Question 1: Can plugin hooks be dynamically registered/unregistered at runtime?</h3>
+<strong>Answer: NO — Plugin hooks cannot be dynamically registered or unregistered at runtime.</strong>
+<p>Plugin hooks are hooks that are registered through the Plugin SDK when a plugin loads. They are part of the plugin registry and remain active for the lifetime of the plugin. There is no public API exposed to dynamically add or remove plugin hooks after initial registration.</p>
+<strong>Key finding</strong>: Only <strong>internal hooks</strong> (standalone hooks in <code>~/.openclaw/hooks/</code>) have <code>registerInternalHook</code> and <code>unregisterInternalHook</code> functions, but even these are only called during plugin load/unload cycles, not for dynamic runtime changes.
+<h3>Question 2: Can hooks access gateway internal state (session store, config)?</h3>
+<strong>Answer: YES — Hooks can access gateway configuration and session data.</strong>
+<p>Hooks receive a <code>context</code> object that contains:
+<ul><li><code>context.cfg</code> — Full gateway configuration including all credentials, API keys, and secrets</li>
+<li><code>context.sessionEntry</code> — Current session entry/metadata</li>
+<li><code>context.patch</code> (for <code>session:patch</code> events) — Changed fields</li>
+<li><code>context.bootstrapFiles</code> (for <code>agent:bootstrap</code> events) — Mutable array of bootstrap files</li>
+</ul>
+This is a <strong>significant security finding</strong> — hooks have full access to all gateway secrets through <code>context.cfg</code>.</p>
+<hr>
+<h2>2. HOW IT WORKS — Architecture & Mechanics</h2>
+<h3>Plugin Hook Registration Flow</h3>
+<pre><code>Plugin Load Time:
+├── Plugin's register(api) function is called
+├── api.registerHook(events, handler, options) registers hooks
+├── Hooks are added to registry.typedHooks array
+└── Hooks remain active for plugin lifetime
+<p>Plugin Unload Time (gateway restart or plugin disable):
+├── unregisterInternalHook is called for each registration
+├── Hooks are removed from registry
+└── Plugin is unloaded from memory
+</code></pre></p>
+<h3>Source Code Evidence</h3>
+<p>From <code>/usr/local/lib/node_modules/openclaw/dist/internal-hooks-2legcEEL.js</code>:</p>
+<pre><code>function registerInternalHook(eventKey, handler) {
+  // Adds handler to internal hooks registry
+}
+<p>function unregisterInternalHook(eventKey, handler) {
+  // Removes handler from internal hooks registry
+}</p>
+<p>// Exported but only used during plugin lifecycle
+export { registerInternalHook, unregisterInternalHook, clearInternalHooks };
+</code></pre></p>
+<p>From <code>/usr/local/lib/node_modules/openclaw/dist/hook-runner-global-D9t7KsGJ.js</code>:</p>
+<pre><code>// Plugin hooks are stored in registry.typedHooks
+// No public API to add/remove after initial registration
+function getHooksForName(registry, hookName) {
+  return registry.typedHooks.filter((h) => h.hookName === hookName)
+    .toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+}
+</code></pre>
+<h3>Hook Context Structure</h3>
+<p>From the source code, hooks receive an event with this structure:</p>
+<pre><code>interface HookEvent {
+  type: string;      // Event type (e.g., "command", "message:received")
+  action?: string;   // Action subtype (e.g., "new", "reset")
+  sessionKey: string;
+  timestamp: number;
+  messages: string[];  // Messages to send back to user
+  context: {
+    cfg: GatewayConfig;           // Full gateway config (INCLUDES SECRETS)
+    sessionEntry: SessionEntry;   // Current session data
+    workspaceDir?: string;        // Workspace directory path
+    patch?: Record<string, any>;  // For session:patch events
+    bootstrapFiles?: string[];    // For agent:bootstrap events
+    // ... event-specific fields
+  };
+}
+</code></pre>
+<hr>
+<h2>3. USES — Practical Applications</h2>
+<h3>Why This Matters</h3>
+<ul><li><strong>Security Implications</strong>: Since hooks can access <code>context.cfg</code> with all credentials, any compromised hook can exfiltrate API keys, tokens, and secrets.</li>
+</ul>
+<ul><li><strong>Plugin Lifecycle</strong>: Plugins register hooks once at load time. There is no dynamic hook management without gateway restart.</li>
+</ul>
+<ul><li><strong>Configuration Access</strong>: Hooks can read (but not modify) the entire gateway configuration at runtime.</li>
+</ul>
+<h3>Use Case: Hook-Based Configuration Access</h3>
+<pre><code>// A hook can read ALL gateway configuration including secrets
+const handler = async (event) => {
+  // Access full config with all secrets
+  const apiKey = event.context.cfg.providers?.minimax?.apiKey;
+  const telegramToken = event.context.cfg.channels?.telegram?.botToken;
+  
+  // Can also access session data
+  const sessionId = event.context.sessionEntry?.sessionId;
+  
+  // Log or exfiltrate these values (SECURITY RISK)
+};
+</code></pre>
+<hr>
+<h2>4. PROBLEMS — Known Issues & Limitations</h2>
+<h3>Problem 1: No Dynamic Hook Registration for Plugins</h3>
+<strong>Issue</strong>: Plugin hooks cannot be added or removed at runtime without plugin reload.
+<strong>Impact</strong>: 
+<ul><li>Cannot implement runtime hook hot-swap</li>
+<li>Cannot create ephemeral hooks for one-off processing</li>
+<li>Must restart gateway to change plugin hook behavior</li>
+</ul>
+<h3>Problem 2: Full Configuration Access Without Audit</h3>
+<strong>Issue</strong>: Hooks have access to <code>context.cfg</code> which contains ALL secrets but there's no audit logging of this access.
+<strong>Impact</strong>:
+<ul><li>A malicious or compromised hook can read all credentials</li>
+<li>No way to detect credential access by hooks</li>
+<li>Security blind spot in the gateway</li>
+</ul>
+<h3>Problem 3: Internal vs Plugin Hook Asymmetry</h3>
+<strong>Issue</strong>: Internal hooks have registration/unregistration functions but they're not exposed as a public API for runtime use.
+<strong>Current state</strong>: Functions exist (<code>registerInternalHook</code>, <code>unregisterInternalHook</code>, <code>clearInternalHooks</code>) but are only used internally during plugin lifecycle.
+<h3>Problem 4: Hook Enable/Disable Requires Gateway Restart</h3>
+<strong>Issue</strong>: Even enabling/disabling hooks via config requires gateway restart in most cases.
+<strong>From hook-execution-order findings</strong>: "Some changes hot-reload; others may require restart."
+<hr>
+<h2>5. SOLUTIONS — Best Practices & Workarounds</h2>
+<h3>Solution 1: Use before_install Hook for Pre-Install Scanning</h3>
+<p>Since plugin hooks can't be dynamically registered, organizations can use <code>before_install</code> hook to implement custom security scanning before skill installation.</p>
+<pre><code>// In a plugin that provides before_install hook
+handler: async (event) => {
+  const { skillPath, skillName } = event.context;
+  
+  // Custom SKILL.md scanning
+  const skillMdPath = path.join(skillPath, 'SKILL.md');
+  if (fs.existsSync(skillMdPath)) {
+    const content = fs.readFileSync(skillMdPath, 'utf-8');
+    const findings = scanForRisks(content);
+    
+    if (findings.length > 0) {
+      return { 
+        block: true, 
+        blockReason: <code>Security risks found in SKILL.md: ${findings.join(', ')}</code> 
+      };
+    }
+  }
+}
+</code></pre>
+<h3>Solution 2: Monitor Hook Access to Configuration</h3>
+<p>Since hooks can access <code>context.cfg</code>, implement monitoring:</p>
+<pre><code>// Use a wrapper hook that logs all cfg access
+const configAccessLogger = {
+  handler: async (event) => {
+    const hasConfigAccess = Boolean(event.context?.cfg);
+    if (hasConfigAccess) {
+      logger?.warn(<code>[security] ${event.type} hook accessed configuration</code>);
+    }
+  }
+};
+</code></pre>
+<h3>Solution 3: Minimize Hook Privileges</h3>
+<ul><li>Only enable hooks that are strictly necessary</li>
+<li>Never enable workspace hooks in production</li>
+<li>Review all third-party plugins for hook requirements</li>
+</ul>
+<h3>Solution 4: Use Separate Agents for Untrusted Workloads</h3>
+<p>For untrusted skills or plugins, run in isolated agent with minimal config access:</p>
+<pre><code>{
+  agents: {
+    list: [{
+      id: "sandbox-agent",
+      skills: ["untrusted-skill"],
+      // Minimal or no hooks
+    }]
+  }
+}
+</code></pre>
+<hr>
+<h2>6. EDGE CASES — Corner Cases & Unexpected Behaviors</h2>
+<h3>Edge Case 1: Plugin Reload During Hook Execution</h3>
+<strong>Scenario</strong>: A plugin is being unloaded while one of its hooks is executing.
+<strong>Behavior</strong>: The hook completes normally; unregister happens after all in-flight hooks finish.
+<h3>Edge Case 2: Multiple Plugins Accessing Same Config Path</h3>
+<strong>Scenario</strong>: Two plugins both have hooks that access <code>context.cfg.providers.minimax.apiKey</code>.
+<strong>Behavior</strong>: Both get the same value; no conflict resolution needed. Each hook gets a fresh context object.
+<h3>Edge Case 3: Hook Throws Exception While Accessing Config</h3>
+<strong>Scenario</strong>: Hook accesses a nested config path that doesn't exist.
+<strong>Behavior</strong>: Depends on failure policy. Most hooks use <code>fail-open</code> (log error and continue). <code>before_tool_call</code> uses <code>fail-closed</code> (halt execution).
+<h3>Edge Case 4: Session Store Access</h3>
+<strong>Question</strong>: Can hooks directly read/write to the session store (session JSON files)?
+<strong>Answer</strong>: No direct API. Hooks can only access <code>context.sessionEntry</code> which is the in-memory session metadata, not the raw session files on disk.
+<hr>
+<h2>7. CREATIVE USES — Innovative Applications</h2>
+<h3>Creative Use 1: Hook-Based Configuration Observer</h3>
+<p>Create a monitoring hook that tracks configuration changes:</p>
+<pre><code>// Track which hooks access which config paths
+const configObserver = {
+  priority: -1000, // Run last
+  handler: async (event) => {
+    const accessedPaths = [];
+    // Deep-parse context.cfg to log accessed paths
+    // Build audit trail of config access patterns
+  }
+};
+</code></pre>
+<h3>Creative Use 2: Dynamic Hook Routing</h3>
+<p>Since hooks receive session context, implement conditional routing:</p>
+<pre><code>// Route to different handlers based on session state
+const router = {
+  handler: async (event) => {
+    const sessionId = event.context.sessionEntry?.sessionId;
+    const agentId = event.context.sessionEntry?.agentId;
+    
+    // Determine which sub-handler to invoke
+    return routeToHandler(agentId, sessionId);
+  }
+};
+</code></pre>
+<h3>Creative Use 3: Configuration Cache Invalidation</h3>
+<p>Use <code>session:patch</code> hooks to detect config changes:</p>
+<pre><code>// Detect when gateway config is modified
+handler: async (event) => {
+  if (event.context.patch) {
+    logger?.info(<code>Config changed: ${JSON.stringify(event.context.patch)}</code>);
+  }
+}
+</code></pre>
+<hr>
+<h2>8. NEW QUESTIONS OPENED BY THIS RESEARCH</h2>
+<h3>Generated New Questions:</h3>
+<ul><li><strong>[MED]</strong> Is there any audit logging for hooks accessing <code>context.cfg</code>?</li>
+</ul>   - <strong>Rationale</strong>: Current implementation has no audit trail for credential access via hooks.
+<ul><li><strong>[MED]</strong> Can hooks modify gateway configuration at runtime?</li>
+</ul>   - <strong>Rationale</strong>: Hooks can read <code>context.cfg</code> but it's unclear if they can write back changes.
+<ul><li><strong>[LOW]</strong> What is the performance impact of hooks accessing large config objects?</li>
+</ul>   - <strong>Rationale</strong>: <code>context.cfg</code> contains entire gateway config; passing this to every hook may have memory/CPU overhead.
+<ul><li><strong>[MED]</strong> Can hooks access the session store files directly on disk?</li>
+</ul>   - <strong>Rationale</strong>: Only in-memory session entry is accessible via context; disk access is not exposed.
+<ul><li><strong>[LOW]</strong> Is there a way to scope hook config access to only necessary fields?</li>
+</ul>   - <strong>Rationale</strong>: Current design passes full config; a scoped approach would reduce attack surface.
+<ul><li><strong>[MED]</strong> Can workspace hooks (per-agent) be dynamically enabled/disabled without affecting other agents?</li>
+</ul>   - <strong>Rationale</strong>: This would allow per-agent hook control but current design seems global.
+<hr>
+<h2>9. SOURCES</h2>
+<h3>Primary Sources</h3>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/internal-hooks-2legcEEL.js</code> — Internal hooks implementation with <code>registerInternalHook</code>, <code>unregisterInternalHook</code>, <code>clearInternalHooks</code> functions</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/hook-runner-global-D9t7KsGJ.js</code> — Plugin hook runner with registry structure</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/loader-DuIH27tS.js</code> — Plugin loader showing hook lifecycle</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Hook system documentation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/architecture.md</code> — Plugin architecture reference</li>
+</ul>
+<h3>Related Findings</h3>
+<ul><li><code>Research/OpenClaw/findings/hook-execution-order.md</code> (L16) — Hook execution order, failure policies</li>
+<li><code>Research/OpenClaw/findings/hook-security-audit.md</code> (L20) — Hook security model</li>
+<li><code>Research/OpenClaw/findings/openclaw-hooks-system.md</code> (L18) — Complete hook system overview</li>
+<li><code>Research/OpenClaw/findings/hook-internal-vs-plugin-types.md</code> (L14) — Internal vs plugin hook differences</li>
+</ul>
+<hr>
+<h2>Key Findings Summary</h2>
+<ul><li><strong>Plugin hooks CANNOT be dynamically registered/unregistered at runtime</strong> — They are tied to plugin lifecycle</li>
+<li><strong>Internal hooks have registration functions but are not exposed as public runtime API</strong> — Only used internally</li>
+<li><strong>Hooks CAN access gateway internal state</strong> — Via <code>context.cfg</code> (full config including secrets) and <code>context.sessionEntry</code> (session metadata)</li>
+<li><strong>No audit logging exists for config access by hooks</strong> — Security gap</li>
+<li><strong>Hook enable/disable may require gateway restart</strong> — Not all changes hot-reload</li>
+</ul>
+<hr>
+<em>Research by: Investigador Scout | 2026-04-23 07:09 CET</em>
+</body>
+</html>

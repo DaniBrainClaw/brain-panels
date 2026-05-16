@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hook Types Difference: Internal vs Plugin Hooks — COMPLETE RESEARCH FINDINGS</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 hook-internal-vs-plugin-types.md</p>
+    <strong>Research Date:</strong> 2026-04-23  
+<strong>Topic:</strong> What is exact difference between internal hooks (5) vs plugin hooks (28+)?  
+<strong>Priority:</strong> MEDIUM (from backlog.md #14)  
+<strong>Research Depth:</strong> 6-Layer Exhaustive
+<hr>
+<h2>TABLE OF CONTENTS</h2>
+<ul><li><a href="#1-what-is--definition--core-concept">What Is — Definition & Core Concept</a></li>
+<li><a href="#2-how-it-works--architecture--mechanics">How It Works — Architecture & Mechanics</a></li>
+<li><a href="#3-uses--practical-applications">Uses — Practical Applications</a></li>
+<li><a href="#4-problems--known-issues--limitations">Problems — Known Issues & Limitations</a></li>
+<li><a href="#5-solutions--best-practices--workarounds">Solutions — Best Practices & Workarounds</a></li>
+<li><a href="#6-edge-cases--unusual-scenarios">Edge Cases — Unusual Scenarios</a></li>
+<li><a href="#7-creative-uses--innovative-applications">Creative Uses — Innovative Applications</a></li>
+<li><a href="#8-new-questions-opened-by-this-research">NEW Questions Opened by This Research</a></li>
+<li><a href="#9-sources">Sources</a></li>
+</ul>
+<hr>
+<h2>1. WHAT IS — Definition & Core Concept</h2>
+<h3>Definition</h3>
+<p>OpenClaw has <strong>TWO fundamentally different hook systems</strong> that are often conflated:</p>
+| Aspect | Internal Hooks | Plugin Hooks (Typed Hooks) |
+|--------|---------------|---------------------------|
+| <strong>Origin</strong> | Standalone hook directories | Plugin SDK registration |
+| <strong>Count</strong> | 4 bundled + custom in <code>~/.openclaw/hooks/</code> | 44+ provider runtime + channel + tool hooks |
+| <strong>Discovery</strong> | Directory-based auto-discovery | Programmatic registration via SDK |
+| <strong>Execution model</strong> | Fire-and-forget, registration order | Void/modifying/claiming modes |
+| <strong>Purpose</strong> | Workspace/event automation | Deep provider/channel/tool integration |
+| <strong>Security</strong> | No prompt injection context by default | Controlled via <code>PROMPT_INJECTION_HOOK_NAMES</code> |
+<h3>Internal Hooks (Standalone Hooks)</h3>
+<strong>Definition</strong>: Internal hooks are <strong>standalone hook directories</strong> auto-discovered from specific directories. They respond to agent lifecycle events like <code>/new</code>, <code>/reset</code>, <code>/stop</code>, and gateway startup.
+<strong>4 Bundled Internal Hooks</strong>:
+| Hook Name | Events | Purpose |
+|-----------|--------|---------|
+| <code>session-memory</code> | <code>command:new</code>, <code>command:reset</code> | Saves session context to <code><workspace>/memory/</code> |
+| <code>bootstrap-extra-files</code> | <code>agent:bootstrap</code> | Injects additional bootstrap files from glob patterns |
+| <code>command-logger</code> | <code>command</code> | Logs all commands to <code>~/.openclaw/logs/commands.log</code> |
+| <code>boot-md</code> | <code>gateway:startup</code> | Runs <code>BOOT.md</code> when gateway starts |
+<strong>Discovery locations</strong> (in order of precedence):
+<ul><li><strong>Bundled hooks</strong> — shipped with OpenClaw</li>
+<li><strong>Managed hooks</strong> — <code>~/.openclaw/hooks/</code> (user-installed)</li>
+<li><strong>Extra dirs</strong> — configured via <code>hooks.internal.load.extraDirs[]</code></li>
+<li><strong>Workspace hooks</strong> — <code><workspace>/hooks/</code> (per-agent, <strong>disabled by default</strong>)</li>
+</ul>
+<h3>Plugin Hooks (Typed Hooks)</h3>
+<strong>Definition</strong>: Plugin hooks are <strong>typed function callbacks</strong> registered by plugins via the Plugin SDK (<code>registerHook()</code>). They cover deep integration points across the entire agent lifecycle.
+<strong>44+ Provider Runtime Hooks</strong> covering:
+<ul><li>Model resolution (11 hooks): <code>normalizeModelId</code>, <code>normalizeTransport</code>, <code>normalizeConfig</code>, <code>resolveDynamicModel</code>, <code>prepareDynamicModel</code>, <code>normalizeResolvedModel</code>, <code>contributeResolvedModelCompat</code>, <code>resolveReasoningOutputMode</code>, <code>prepareExtraParams</code>, <code>createStreamFn</code>, <code>wrapStreamFn</code></li>
+<li>Provider lifecycle (15+ hooks): <code>catalog</code>, <code>applyConfigDefaults</code>, <code>resolveConfigApiKey</code>, <code>resolveSyntheticAuth</code>, <code>resolveExternalAuthProfiles</code>, <code>shouldDeferSyntheticProfileAuth</code>, <code>capabilities</code>, <code>normalizeToolSchemas</code>, <code>inspectToolSchemas</code>, <code>formatApiKey</code>, <code>refreshOAuth</code>, <code>buildAuthDoctorHint</code></li>
+<li>Transport/policy (8 hooks): <code>resolveTransportTurnState</code>, <code>resolveWebSocketSessionPolicy</code>, <code>matchesContextOverflowError</code>, <code>classifyFailoverReason</code>, <code>isCacheTtlEligible</code>, <code>buildMissingAuthMessage</code>, <code>suppressBuiltInModel</code>, <code>augmentModelCatalog</code></li>
+<li>Thinking/reasoning (4 hooks): <code>isBinaryThinking</code>, <code>supportsXHighThinking</code>, <code>resolveDefaultThinkingLevel</code>, <code>isModernModelRef</code></li>
+<li>Auth/usage (5 hooks): <code>prepareRuntimeAuth</code>, <code>resolveUsageAuth</code>, <code>fetchUsageSnapshot</code>, <code>createEmbeddingProvider</code>, <code>onModelSelected</code></li>
+<li>Replay/transcript (4 hooks): <code>buildReplayPolicy</code>, <code>sanitizeReplayHistory</code>, <code>validateReplayTurns</code></li>
+</ul>
+<strong>Other Plugin Hook Categories</strong>:
+<ul><li><strong>Tool hooks</strong>: <code>before_tool_call</code>, <code>after_tool_call</code>, <code>tool_result_persist</code>, <code>before_agent_reply</code></li>
+<li><strong>Message hooks</strong>: <code>message:received</code>, <code>message:transcribed</code>, <code>message:preprocessed</code>, <code>message:sent</code>, <code>before_message_write</code></li>
+<li><strong>Session hooks</strong>: <code>session:patch</code>, <code>session:compact:before</code>, <code>session:compact:after</code></li>
+<li><strong>Agent hooks</strong>: <code>agent:bootstrap</code>, <code>before_agent_start</code> (deprecated), <code>before_prompt_build</code></li>
+<li><strong>Subagent hooks</strong>: <code>subagent:start</code>, <code>subagent:complete</code></li>
+<li><strong>Gateway hooks</strong>: <code>gateway:startup</code></li>
+<li><strong>Install hooks</strong>: <code>before_install</code>, <code>after_install</code></li>
+</ul>
+<hr>
+<h2>2. HOW IT WORKS — Architecture & Mechanics</h2>
+<h3>Internal Hooks Architecture</h3>
+<strong>Hook structure</strong> (per directory):
+<pre><code>my-hook/
+├── HOOK.md          # Metadata + YAML frontmatter
+└── handler.ts       # Handler implementation
+</code></pre>
+<strong>HOOK.md format</strong>:
+<pre><code>---
+name: my-hook
+description: "Short description"
+metadata:
+  { "openclaw": { "emoji": "🔗", "events": ["command:new"], "requires": { "bins": ["node"] } } }
+<hr>
+<h1>My Hook</h1>
+Detailed docs here.
+</code></pre>
+<strong>Handler implementation</strong>:
+<pre><code>const handler = async (event) => {
+  if (event.type !== "command" || event.action !== "new") return;
+  console.log(<code>[my-hook] New command triggered</code>);
+  event.messages.push("Hook executed!"); // Optional: send to user
+};
+export default handler;
+</code></pre>
+<strong>Execution</strong>: Internal hooks run via <code>runInternalHook()</code> — handlers called in <strong>registration order</strong>, each wrapped in try/catch, errors logged but don't halt other handlers.
+<h3>Plugin Hooks Architecture</h3>
+<strong>Registration</strong> (via Plugin SDK):
+<pre><code>api.registerHook({
+  hookName: "before_tool_call",
+  pluginId: "my-plugin",
+  priority: 50,
+  handler: async (event, ctx) => {
+    // Your logic
+  }
+});
+</code></pre>
+<strong>Hook registry</strong>: Plugin hooks stored in <code>registry.typedHooks[]</code> array, sorted by <code>(b.priority ?? 0) - (a.priority ?? 0)</code> (higher first).
+<strong>Three execution modes</strong>:
+| Mode | Function | Behavior | Example Hooks |
+|------|----------|----------|---------------|
+| <strong>Void</strong> | <code>runVoidHook()</code> | Parallel via Promise.all, fail-open | <code>message:received</code>, <code>message:sent</code> |
+| <strong>Modifying</strong> | <code>runModifyingHook()</code> | Sequential, result merged | <code>before_prompt_build</code>, <code>before_model_resolve</code> |
+| <strong>Claiming</strong> | <code>runClaimingHook()</code> | First <code>{ handled: true }</code> wins | <code>inbound_claim</code> |
+<strong>Execution flow</strong>:
+<pre><code>Hook Event Fires
+       │
+       ▼
+getHooksForName(registry, hookName)
+  Sort by: priority (high→low)
+       │
+       ▼
+runVoidHook() | runModifyingHook() | runClaimingHook()
+</code></pre>
+<h3>Key Differences Summary</h3>
+| Aspect | Internal Hooks | Plugin Hooks |
+|--------|---------------|--------------|
+| <strong>Entry point</strong> | <code>registerInternalHook()</code> | <code>registerHook()</code> |
+| <strong>Discovery</strong> | Directory scan | Programmatic registration |
+| <strong>Hook name conflict</strong> | Later precedence overrides earlier | Same source precedence, priority decides |
+| <strong>Source types</strong> | <code>openclaw-bundled</code>, <code>openclaw-managed</code>, <code>openclaw-workspace</code> | <code>openclaw-plugin</code> |
+| <strong>Execution order</strong> | Registration index (FIFO) | Priority value (higher first) |
+| <strong>Error handling</strong> | Per-handler try/catch, logged | Per-handler try/catch + failure policy |
+| <strong>Prompt injection context</strong> | NONE by default | Controlled via <code>PROMPT_INJECTION_HOOK_NAMES</code> |
+| <strong>Can modify event context</strong> | Limited (messages array push) | Full modification rights |
+| <strong>async support</strong> | Yes | Yes (Promise.all for void, sequential for modifying) |
+| <strong>Priority field</strong> | No | Yes (<code>priority?: number</code>) |
+| <strong>Access to config</strong> | Via <code>context.cfg</code> | Via plugin context |
+<h3>PROMPT_INJECTION_HOOK_NAMES</h3>
+<p>Security-critical config restricting which hooks receive <strong>prompt injection context</strong>:</p>
+<pre><code>PROMPT_INJECTION_HOOK_NAMES = ["before_prompt_build", "before_agent_start"]
+</code></pre>
+<p>Only these two hooks can see the full prompt context. All other hooks (including internal hooks) run without access to injected prompt content.</p>
+<hr>
+<h2>3. USES — Practical Applications</h2>
+<h3>Internal Hooks Use Cases</h3>
+| Hook | Best For |
+|------|----------|
+| <code>session-memory</code> | Auto-saving conversation summaries to <code>memory/</code> on new session |
+| <code>bootstrap-extra-files</code> | Injecting monorepo AGENTS.md/TOOLS.md at bootstrap |
+| <code>command-logger</code> | Audit trail of all slash commands |
+| <code>boot-md</code> | Startup scripts, external service verification, cache warming |
+<h3>Plugin Hooks Use Cases (Provider Runtime)</h3>
+| Hook Category | Use Case |
+|---------------|----------|
+| <code>normalizeModelId</code> | Normalize legacy model-id aliases before lookup |
+| <code>normalizeTransport</code> | Normalize provider-family api/baseUrl |
+| <code>resolveDynamicModel</code> | Handle arbitrary upstream model ids |
+| <code>prepareDynamicModel</code> | Async warm-up with network metadata |
+| <code>before_prompt_build</code> | Inject dynamic system prompts, filter sensitive content |
+| <code>before_tool_call</code> | Validate tool parameters, enforce policies (fail-closed) |
+| <code>before_agent_reply</code> | Sanitize output, add disclaimers, redact PII |
+<h3>Plugin Hooks Use Cases (Tool/Message)</h3>
+| Hook | Use Case |
+|------|----------|
+| <code>before_tool_call</code> | Block dangerous tool calls, validate parameters |
+| <code>after_tool_call</code> | Log tool results, post-process outputs |
+| <code>tool_result_persist</code> | Persist tool results to external storage |
+| <code>message:received</code> | Pre-process inbound messages |
+| <code>message:transcribed</code> | Process audio transcription before agent sees it |
+| <code>message:preprocessed</code> | Final enriched body before agent processes |
+| <code>before_message_write</code> | Modify outbound messages |
+| <code>before_install</code> | Scan skill installer metadata |
+| <code>after_install</code> | Post-install skill setup |
+<hr>
+<h2>4. PROBLEMS — Known Issues & Limitations</h2>
+<h3>Problem 1: Conflation of Two Systems</h3>
+<strong>Issue</strong>: Documentation and discussions often use "hooks" to mean both internal and plugin hooks, causing confusion.
+<strong>Symptom</strong>: User reads "hooks run in registration order" but plugin hooks run by priority. Confused about which applies where.
+<strong>Reality</strong>: Internal hooks use registration index; plugin hooks use priority value.
+<h3>Problem 2: Workspace Hooks Disabled by Default</h3>
+<strong>Issue</strong>: Workspace hooks have HIGHEST precedence (40) but are disabled until explicitly enabled.
+<strong>Confusion</strong>: User enables workspace hook expecting it to fire, but it doesn't because <code>hooks.internal.entries.my-hook.enabled: true</code> is missing.
+<h3>Problem 3: No Prompt Injection for Internal Hooks</h3>
+<strong>Issue</strong>: Internal hooks have NO access to prompt injection context.
+<strong>Limitation</strong>: If you need a hook to modify the system prompt, you must use <code>before_prompt_build</code> (plugin hook), not an internal hook.
+<h3>Problem 4: <code>before_agent_start</code> Deprecated</h3>
+<strong>Issue</strong>: The <code>before_agent_start</code> internal hook is deprecated but still works (just shows warning).
+<strong>Current state</strong>: Use <code>before_prompt_build</code> + <code>before_model_resolve</code> separately for new plugins.
+<h3>Problem 5: before_tool_call Uses fail-closed</h3>
+<strong>Issue</strong>: <code>before_tool_call</code> throws if handler errors, halting tool execution.
+<strong>Risk</strong>: A buggy <code>before_tool_call</code> handler can break all tool calls.
+<strong>Workaround</strong>: Wrap handlers in try/catch to prevent errors from propagating.
+<h3>Problem 6: No Native Hook-to-Hook Communication</h3>
+<strong>Issue</strong>: Internal hooks run independently with no shared state mechanism.
+<strong>Workaround</strong>: Use session store (<code>event.context.sessionEntry</code>) or file-based communication between hooks.
+<hr>
+<h2>5. SOLUTIONS — Best Practices & Workarounds</h2>
+<h3>Solution 1: Choose Right Hook Type</h3>
+| Need | Use |
+|------|-----|
+| Workspace/event automation (<code>/new</code>, <code>/reset</code>) | Internal hook |
+| Provider-specific model behavior | Plugin hook (provider runtime hook) |
+| Tool validation/policy | Plugin hook (<code>before_tool_call</code>) |
+| Message pre-processing | Plugin hook (<code>message:received</code>) |
+| Prompt modification | Plugin hook (<code>before_prompt_build</code>) |
+<h3>Solution 2: Debug Hook Registration</h3>
+<pre><code><h1>List all discovered hooks</h1>
+openclaw hooks list --verbose
+<h1>Check specific hook info</h1>
+openclaw hooks info <hook-name>
+<h1>View gateway logs</h1>
+./scripts/clawlog.sh | grep hook
+</code></pre>
+<h3>Solution 3: Enable Workspace Hooks Explicitly</h3>
+<pre><code>{
+  "hooks": {
+    "internal": {
+      "entries": {
+        "my-workspace-hook": {
+          "enabled": true
+        }
+      }
+    }
+  }
+}
+</code></pre>
+<h3>Solution 4: Use Priority for Plugin Hook Ordering</h3>
+<pre><code>api.registerHook({
+  hookName: "before_tool_call",
+  priority: 100,  // Run first (security checks)
+  handler: async (event, ctx) => {
+    if (!isValid(event.context.toolCall)) {
+      return { block: true, blockReason: "Invalid parameters" };
+    }
+  }
+});
+</code></pre>
+<h3>Solution 5: Use before_install for Scanner Integration</h3>
+<pre><code>api.registerHook({
+  hookName: "before_install",
+  handler: async (event, ctx) => {
+    // Scan SKILL.md content before skill install
+    const content = await readFile(event.context.skillPath);
+    if (containsMaliciousPatterns(content)) {
+      return { block: true, blockReason: "Malicious pattern detected" };
+    }
+  }
+});
+</code></pre>
+<hr>
+<h2>6. EDGE CASES — Unusual Scenarios</h2>
+<h3>Edge Case 1: Same Hook Name from Internal + Plugin</h3>
+<strong>Scenario</strong>: Internal hook named <code>session-memory</code> and plugin hook named <code>session-memory</code>.
+<strong>Resolution</strong>: Both can coexist — internal hooks have source <code>openclaw-managed</code> or <code>openclaw-workspace</code>, plugin hooks have source <code>openclaw-plugin</code>. Source precedence determines execution order.
+<h3>Edge Case 2: Plugin Hook Returns Non-Object</h3>
+<strong>Scenario</strong>: Plugin hook handler returns a primitive instead of expected object.
+<strong>Resolution</strong>: For modifying hooks, primitives are ignored. For claiming hooks, primitives don't match <code>handlerResult?.handled</code>, so claim fails.
+<h3>Edge Case 3: before_tool_call Block Response Format</h3>
+<strong>Scenario</strong>: <code>before_tool_call</code> returns <code>{ block: true }</code> but wrong format.
+<strong>Resolution</strong>: If block response is malformed, Gateway treats it as allow (no block).
+<h3>Edge Case 4: Plugin Hook for Non-Provider Event</h3>
+<strong>Scenario</strong>: Plugin registers for event that isn't a provider runtime hook.
+<strong>Resolution</strong>: Plugins can register any hook name, but only certain hooks are called by OpenClaw core. Unrecognized hook names are silently ignored.
+<h3>Edge Case 5: Internal Hook in Extra Dirs Has Same Name as Bundled</h3>
+<strong>Scenario</strong>: Custom hook in <code>hooks.internal.load.extraDirs[]</code> has same name as bundled hook.
+<strong>Resolution</strong>: Same source precedence rules apply. <code>canOverride</code> policies determine if custom can override bundled.
+<hr>
+<h2>7. CREATIVE USES — Innovative Applications</h2>
+<h3>Creative Use 1: Multi-Provider Model Routing</h3>
+<p>Use <code>before_model_resolve</code> to route requests based on content analysis:
+<pre><code>api.registerHook({
+  hookName: "before_model_resolve",
+  priority: 100,
+  handler: async (event, ctx) => {
+    if (containsCode(event.context.userMessage)) {
+      return { providerOverride: "anthropic", modelOverride: "claude-sonnet" };
+    }
+  }
+});
+</code></pre></p>
+<h3>Creative Use 2: Real-Time Message Filtering</h3>
+<p>Use <code>message:received</code> to filter spam before agent sees it:
+<pre><code>api.registerHook({
+  hookName: "message:received",
+  handler: async (event, ctx) => {
+    if (isSpam(event.context.content)) {
+      return { handled: true, /<em> silent ignore </em>/ };
+    }
+  }
+});
+</code></pre></p>
+<h3>Creative Use 3: Tool Usage Analytics</h3>
+<p>Use <code>after_tool_call</code> to track tool usage patterns:
+<pre><code>api.registerHook({
+  hookName: "after_tool_call",
+  handler: async (event, ctx) => {
+    await logToolUsage(event.context.toolName, event.context.sessionKey);
+  }
+});
+</code></pre></p>
+<hr>
+<h2>8. NEW QUESTIONS OPENED BY THIS RESEARCH</h2>
+<h3>NEW Questions Generated:</h3>
+<ul><li><strong>[MED]</strong> Can plugin hooks be dynamically registered/unregistered at runtime?</li>
+</ul>   - <strong>Rationale</strong>: Plugins load at startup; unclear if new hooks can be added without restart.
+<ul><li><strong>[MED]</strong> Can hooks access gateway internal state (session store, config)?</li>
+</ul>   - <strong>Rationale</strong>: Internal hooks access <code>context.cfg</code>; plugin hooks access via ExtensionContext; exact boundaries unclear.
+<ul><li><strong>[LOW]</strong> What is the exact difference between <code>before_install</code> and <code>after_install</code> hooks?</li>
+</ul>   - <strong>Rationale</strong>: Can be used for pre/post skill install validation.
+<ul><li><strong>[LOW]</strong> Can internal hooks use priority values like plugin hooks?</li>
+</ul>   - <strong>Rationale</strong>: Internal hooks use registration index, not priority field.
+<ul><li><strong>[MED]</strong> What happens when multiple plugins register for same claiming hook?</li>
+</ul>   - <strong>Rationale</strong>: First <code>{ handled: true }</code> wins, but priority may affect order.
+<hr>
+<h2>9. SOURCES</h2>
+<h3>Primary Sources</h3>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Internal hooks documentation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/architecture.md</code> — Plugin architecture, provider runtime hooks (44+ hooks table)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/hook-runner-global-D9t7KsGJ.js</code> — Hook execution runner implementation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/internal-hooks-2legcEEL.js</code> — Internal hooks implementation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/loader-DuIH27tS.js</code> — Hook registry: <code>registry.typedHooks.push()</code></li>
+</ul>
+<h3>Related Findings</h3>
+<ul><li><code>Research/OpenClaw/findings/openclaw-hooks-system.md</code> (L18) — Complete hook system overview</li>
+<li><code>Research/OpenClaw/findings/hook-security-audit.md</code> (L20) — Hook security model</li>
+<li><code>Research/OpenClaw/findings/hook-execution-order.md</code> (L16) — Hook execution order mechanics</li>
+</ul>
+<hr>
+<em>Research by: Investigador Scout</em>  
+<em>Date: 2026-04-23</em>  
+<em>Status: COMPLETE ✅</em>
+</body>
+</html>

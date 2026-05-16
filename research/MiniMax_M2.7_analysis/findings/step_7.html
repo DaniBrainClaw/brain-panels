@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 7: Creative Writing Abilities</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_7.md</p>
+    <h2>Query</h2>
+"MiniMax M2.7 creative writing abilities"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://www.reddit.com/r/Anthropic/comments/1sjkcw1/is_minimax_27_as_good_as_sonnet_46_in_english/</li>
+<li>https://huggingface.co/MiniMaxAI/MiniMax-M2.7/discussions/17</li>
+<li>https://www.reddit.com/r/LocalLLaMA/comments/1pwyw36/minimaxaiminimaxm21_seems_to_be_the_strongest/</li>
+</ul>
+<hr>
+<h2>Hallazgos principales — ALERTA IMPORTANTE</h2>
+<h3>M2.7 es un modelo "test maxer", NO general purpose</h3>
+<p>Desde HuggingFace discussion #17:
+<blockquote>"This LLM is a test maxer, not a general purpose AI model... It scores lower on broad knowledge tests, including my own, than much smaller general purpose AI models like Gemma 4 26b-a4b, and even Qwen3.5 34b-a3b."</blockquote></p>
+<h3>Regresión vs M2.5 en creative writing</h3>
+<p>En LMSys Arena (donde LOWER rank = mejor):
+<ul><li><strong>M2.5</strong>: creative writing rank ~79</li>
+<li><strong>M2.7</strong>: creative writing rank ~108 ← <strong>REGRESIÓN significativa</strong></li>
+<li>Math: 60 → 91 (también empeoró)</li>
+</ul>
+Esto significa que M2.7 es PEOR que M2.5 en creative writing.</p>
+<h3>Lo que los usuarios reportan</h3>
+<ul><li><strong>Creative writing</strong>: M2.7 no es tan bueno como Sonnet 4.6 para english long-form writing</li>
+<li><strong>General knowledge</strong>: muy bajo para su tamaño</li>
+<li><strong>Endless thinking loops</strong>: para prompts simples fuera de sus dominios overfit</li>
+<li><strong>Hallucination generator</strong>: fuera de STEM/coding, entra en bucles de pensamiento y alucina</li>
+</ul>
+<h3>Lo que MiniMax dice sobre creative writing</h3>
+<p>La página oficial menciona "identity preservation and emotional intelligence" para aplicaciones de entretenimiento/interactive, pero NO claims específicos de creative writing como fortaleza.</p>
+<h3>GDPval-AA — pero no es creative writing</h3>
+<p>GDPval-AA mide "office productivity tasks" (Excel, PowerPoint, Word), no creative writing.</p>
+<hr>
+<h2>Resumen honesto</h2>
+<p>⚠️ <strong>M2.7 NO es bueno para creative writing comparado con su competencia</strong></p>
+<p>Fortalezas:
+<ul><li>Coding/engineering</li>
+<li>STEM/math</li>
+<li>Agentic workflows</li>
+<li>Office productivity</li>
+</ul>
+Debilidades:
+<ul><li>Creative writing ← no es su enfoque</li>
+<li>General knowledge ← bajo para su tier</li>
+<li>Long-form writing ← regressed vs M2.5</li>
+<li>Simple prompts outside STEM ← puede entrar en loops</li>
+</ul>
+<strong>Si necesitas creative writing de alta calidad → usa Claude Sonnet 4.6 o GPT-5.4</strong></p>
+</body>
+</html>

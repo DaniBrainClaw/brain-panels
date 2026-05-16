@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub + BRAIN Integration — Query 4: GitHub Repo for Backup Critical Files Automation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_4.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<strong>Query:</strong> "github repo for backup critical files automation"
+<strong>Resultados:</strong> ~20 found
+<hr>
+<h2>Fuentes</h2>
+<ul><li><strong>git-backup</strong> — github.com/ChappIO/git-backup (CLI para backup automático)</li>
+<li><strong>kopia/kopia</strong> — github.com/kopia/kopia (backup tool cross-platform)</li>
+<li><strong>Gitea Mirror</strong> — giteamirror.com (backup con mirroring)</li>
+<li><strong>simplebackups.com</strong> — SaaS para backup de GitHub</li>
+</ul>
+<hr>
+<h2>git-backup — CLI para Backup Automático</h2>
+<strong>Repo:</strong> github.com/ChappIO/git-backup
+<h3>Características:</h3>
+<ul><li>CLI standalone (no necesita git instalado)</li>
+<li>Download binarios desde releases</li>
+<li>Backup de GitHub y GitLab</li>
+<li>Configuración via YAML</li>
+</ul>
+<h3>Configuración ejemplo:</h3>
+<pre><code>github:
+  - job_name: DaniBrainClaw
+    access_token: ghp_XXXXX  # Token con scopes "read:org, repo"
+    owned: true
+    starred: true
+    collaborator: true
+    org_member: true
+    exclude:
+      - excluded-org
+      - excluded-user
+</code></pre>
+<h3>Uso:</h3>
+<pre><code>git-backup -backup.path /path/to/backup -config.file git-backup.yml
+</code></pre>
+<h3>Scopes necesarios del token:</h3>
+<ul><li><code>repo</code> — acceso a repositorios</li>
+<li><code>read:org</code> — acceso a organizaciones</li>
+</ul>
+<hr>
+<h2>kopia — Backup Tool Profesional</h2>
+<strong>Repo:</strong> github.com/kopia/kopia (13.2k stars)
+<h3>Características:</h3>
+<ul><li>Cross-platform (Windows, macOS, Linux)</li>
+<li>Incremental backups (solo备份 изменённого)</li>
+<li>Client-side encryption</li>
+<li>Compression</li>
+<li>Data deduplication</li>
+<li>CLI y GUI</li>
+</ul>
+<h3>Para qué sirve:</h3>
+<ul><li>Backup de archivos críticos</li>
+<li>Sincronización con cloud storage</li>
+<li>Snapshots versionados</li>
+</ul>
+<h3>Uso típico:</h3>
+<pre><code><h1>Crear snapshot</h1>
+kopia snapshot create /data/critical-files
+<h1>Ver snapshots</h1>
+kopia snapshot list
+<h1>Restaurar</h1>
+kopia restore --snapshot <id> /restore/path
+</code></pre>
+<hr>
+<h2>GitHub como Sistema de Backup</h2>
+<h3>Estrategia: Usar GitHub como backup de sí mismo</h3>
+<strong>Concepto:</strong>
+<ul><li>Crear repo privado <code>brain-config-backup</code></li>
+<li>BRAIN hace sync automático de archivos críticos</li>
+<li>GitHub guarda version history</li>
+<li>Rollback a cualquier versión anterior</li>
+</ul>
+<h3>Archivos a respaldar de BRAIN:</h3>
+<pre><code>~/.openclaw/
+├── agents/
+│   ├── brain/
+│   │   ├── workspace/
+│   │   │   ├── AGENTS.md
+│   │   │   ├── SOUL.md
+│   │   │   ├── USER.md
+│   │   │   ├── MEMORY.md
+│   │   │   └── TOOLS.md
+│   │   └── ...
+├── skills/
+│   └── <em>.md
+├── memory/
+│   └── </em>.md
+└── config/
+    └── <em>.json (sin secrets)
+</code></pre>
+<h3>Script de backup:</h3>
+<pre><code>#!/bin/bash
+<h1>backup-brain-config.sh</h1>
+<p>REPO_DIR="$HOME/DaniBrainClaw/brain-config-backup"
+SOURCE_DIR="$HOME/.openclaw"</p>
+<p>cd "$REPO_DIR" || exit 1</p>
+<h1>Pull latest</h1>
+git pull origin main
+<h1>Sync config files</h1>
+rsync -av --exclude='node_modules' \
+      --exclude='</em>.log' \
+      --exclude='secrets/' \
+      "$SOURCE_DIR/" "$REPO_DIR/"
+<h1>Commit with timestamp</h1>
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+git add -A
+git commit -m "Auto-backup: $TIMESTAMP" || exit 0
+<h1>Push</h1>
+git push origin main
+</code></pre>
+<hr>
+<h2>Gitea como Mirror de GitHub</h2>
+<strong>Fuente:</strong> giteamirror.com
+<h3>Por qué:</h3>
+<ul><li>Gitea es self-hosted (control total)</li>
+<li>Mirror automático de repos GitHub</li>
+<li>Scheduling configurable</li>
+<li>Gratis y open source</li>
+</ul>
+<h3>Setup:</h3>
+<ul><li>Instalar Gitea en VPS (Docker)</li>
+<li>Crear repository mirror</li>
+<li>Configurar sync schedule</li>
+</ul>
+<h3>Docker setup:</h3>
+<pre><code>docker run -d \
+  --name gitea \
+  -p 3000:3000 \
+  -p 2222:22 \
+  -v /data/gitea:/data \
+  gitea/gitea:latest
+</code></pre>
+<hr>
+<h2>SimpleBackups — SaaS para GitHub</h2>
+<strong>URL:</strong> simplebackups.com/saas-backup/github
+<h3>Qué respalda:</h3>
+<ul><li>Repositories</li>
+<li>Gists</li>
+<li>Issues</li>
+<li>Pull requests</li>
+<li>Releases</li>
+<li>Wikis</li>
+<li>Labels</li>
+<li>Milestones</li>
+<li>LFS objects</li>
+<li>Projects</li>
+</ul>
+<h3>Características:</h3>
+<ul><li>Serverless (no necesitas servidor)</li>
+<li>Automático (schedule)</li>
+<li>Customizable retention</li>
+<li>Descarga como ZIP</li>
+</ul>
+<h3>Precio:</h3>
+<ul><li>Free tier: 1 repo, 1 backup/month</li>
+<li>Paid: desde $9/month</li>
+</ul>
+<hr>
+<h2>HYCU — Backup Enterprise para GitHub</h2>
+<strong>Fuente:</strong> de la búsqueda Brave
+<h3>Para qué:</h3>
+<ul><li>Backup de repositorios</li>
+<li>Disaster recovery</li>
+<li>Data loss prevention</li>
+<li>GitHub, Okta, SaaS apps</li>
+</ul>
+<h3>Características:</h3>
+<ul><li>Granular restore (archivos específicos)</li>
+<li>Immutable storage</li>
+<li>Compliance ready</li>
+</ul>
+<hr>
+<h2>Comparativa de Opciones</h2>
+| Herramienta | Tipo | Costo | Storage | Mejor para |
+|-------------|------|-------|---------|-----------|
+| <strong>git-backup</strong> | CLI | Gratis | Local/NAS | Backup simple de todos los repos |
+| <strong>kopia</strong> | CLI/GUI | Gratis | Cloud/Local | Backup profesional de archivos |
+| <strong>GitHub Actions</strong> | CI/CD | Gratis (minutos limitados) | GitHub | Backup versionado de config |
+| <strong>Gitea Mirror</strong> | Self-hosted | Gratis | Local | Mirror completo en VPS |
+| <strong>SimpleBackups</strong> | SaaS | $9+/month | Cloud | SaaS管理的 |
+| <strong>HYCU</strong> | Enterprise | $$$ | Cloud | Empresas con compliance |
+<hr>
+<h2>Recomendación para BRAIN + Dani</h2>
+<h3>Setup recomendado:</h3>
+<strong>1. GitHub como backup (gratis):</strong>
+<ul><li>Crear repo privado <code>brain-backup</code></li>
+<li>BRAIN hace sync diario via cron</li>
+<li>Automatic versioning + rollback</li>
+</ul>
+<strong>2. git-backup para todos los repos:</strong>
+<ul><li>Instalar git-backup CLI</li>
+<li>Configurar backup de todos los repos de Dani</li>
+<li>Guardar en NAS o disco externo</li>
+</ul>
+<strong>3. kopia para archivos críticos:</strong>
+<ul><li>Configurar snapshots de <code>/data</code></li>
+<li>Encriptado local</li>
+<li>Offsite backup a cloud (S3, Backblaze)</li>
+</ul>
+<hr>
+<h2>Script Completo para BRAIN</h2>
+<pre><code>#!/bin/bash
+<h1>brain-backup.sh - Backup completo de BRAIN</h1>
+<p>set -e</p>
+<p>echo "🔄 Starting BRAIN backup..."</p>
+<p>BACKUP_REPO="$HOME/DaniBrainClaw/brain-backup"
+SOURCE_DIR="$HOME/.openclaw"</p>
+<h1>1. Sync a GitHub (versioning automático)</h1>
+cd "$BACKUP_REPO"
+git pull origin main
+<p>rsync -av --delete \
+  --exclude='node_modules' \
+  --exclude='<em>.log' \
+  --exclude='.cache' \
+  "$SOURCE_DIR/" .</p>
+<p>git add -A
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+git commit -m "Backup: $TIMESTAMP" || echo "No changes"
+git push origin main</p>
+<h1>2. Backup de archivos grandes con kopia</h1>
+kopia snapshot create "$HOME/data" --tags=backup=daily
+<p>echo "✅ Backup complete: $TIMESTAMP"
+</code></pre></p>
+<hr>
+</em>Investigador — Query 4 completada.*
+</body>
+</html>

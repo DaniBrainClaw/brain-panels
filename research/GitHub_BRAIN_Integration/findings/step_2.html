@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub + BRAIN Integration — Query 2: GitHub Actions CI/CD Pipeline for AI Agents</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_2.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<strong>Query:</strong> "github actions CI/CD pipeline for AI agents"
+<strong>Resultados:</strong> 20 found
+<hr>
+<h2>Fuentes</h2>
+<ul><li><strong>Automate repository tasks with GitHub Agentic Workflows</strong> — github.blog (oficial)</li>
+<li><strong>CI/CD as a Platform: Shipping Microservices and AI Agents</strong> — Microsoft Tech Community</li>
+<li><strong>GitHub Agentic Workflows</strong> — github.github.com/gh-aw/</li>
+<li><strong>Build Your First Agentic Workflow</strong> — Medium</li>
+</ul>
+<hr>
+<h2>GitHub Agentic Workflows — Qué es</h2>
+<strong>Nuevo en GitHub (2026).</strong> Puedes escribir un archivo Markdown que le dice a un AI agent qué hacer en tu repo.
+<h3>Ejemplo básico:</h3>
+Creas un archivo <code>.github/agent/workflow.md</code>:
+<pre><code><h1>Analyze failing CI checks</h1>
+Look at the most recent CI run. If any checks failed, investigate the failure, propose a fix, and create a pull request with the changes.
+</code></pre>
+<p>GitHub automáticamente ejecutará un agent de IA para cumplir la tarea.</p>
+<hr>
+<h2>Arquitectura de Pipeline para AI Agents</h2>
+<h3>Problema: CI/CD tradicional no funciona igual para AI</h3>
+| Etapa | Code | AI Agent |
+|-------|------|----------|
+| Test | ✅ unit tests validan comportamiento | ❌ no valida alucinaciones |
+| Build | ✅ deterministic | ❌ puede drift |
+| Deploy | ✅ mismo código en prod | ❌ silent degradation |
+<strong>Solución:</strong> Añadir "evaluation gate" como cuarto paso.
+<hr>
+<h2>Pipeline de 4 Etapas (Microsoft)</h2>
+<pre><code>Test → Build → Deploy Staging → Evaluate Agent → Deploy Production
+</code></pre>
+<h3>evaluate-agent.yml:</h3>
+<pre><code>name: evaluate-agent
+on:
+  workflow_call:
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run evaluation
+        run: |
+          # Evaluar outputs del agent
+          echo "Evaluating agent output..."
+</code></pre>
+<hr>
+<h2>Estructura de Repos (Platform + Application)</h2>
+<pre><code>ci-platform/                    # Platform repo (equipo core)
+  .github/workflows/
+    test-python.yml
+    build.yml
+    deploy.yml
+    evaluate-agent.yml          # NEW: para AI agents
+<p>fastapi-app/                    # Application repo
+  .github/workflows/
+    release.yml                 # Solo llama a ci-platform
+  src/
+    Dockerfile
+</code></pre></p>
+<h3>release.yml (app):</h3>
+<pre><code>name: release
+on: push to main
+jobs:
+  test:
+    uses: platform-org/ci-platform/.github/workflows/test-python.yml@v1
+  build:
+    needs: test
+    uses: platform-org/ci-platform/.github/workflows/build.yml@v1
+  deploy:
+    needs: build
+    uses: platform-org/ci-platform/.github/workflows/deploy.yml@v1
+</code></pre>
+<hr>
+<h2>Evaluación como First-Class Gate</h2>
+<h3>Qué evaluar en un AI agent:</h3>
+<ul><li><strong>Correctness</strong> — ¿Responde correctamente?</li>
+<li><strong>Safety</strong> — ¿No genera contenido peligroso?</li>
+<li><strong>Performance</strong> — ¿Respuesta en tiempo aceptable?</li>
+<li><strong>Drift detection</strong> — ¿Se desvía del baseline?</li>
+</ul>
+<h3>Métricas a guardar:</h3>
+<ul><li>Scores por categoría</li>
+<li>Historial de versiones</li>
+<li>Alertas si degrada</li>
+</ul>
+<hr>
+<h2>Security Risks (StepSecurity)</h2>
+<p>AI agents en CI/CD tienen riesgos únicos:
+<ul><li>Code injection vía prompts maliciosos</li>
+<li>Secret exfiltration</li>
+<li>Unauthorized code execution</li>
+</ul>
+<strong>Mitigación:</strong>
+<ul><li>No permitir que agentes modifiquen credenciales</li>
+<li>Auditar todos los cambios</li>
+<li>Limitar scope de permisos</li>
+</ul>
+<hr></p>
+<h2>Para BRAIN + Dani: Uso Práctico</h2>
+<h3>Qué podemos hacer:</h3>
+<ul><li><strong>Backup automático</strong> — guardar config de BRAIN en GitHub (ya documentado en query 1)</li>
+<li><strong>Versioning de cambios</strong> — cada cambio en BRAIN = commit con timestamp</li>
+<li><strong>CI/CD para skills</strong> — testear nuevos skills antes de instalar</li>
+<li><strong>Evaluation pipeline</strong> — evaluar si BRAIN está funcionando bien</li>
+</ul>
+<h3>Ejemplo: Workflow para evaluar BRAIN</h3>
+<pre><code>name: brain-health-check
+on:
+  schedule:
+    - cron: '0 6 <em> </em> <em>'  # Daily at 6 AM
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check BRAIN health
+        run: |
+          # Verificar que BRAIN responde
+          curl -s http://localhost:18789/health || exit 1
+      - name: Report
+        if: failure()
+        run: |
+          echo "BRAIN health check failed" >> $GITHUB_OUTPUT
+</code></pre>
+<hr>
+<h2>GitHub Agentic Workflows — Setup</h2>
+<strong>URL:</strong> github.github.com/gh-aw/
+<h3>Paso 1: Crear agent workflow file</h3>
+<code>.github/agent/analyze.yml</code>:
+<pre><code><h1>Analyze Repository Health</h1>
+Check the recent commit activity. If there are issues, summarize them in a comment.
+</code></pre>
+<h3>Paso 2: GitHub detecta y ejecuta automáticamente</h3>
+<h3>Paso 3: Ver resultados en Actions tab</h3>
+<hr>
+<h2>ActiveWizards — Tutorial Completo CI/CD AI Agents</h2>
+<strong>Fuente:</strong> activewizards.com/blog/the-definitive-ci-cd-pipeline-for-ai-agents-a-tutorial
+<h3>Stack:</h3>
+<ul><li>GitHub Actions</li>
+<li>Docker</li>
+<li>Kubernetes (AWS/GCP)</li>
+</ul>
+<h3>Pipeline:</h3>
+<pre><code><h1>Build and test</h1>
+<ul><li>name: Test agent</li>
+</ul>  run: pytest tests/
+<h1>Package</h1>
+<ul><li>name: Build Docker image</li>
+</ul>  run: docker build -t agent:$GITHUB_SHA .
+<h1>Deploy to staging</h1>
+<ul><li>name: Deploy staging</li>
+</ul>  run: kubectl apply -f k8s/staging.yaml
+<h1>Evaluate</h1>
+<ul><li>name: Evaluate agent</li>
+</ul>  run: python evaluate.py
+<h1>Deploy production</h1>
+<ul><li>name: Deploy production</li>
+</ul>  if: success()
+  run: kubectl apply -f k8s/prod.yaml
+</code></pre>
+<hr>
+<h2>Reddit — AI Agent en CI real</h2>
+<strong>Fuente:</strong> reddit.com/r/AI_Agents/comments/1qpj49h/
+<h3>Setup:</h3>
+<ul><li>PR review automatizado por AI</li>
+<li>CI gating con AI</li>
+<li>Repo maintenance automatizado</li>
+</ul>
+<h3>Resultado:</h3>
+<ul><li>40% reducción en review time</li>
+<li>Detección automática de bugs</li>
+<li>Maintenance proactivo</li>
+</ul>
+<hr>
+<h2>Resumen: Qué puede hacer BRAIN con GitHub Actions</h2>
+| Caso | Trigger | Acción |
+|------|---------|--------|
+| Auto-backup | Daily cron | Sync config a repo privado |
+| Health check | Daily cron | Verificar BRAIN responde |
+| Skill test | PR en skills/ | Testear antes de merge |
+| Version tagging | Manual | Crear tag con semantic version |
+| Alert on failure | On failure | Crear issue con problema |
+<hr>
+</em>Investigador — Query 2 completada.*
+</body>
+</html>

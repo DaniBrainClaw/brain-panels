@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skills Overhead Profiling & Reload Mechanisms — Research Findings</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 skills-overhead-profiling-reload.md</p>
+    <strong>Topic:</strong> Can skills overhead be profiled in production? Is there a tool command to reload skills without file changes?
+<strong>Priority:</strong> MED
+<strong>Date:</strong> 2026-04-23 11:46 CET
+<strong>Research by:</strong> Investigador Scout
+<strong>Status:</strong> ✅ COMPLETE
+<hr>
+<h2>1. WHAT IS — Definition & Core Concepts</h2>
+<h3>Skills Overhead Profiling</h3>
+<p>Skills overhead profiling is the ability to <strong>measure, monitor, and debug</strong> the token/character cost of the skills list in the system prompt. OpenClaw provides built-in introspection via <code>/context</code> slash commands rather than a dedicated profiler.</p>
+<h3>Skills Reload Mechanisms</h3>
+<p>Skills reload is the ability to <strong>refresh the skills snapshot</strong> without waiting for natural watcher triggers or session restart. OpenClaw has <strong>no dedicated reload command</strong>, but skills refresh through multiple automatic mechanisms and limited manual triggers.</p>
+<h3>Key Distinction</h3>
+| Concept | Description |
+|---------|-------------|
+| Skills snapshot | Per-session cached list of eligible skills, built at session start |
+| Skills watcher | File system monitor that triggers snapshot refresh on SKILL.md changes |
+| Config hot-reload | System that applies config changes (including <code>skills.entries</code>) without restart |
+| Snapshot bump | Programmatic increment of snapshot version forcing next-turn refresh |
+<hr>
+<h2>2. HOW IT WORKS — Internal Mechanics</h2>
+<h3>A) Skills Overhead Profiling via <code>/context</code></h3>
+<strong>Built-in profiling commands:</strong>
+<pre><code>/context        → quick summary
+/context list  → breakdown: skills list chars + token estimate + count
+/context detail → per-skill entry sizes (top skills shown individually)
+/context json  → machine-readable format
+</code></pre>
+<strong>What <code>/context list</code> shows for skills:</strong>
+<pre><code>Skills list (system prompt text): 2,184 chars (~546 tok) (12 skills)
+</code></pre>
+<strong>What <code>/context detail</code> shows for skills:</strong>
+<pre><code>Top skills (prompt entry size):
+<ul><li>frontend-design: 412 chars (~103 tok)</li>
+<li>oracle: 401 chars (~101 tok)</li>
+</ul>… (+10 more skills)
+</code></pre>
+<strong>Token calculation formula (from skills.md):</strong>
+<pre><code>total_chars = 195 + Σ (97 + len(name_escaped) + len(description_escaped) + len(location_escaped))
+rough_tokens ≈ total_chars / 4  (OpenAI-style estimate)
+</code></pre>
+<ul><li><strong>Base overhead:</strong> 195 characters (~49 tokens) when ≥1 skill exists</li>
+<li><strong>Per skill:</strong> 97 chars + XML-escaped field lengths (~24-45 tokens/skill)</li>
+</ul>
+<h3>B) Skills Snapshot Mechanism</h3>
+<strong>When snapshot is built:</strong>
+<ul><li>Session starts → <code>buildWorkspaceSkillSnapshot()</code> called once</li>
+<li>Snapshot stored in <code>sessionEntry.skillsSnapshot</code></li>
+<li>Reused for all subsequent turns in same session</li>
+</ul>
+<strong>Snapshot refresh triggers:</strong>
+<ul><li>Skills watcher detects <code>add</code>/<code>change</code>/<code>unlink</code> on SKILL.md files</li>
+<li>New eligible remote node appears (macOS node with skills)</li>
+<li>Effective agent skill allowlist changes for that session</li>
+<li><code>bumpSkillsSnapshotVersion()</code> called programmatically</li>
+</ul>
+<strong>Key files:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/skills-DYF-hmoJ.js</code> — <code>buildWorkspaceSkillSnapshot</code></li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/refresh-p9Dzo7mb.js</code> — Skills watcher + <code>bumpSkillsSnapshotVersion</code></li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/agent-command-BRtqb5oD.js</code> — Snapshot version checking</li>
+</ul>
+<h3>C) Skills Watcher Implementation</h3>
+<pre><code>// From refresh-p9Dzo7mb.js
+watcher.on("add", (p) => schedule(p));
+watcher.on("change", (p) => schedule(p));
+watcher.on("unlink", (p) => schedule(p));  // SKILL.md deleted
+</code></pre>
+<ul><li>Watch targets: skill folder directories (6 locations)</li>
+<li>Debounce: <code>watchDebounceMs</code> (default 250ms)</li>
+<li><code>schedule(p)</code> calls <code>bumpSkillsSnapshotVersion()</code> on SKILL.md change</li>
+</ul>
+<h3>D) Config Hot-Reload for Skills Entries</h3>
+<strong>Config changes that hot-reload without restart:</strong>
+<ul><li><code>skills.entries.<skill>.enabled</code> (set to <code>false</code> to disable)</li>
+<li><code>skills.entries.<skill>.env</code> changes</li>
+<li><code>skills.entries.<skill>.apiKey</code> changes</li>
+</ul>
+<strong>How it works:</strong>
+<ul><li>User runs: <code>openclaw config set skills.entries.peek:enabled=false</code></li>
+<li>Config hot-reload fires</li>
+<li>On next agent turn: <code>needsSkillsSnapshot</code> check sees new version</li>
+<li><code>buildWorkspaceSkillSnapshot()</code> rebuilds with disabled skill excluded</li>
+</ul>
+<strong>NOT hot-reloaded:</strong>
+<ul><li><code>skills.load.extraDirs</code> changes (require restart)</li>
+<li><code>skills.load.watch</code> changes (require restart)</li>
+</ul>
+<hr>
+<h2>3. USES — Practical Applications</h2>
+<h3>A) Profiling Skills Overhead in Production</h3>
+<strong>Scenario 1: Diagnose unexpected context size</strong>
+<pre><code>User: /context detail
+→ Top skills shows "unused-skill: 800 chars"
+→ Disable skill via: openclaw config set skills.entries.unused-skill:enabled=false
+</code></pre>
+<strong>Scenario 2: Budget planning before adding skills</strong>
+<pre><code>Calculation:
+<ul><li>100 skills × 35 tokens/skill = 3,500 tokens</li>
+<li>Current system prompt: ~3,000 tokens</li>
+<li>Bootstrap files: ~5,000 tokens</li>
+<li>Output reserve: ~10,000 tokens</li>
+<li>Available for history + new input: ~181,000 tokens</li>
+</ul></code></pre>
+<strong>Scenario 3: Track skills overhead over time</strong>
+<pre><code>/context list → note skills list size
+After adding skills:
+/context list → compare new size
+</code></pre>
+<h3>B) Reloading Skills Without File Changes</h3>
+<strong>Workaround 1: Touch SKILL.md file</strong>
+<pre><code>touch /path/to/skill/SKILL.md
+<h1>Watcher detects change → bumps snapshot version → next turn uses new snapshot</h1>
+</code></pre>
+<strong>Workaround 2: Rename skill folder</strong>
+<pre><code>mv my-skill my-skill-temp
+mv my-skill-temp my-skill
+<h1>Watcher detects add+unlink → refreshes snapshot</h1>
+</code></pre>
+<strong>Workaround 3: Config hot-reload (for enable/disable only)</strong>
+<pre><code>openclaw config set skills.entries.my-skill:enabled=false
+<h1>Next turn: skill excluded from snapshot</h1>
+</code></pre>
+<strong>Workaround 4: Via remote node reconnection</strong>
+<pre><code><h1>Disconnect/reconnect macOS node with skills</h1>
+<h1>Node reconnection triggers skills snapshot refresh</h1>
+</code></pre>
+<h3>C) Monitoring In-Flight Skill Executions</h3>
+<strong>When SKILL.md is deleted mid-execution:</strong>
+<ul><li>Watcher detects <code>unlink</code> event</li>
+<li><code>bumpSkillsSnapshotVersion()</code> called</li>
+<li><strong>In-flight execution continues</strong> (no immediate interruption)</li>
+<li><strong>Next agent turn</strong> uses new snapshot (skill excluded)</li>
+</ul>
+<strong>Important context:</strong>
+<ul><li>Skills are TEXT (SKILL.md content) — they don't "run" independently</li>
+<li>Model reads SKILL.md when invoked via slash command</li>
+<li>If model is mid-execution reading a skill's instructions:</li>
+</ul>  - Current turn continues with its snapshot
+  - Next turn sees the deletion
+  - Model cannot re-read deleted SKILL.md
+<hr>
+<h2>4. PROBLEMS — Limitations & Issues</h2>
+<h3>Problem 1: No Dedicated Profiler</h3>
+| Issue | Impact | Workaround |
+|-------|--------|------------|
+| No <code>openclaw skills profile</code> command | Can't get historical trends | Manual <code>/context</code> tracking |
+| <code>/context detail</code> only shows top N skills | May not see all skills | Run multiple times with different views |
+| No token breakdown by skill metadata field | Can't pinpoint overhead source | Manual calculation using formula |
+| No alerting on overhead threshold | May not notice bloat | External monitoring + <code>/context</code> cron |
+<h3>Problem 2: No Dedicated Reload Command</h3>
+| Issue | Impact | Workaround |
+|-------|--------|------------|
+| No <code>openclaw skills reload</code> command | Must use file hacks | Touch SKILL.md or rename folder |
+| Watcher only monitors SKILL.md files | Config changes may not trigger | Use config set instead of file edit |
+| Remote node trigger is fragile | Relies on node connection | Manual session restart |
+<h3>Problem 3: Snapshot Refresh Race Conditions</h3>
+| Issue | Impact | Workaround |
+|-------|--------|------------|
+| In-flight turn uses old snapshot | Changes not immediate | Accept delay or restart session |
+| Concurrent sessions may see different snapshots | State inconsistency | Per-session state files |
+| Snapshot version bump without file change | Confuses debugging | Document workaround usage |
+<h3>Problem 4: Config Hot-Reload Limits</h3>
+| Issue | Impact | Workaround |
+|-------|--------|------------|
+| <code>skills.load.extraDirs</code> requires restart | Can't add skill folders hot | Restart gateway |
+| <code>skills.load.watch</code> requires restart | Can't toggle watcher hot | Restart gateway |
+| Per-agent <code>skills</code> array changes don't hot-reload | Must start new session | Use session-specific config |
+<h3>Problem 5: In-Flight Execution Deletion Edge Case</h3>
+| Issue | Impact | Workaround |
+|-------|--------|------------|
+| SKILL.md deleted while model reading it | Model gets incomplete context | Don't delete mid-execution |
+| Snapshot rebuild during session | Brief inconsistency window | Avoid deletions during active work |
+| Skills watcher may miss nested changes | Some changes not detected | Use top-level SKILL.md only |
+<hr>
+<h2>5. SOLUTIONS — Mitigations & Best Practices</h2>
+<h3>Solution 1: Establish Skills Overhead Budget</h3>
+<pre><code>{
+  agents: {
+    defaults: {
+      contextTokens: 200000,
+      // Reserve 5% for skills overhead
+      // Max ~100 skills at 35 tokens each = 3,500 tokens = 1.75%
+    }
+  }
+}
+</code></pre>
+<strong>Monitoring cron:</strong>
+<pre><code><h1>Run /context list weekly, log skills overhead</h1>
+<h1>Alert if >10% of context budget</h1>
+</code></pre>
+<h3>Solution 2: Use <code>disable-model-invocation</code> for Rare Skills</h3>
+<pre><code>---
+name: emergency-skill
+description: "For emergencies only"
+disable-model-invocation: true
+<hr>
+</code></pre>
+<strong>Benefits:</strong>
+<ul><li>Zero token overhead in model prompt</li>
+<li>Available via user slash command only</li>
+<li>Useful for skills used <1/week</li>
+</ul>
+<h3>Solution 3: Controlled Reload via File Touch</h3>
+<pre><code><h1>Force snapshot refresh without visible file change</h1>
+touch /workspace/skills/my-skill/SKILL.md
+</code></pre>
+<strong>Script for clean reload:</strong>
+<pre><code>#!/bin/bash
+<h1>reload-skill.sh — force snapshot refresh</h1>
+SKILL_PATH="$1/SKILL.md"
+if [ -f "$SKILL_PATH" ]; then
+  touch "$SKILL_PATH"
+  echo "Snapshot refresh triggered for $1"
+else
+  echo "SKILL.md not found at $SKILL_PATH"
+fi
+</code></pre>
+<h3>Solution 4: Per-Agent Skill Control Without Restart</h3>
+<pre><code>{
+  agents: {
+    defaults: { skills: ["core-1", "core-2"] },
+    list: [
+      { id: "research", skills: ["core-1", "core-2", "web-research"] },
+      { id: "minimal", skills: ["core-1"] },
+    ]
+  }
+}
+</code></pre>
+<strong>Change takes effect:</strong> Next session for that agent
+<h3>Solution 5: Skills Overhead Debugging Workflow</h3>
+<pre><code>// Hook to log skills overhead at session start
+api.registerHook({
+  events: ["before_agent_start"],
+  handler: async (event) => {
+    const skills = event.visibleSkills;
+    const overhead = 195 + skills.reduce((sum, s) => {
+      return sum + 97 + s.name.length + s.description.length + s.location.length;
+    }, 0);
+    console.log(<code>Skills overhead: ${overhead} chars (~${Math.round(overhead/4)} tokens)</code>);
+  }
+});
+</code></pre>
+<hr>
+<h2>6. EDGE CASES — Unexpected Behaviors</h2>
+<h3>Edge Case: Snapshot Version Without File Change</h3>
+<p>When <code>bumpSkillsSnapshotVersion()</code> is called programmatically (no SKILL.md change):
+<ul><li>Snapshot version increments</li>
+<li><code>needsSkillsSnapshot</code> check triggers rebuild</li>
+<li>Next turn uses new snapshot</li>
+<li><strong>No visible change</strong> unless you know to look for version bump</li>
+</ul>
+<h3>Edge Case: Concurrent Watcher Events</h3></p>
+<p>When multiple SKILL.md files change in rapid succession:
+<ul><li>Watcher debounce (250ms default) coalesces events</li>
+<li>Single snapshot rebuild at end of debounce window</li>
+<li>All changes reflected in one refresh</li>
+</ul>
+<h3>Edge Case: Skills Snapshot vs. Session Store</h3></p>
+<p>The snapshot is stored in session entry:
+<pre><code>sessionEntry.skillsSnapshot = {
+  version: "v42",
+  skills: [...],
+  timestamp: Date
+}
+</code></pre></p>
+<p>Changes to snapshot do NOT affect:
+<ul><li>Session transcript (past interactions)</li>
+<li>Compaction summaries already written</li>
+<li>Session store file on disk</li>
+</ul>
+<h3>Edge Case: Remote Node Skills and Snapshot Refresh</h3></p>
+<p>When macOS node connects with unique skills:
+<ul><li><code>primeRemoteSkillsCache()</code> called</li>
+<li>Snapshot version bumped</li>
+<li>Skills from node become eligible</li>
+<li><strong>Without node, these skills invisible</strong> — no error, just graceful fallback</li>
+</ul>
+<h3>Edge Case: Watcher Disabled but Snapshot Still Refreshes</h3></p>
+<p>When <code>skills.load.watch: false</code>:
+<ul><li>File watcher inactive</li>
+<li>BUT: remote node changes still trigger snapshot refresh</li>
+<li>AND: programmatic <code>bumpSkillsSnapshotVersion()</code> still works</li>
+<li>AND: config changes still trigger rebuild at turn boundary</li>
+</ul>
+<hr></p>
+<h2>7. CREATIVE USES — Novel Applications</h2>
+<h3>Creative Use 1: Skills Overhead Budget Monitor</h3>
+<pre><code>const OVERHEAD_WARNING_THRESHOLD = 5000; // tokens
+<p>api.registerHook({
+  events: ["before_agent_start"],
+  handler: async (event) => {
+    const skills = event.visibleSkills;
+    const overhead = calculateSkillsOverhead(skills);
+    if (overhead > OVERHEAD_WARNING_THRESHOLD) {
+      console.warn(<code>⚠️ Skills overhead ${overhead} tokens exceeds ${OVERHEAD_WARNING_THRESHOLD} threshold</code>);
+    }
+  }
+});
+</code></pre></p>
+<h3>Creative Use 2: Skills Overhead Auto-Reduction</h3>
+<pre><code>const MAX_SKILLS = 50;
+<p>api.registerHook({
+  events: ["before_agent_start"],
+  handler: async (event) => {
+    if (event.visibleSkills.length > MAX_SKILLS) {
+      console.warn(<code>Limiting skills from ${event.visibleSkills.length} to ${MAX_SKILLS}</code>);
+      event.agentConfig.skills = event.visibleSkills
+        .slice(0, MAX_SKILLS)
+        .map(s => s.name);
+    }
+  }
+});
+</code></pre></p>
+<h3>Creative Use 3: Snapshot Version Telemetry</h3>
+<pre><code>// Log snapshot refresh events for debugging
+api.registerHook({
+  events: ["session:patch"],
+  handler: async (event) => {
+    if (event.patch.skillsSnapshotVersion) {
+      console.log(<code>Snapshot version bump: ${event.patch.skillsSnapshotVersion}</code>);
+    }
+  }
+});
+</code></pre>
+<h3>Creative Use 4: Skills Reload Webhook</h3>
+<pre><code>// Expose skills reload via webhook
+api.registerHook({
+  events: ["before_agent_start"],
+  handler: async (event) => {
+    // Check for reload flag in session context
+    if (event.context.needsSkillsReload) {
+      bumpSkillsSnapshotVersion();
+    }
+  }
+});
+</code></pre>
+<h3>Creative Use 5: Skills Overhead Attribution</h3>
+<pre><code>// Track which skill categories consume most overhead
+const CATEGORIES = {
+  "coding": ["github", "coding-agent", "code-review"],
+  "research": ["web-research", "continuous-improvement"],
+  "communication": ["himalaya", "message"]
+};
+<p>api.registerHook({
+  events: ["before_agent_start"],
+  handler: async (event) => {
+    const overhead = { total: 0, byCategory: {} };
+    for (const skill of event.visibleSkills) {
+      const cat = Object.entries(CATEGORIES).find(([_, skills]) => 
+        skills.includes(skill.name)
+      )?.[0] ?? "other";
+      overhead.byCategory[cat] = (overhead.byCategory[cat] ?? 0) + skillOverhead(skill);
+      overhead.total += skillOverhead(skill);
+    }
+    console.table(overhead.byCategory);
+  }
+});
+</code></pre></p>
+<hr>
+<h2>Summary: Quick Reference</h2>
+| Question | Answer |
+|----------|--------|
+| Can skills overhead be profiled? | <strong>YES</strong> — <code>/context list</code> and <code>/context detail</code> show per-skill sizes |
+| Is there a skills reload command? | <strong>NO</strong> — must use file workaround (touch SKILL.md) |
+| What triggers snapshot refresh? | File watcher + remote nodes + config changes + <code>bumpSkillsSnapshotVersion()</code> |
+| Does config hot-reload apply to skills.entries? | <strong>YES</strong> — enable/disable via <code>openclaw config set</code> hot-reloads |
+| What happens when SKILL.md deleted mid-execution? | In-flight turn completes; next turn excludes skill |
+| Can skills be enabled/disabled per-session? | <strong>NO</strong> — global to workspace; new sessions use new config |
+| Is there a token breakdown by skill field? | <strong>PARTIAL</strong> — <code>/context detail</code> shows per-skill total only |
+| Can watcher be disabled? | YES — <code>skills.load.watch: false</code> (requires restart to set) |
+<hr>
+<h2>Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/concepts/context.md</code> — <code>/context detail</code> documentation, per-skill breakdown</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skills snapshot, watcher, hot reload documentation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills-config.md</code> — <code>skills.entries.<em></code> config fields, hot-reload behavior</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/refresh-p9Dzo7mb.js</code> — Skills watcher implementation: <code>watcher.on("add/change/unlink")</code>, <code>bumpSkillsSnapshotVersion</code></li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/skills-DYF-hmoJ.js</code> — <code>buildWorkspaceSkillSnapshot</code> implementation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/agent-command-BRtqb5oD.js</code> — Snapshot version checking, rebuild logic</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/commands-handlers.runtime-qpU8MeZd.js</code> — <code>/context</code> command handlers</li>
+</ul>
+<hr>
+<h2>NEW QUESTIONS OPENED BY THIS RESEARCH</h2>
+<h3>a) Definition & Scope</h3>
+<ul><li>[ ] Can snapshot version be inspected at runtime without debug mode? <strong>[LOW]</strong></li>
+<li>[ ] Is there a way to export skills overhead data to external monitoring systems? <strong>[MED]</strong></li>
+</ul>
+<h3>b) Internal Mechanics</h3>
+<ul><li>[ ] Does <code>bumpSkillsSnapshotVersion()</code> require watcher to be enabled? <strong>[LOW]</strong></li>
+<li>[ ] Can multiple snapshot versions coexist across concurrent sessions? <strong>[LOW]</strong></li>
+<li>[ ] What is the maximum snapshot version before rollover? <strong>[LOW]</strong></li>
+</ul>
+<h3>c) Use Cases</h3>
+<ul><li>[ ] Can skills overhead be included in <code>/status</code> output automatically? <strong>[MED]</strong></li>
+<li>[ ] Is there a way to schedule skills enable/disable at specific times? <strong>[MED]</strong></li>
+</ul>
+<h3>d) Problems & Limitations</h3>
+<ul><li>[ ] Does watcher consume significant CPU on large skill directories? <strong>[LOW]</strong></li>
+<li>[ ] Is there a known issue where snapshot doesn't refresh after config hot-reload? <strong>[MED]</strong></li>
+</ul>
+<h3>e) Solutions & Workarounds</h3>
+<ul><li>[ ] Can a custom hook simulate <code>openclaw skills reload</code> functionality? <strong>[MED]</strong></li>
+<li>[ ] What's the best way to test skills overhead changes before deploying? <strong>[MED]</strong></li>
+</ul>
+<h3>f) Edge Cases</h3>
+<ul><li>[ ] What happens when snapshot version overflows (wraps around)? <strong>[LOW]</strong></li>
+<li>[ ] Can two concurrent sessions have different snapshot versions? <strong>[LOW]</strong></li>
+</ul>
+<h3>g) Creative Uses</h3>
+<ul><li>[ ] Could a skill self-report its overhead via a hook at load time? <strong>[LOW]</strong></li>
+<li>[ ] Can skills overhead drive automatic skill pruning (remove lowest-use skills)? <strong>[MED]</strong></li>
+</ul>
+<hr>
+</em>Research by: Investigador Scout | 2026-04-23 11:46 CET*
+</body>
+</html>

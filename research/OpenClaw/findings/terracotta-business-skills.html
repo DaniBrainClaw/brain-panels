@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encoding TERRACOTTA Business Procedures as Skills — Research Findings</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 terracotta-business-skills.md</p>
+    <strong>Topic:</strong> Could TERRACOTTA business procedures be encoded as skills for consistent execution?
+<strong>Priority:</strong> HIGH — Critical for operational scaling and consistency
+<strong>Date:</strong> 2026-04-23 06:15 CET
+<strong>Research by:</strong> Investigador Scout
+<strong>Status:</strong> ✅ COMPLETED (updated with skill dependencies research)
+<hr>
+<h2>1. WHAT IS — Definition & Core Concept</h2>
+<p>Encoding TERRACOTTA business procedures as skills means converting standard operating procedures (SOPs) into modular, versioned OpenClaw skill bundles. Instead of relying on human memory or static documents, the agent uses these skills as interactive "living manuals" to guide operations.</p>
+<strong>CRITICAL FINDING:</strong> OpenClaw has <strong>NO native skill dependency system</strong>. Skills are TEXT that influences the model — they don't "run" in the traditional sense. Each skill must be self-contained; chaining requires model cooperation via slash commands.
+<hr>
+<h2>2. HOW IT WORKS — Operational Execution</h2>
+<h3>Skill Architecture for TERRACOTTA</h3>
+<p>Each TERRACOTTA procedure is a skill folder:
+<pre><code>skills/terracotta/
+├── SKILL.md (main operations index)
+├── legionella-log/
+│   └── SKILL.md (water testing procedure)
+├── membership/
+│   └── SKILL.md (onboarding/offboarding)
+├── maintenance/
+│   └── SKILL.md (facility maintenance)
+├── events/
+│   └── SKILL.md (community events)
+└── corporate/
+    └── SKILL.md (B2B reporting)
+</code></pre></p>
+<h3>How Skills Execute</h3>
+<ul><li><strong>Skill is TEXT in system prompt</strong> — skills are instructions the model reads</li>
+<li><strong>Slash commands invoke skills</strong> — <code>/legionella-log</code> triggers the skill's command handler</li>
+<li><strong>Model follows skill instructions</strong> — decides when/how to apply procedures</li>
+<li><strong>No automatic chaining</strong> — master skill must explicitly instruct model to use sub-skills</li>
+<li><strong>No dependency resolution</strong> — sub-skills must be manually installed</li>
+</ul>
+<hr>
+<h2>3. USES — Key Operational Domains</h2>
+<h3>TERRACOTTA Skill Map</h3>
+| Domain | Skill Name | Slash Command | Description |
+|--------|------------|---------------|-------------|
+| <strong>Maintenance</strong> | <code>legionella-log</code> | <code>/legionella-log</code> | RD 865/2003 water testing, log results |
+| <strong>Maintenance</strong> | <code>maintenance-daily</code> | <code>/maintenance-daily</code> | Daily facility checks |
+| <strong>Membership</strong> | <code>membership-onboard</code> | <code>/membership-onboard</code> | New member welcome workflow |
+| <strong>Membership</strong> | <code>membership-offboard</code> | <code>/membership-offboard</code> | Member cancellation/suspension |
+| <strong>Events</strong> | <code>event-scheduler</code> | <code>/event-scheduler</code> | Community event creation |
+| <strong>Events</strong> | <code>event-reminder</code> | <code>/event-reminder</code> | Automated reminders |
+| <strong>Corporate</strong> | <code>corporate-proposal</code> | <code>/corporate-proposal</code> | B2B wellness proposal generation |
+| <strong>Corporate</strong> | <code>corporate-report</code> | <code>/corporate-report</code> | ROI reporting for corporate partners |
+| <strong>Operations</strong> | <code>operations-master</code> | <code>/terracotta-ops</code> | Master skill for all operations |
+<h3>Daily Operations Flow</h3>
+<pre><code>Morning (9:00)
+  → /maintenance-daily → Salt electrolysis check, water levels
+  → /legionella-log → Record Legionella test results (if test day)
+<p>Onboarding (as needed)
+  → /membership-onboard → Welcome message, tier selection, payment setup</p>
+<p>Events (weekly)
+  → /event-scheduler → Create/update community events
+  → /event-reminder → Send reminders 24h before</p>
+<p>Corporate (monthly)
+  → /corporate-proposal → Generate B2B proposal for prospects
+  → /corporate-report → Monthly usage report for existing contracts
+</code></pre></p>
+<hr>
+<h2>4. PROBLEMS & LIMITATIONS</h2>
+| Problem | Severity | Impact |
+|---------|----------|--------|
+| <strong>No dependency system</strong> | CRITICAL | Cannot declare that <code>/terracotta-ops</code> requires sub-skills; must manually install all |
+| <strong>No automatic resolution</strong> | HIGH | Installing via ClawHub installs skills alphabetically, not by dependency |
+| <strong>No version pinning</strong> | HIGH | Sub-skill updates may break master skill references |
+| <strong>Model-dependent chaining</strong> | HIGH | Chaining relies on model following instructions; not guaranteed |
+| <strong>No error propagation</strong> | MED | If sub-skill fails, master skill may not detect failure |
+| <strong>No transactional execution</strong> | MED | Partial chain failure leaves inconsistent state |
+| <strong>No skill state isolation</strong> | MED | Chained skills share session context without isolation |
+<h3>TERRACOTTA-Specific Limitations</h3>
+<ul><li><strong>Data Sensitivity</strong>: Member data in system prompts poses risk — treat skills as untrusted code equivalent</li>
+<li><strong>Compliance Chain Gaps</strong>: If sub-skill for Legionella logging is missing, compliance chain breaks</li>
+<li><strong>Multi-location Coordination</strong>: Skills loaded per-agent; no shared skill state across TERRACOTTA locations</li>
+<li><strong>Procedural Complexity</strong>: Multi-step procedures (MIDRA massage flow) harder to encode as pure markdown</li>
+</ul>
+<hr>
+<h2>5. SOLUTIONS & BEST PRACTICES</h2>
+<h3>Solution 1: Master Skill Pattern (RECOMMENDED)</h3>
+<p>Create a <code>terracotta-operations</code> master skill that:
+<ul><li>Lists all available sub-skills with slash commands</li>
+<li>Provides error handling when sub-skills unavailable</li>
+<li>Documents manual installation dependency in SKILL.md</li>
+</ul>
+<pre><code>---
+name: terracotta-operations
+description: Master skill for TERRACOTTA business operations
+<hr></p>
+<h1>TERRACOTTA Operations Master Skill</h1>
+<h2>Prerequisites (MANUAL INSTALL REQUIRED)</h2>
+Install these skills first:
+<ul><li><code>terracotta-maintenance</code> (legionella-log, maintenance-daily)</li>
+<li><code>terracotta-membership</code> (membership-onboard, membership-offboard)</li>
+<li><code>terracotta-events</code> (event-scheduler, event-reminder)</li>
+<li><code>terracotta-corporate</code> (corporate-proposal, corporate-report)</li>
+</ul>
+<h2>Operations Index</h2>
+| Operation | Command | Description |
+|-----------|---------|-------------|
+| Daily Maintenance | <code>/maintenance-daily</code> | Facility check routine |
+| Legionella Log | <code>/legionella-log</code> | Water quality documentation |
+| Member Onboarding | <code>/membership-onboard</code> | New member welcome |
+| Event Create | <code>/event-scheduler</code> | Create community event |
+| Corporate Proposal | <code>/corporate-proposal</code> | Generate B2B proposal |
+<h2>Error Handling</h2>
+If a sub-skill command is not found, inform user:
+"Please ensure the [skill-name] skill is installed. Run: openclaw skills install [skill-name]"
+</code></pre>
+<h3>Solution 2: Compliance Hook Verification</h3>
+<p>Use <code>before_prompt_build</code> hook to verify compliance-critical skills are loaded:</p>
+<pre><code>api.registerHook({
+  events: ["before_prompt_build"],
+  handler: async (event) => {
+    const sessionId = event.context.sessionId;
+    const message = event.context.userMessage;
+    
+    if (message.includes("legionella") || message.includes(" Legionella")) {
+      // Verify legionella-log skill is in system prompt
+      const skills = event.context.skillsSnapshot || [];
+      if (!skills.includes("legionella-log")) {
+        event.context.systemPrompt += <code>\n\n⚠️ WARNING: legionella-log skill not detected. Compliance may be affected.</code>;
+      }
+    }
+  }
+});
+</code></pre>
+<h3>Solution 3: Centralized Git Repository</h3>
+<p>Manage all TERRACOTTA skills in single Git repo:
+<pre><code>terracotta-skills/
+├── maintenance/
+│   ├── SKILL.md
+│   └── procedures/
+├── membership/
+│   ├── SKILL.md
+│   └── templates/
+├── events/
+│   └── SKILL.md
+├── corporate/
+│   └── SKILL.md
+└── README.md
+</code></pre></p>
+<p>Benefits:
+<ul><li>Version control for all procedures</li>
+<li>Easy deployment to multiple agents</li>
+<li>Change tracking for compliance</li>
+<li>Rollback capability</li>
+</ul>
+<h3>Solution 4: Hook-Based Skill Activation</h3></p>
+<p>For dynamic compliance enforcement:</p>
+<pre><code>// In terracotta-compliance hook
+api.registerHook({
+  events: ["before_prompt_build"],
+  handler: async (event) => {
+    // After any maintenance operation, verify log was written
+    if (event.context.userMessage.includes("maintenance-daily")) {
+      event.context.systemPrompt += <code>\n\n[After maintenance, verify /legionella-log was executed if today is a test day.]</code>;
+    }
+  }
+});
+</code></pre>
+<hr>
+<h2>6. EDGE CASES</h2>
+<h3>Edge Case 1: Master Skill Installed Without Sub-Skills</h3>
+<strong>Scenario:</strong> User installs <code>terracotta-operations</code> but forgets sub-skills
+<strong>Result:</strong> <code>/terracotta-ops</code> lists operations that don't exist as commands
+<strong>Mitigation:</strong> Include dependency check in master skill instructions
+<h3>Edge Case 2: Skill Update Breaks Slash Command</h3>
+<strong>Scenario:</strong> <code>legionella-log</code> v2.0 changes command from <code>/legionella-log</code> to <code>/log-legionella</code>
+<strong>Result:</strong> Master skill references old command; model reports "skill not found"
+<strong>Mitigation:</strong> Pin skill versions; test updates before production
+<h3>Edge Case 3: Compliance Audit Missing Logs</h3>
+<strong>Scenario:</strong> Maintenance performed but <code>/legionella-log</code> not executed
+<strong>Result:</strong> Compliance gap — operation done but not documented
+<strong>Mitigation:</strong> Use hook-based verification; cross-check logs after maintenance
+<h3>Edge Case 4: Member Data in Skill Instructions</h3>
+<strong>Scenario:</strong> <code>membership-onboard</code> skill instructs model to access member API with credentials
+<strong>Risk:</strong> Credentials in SKILL.md enter system prompt — CRITICAL security gap
+<strong>Mitigation:</strong> Use <code>skills.entries.<skill>.env</code> for secrets; never put credentials in markdown
+<h3>Edge Case 5: Multi-Location Skill Sync</h3>
+<strong>Scenario:</strong> TERRACOTTA has 3 locations, skills updated but only 2 locations refreshed
+<strong>Result:</strong> Inconsistent procedures across locations
+<strong>Mitigation:</strong> Use Git repo with <code>clawhub sync --all</code> deployment
+<hr>
+<h2>7. CREATIVE USES</h2>
+<h3>Creative Use 1: Skill-Based SOP Compliance System</h3>
+<pre><code>TERRACOTTA Compliance Engine
+├── Skill: legionella-log (RD 865/2003)
+├── Skill: maintenance-daily (equipment checks)
+├── Skill: membership-audit (data retention compliance)
+└── Hook: before_prompt_build (verify operations documented)
+</code></pre>
+<h3>Creative Use 2: Dynamic Procedure Generation</h3>
+A meta-skill that generates new procedures:
+<pre><code><h1>TERRACOTTA Procedure Builder</h1>
+<p>When Dani describes a new standard operating procedure:
+<ul><li>Create a new skill directory under skills/terracotta/</li>
+<li>Write SKILL.md with the procedure steps</li>
+<li>Register slash command</li>
+<li>Add to operations index</li>
+<li>Document in MEMORY.md</li>
+</ul></code></pre></p>
+<h3>Creative Use 3: Corporate Wellness B2B Skill Chain</h3>
+<pre><code>Corporate Onboarding (master skill)
+├── /corporate-proposal → generate proposal document
+├── /membership-onboard-bulk → batch member creation
+├── /corporate-report → set up monthly reporting schedule
+└── /event-scheduler-corporate → book wellness days
+</code></pre>
+<h3>Creative Use 4: Real-Time Voice Guidance</h3>
+Skills that provide step-by-step guidance via TTS:
+<pre><code><h1>Sauna Protocol Skill</h1>
+<p>When guiding user through sauna session:
+<ul><li>Check membership tier via /membership-check</li>
+<li>Provide temperature recommendation</li>
+<li>Guide timing: "Enter sauna for 15 minutes"</li>
+<li>Trigger cold plunge reminder at interval</li>
+<li>Log session to member record</li>
+</ul></code></pre></p>
+<hr>
+<h2>NEW QUESTIONS FOR BACKLOG (TERRACOTTA Specific)</h2>
+<ul><li><strong>[HIGH]</strong> Can OpenClaw skill manifest format be extended to support <code>dependencies</code> field? (Would need PR to core)</li>
+<li><strong>[MED]</strong> What Telegram bot platform best integrates with TERRACOTTA membership skill (Manychat vs custom)?</li>
+<li><strong>[MED]</strong> Can skills use webhook out to notify external systems (Mindbody/Vagaro) after operations?</li>
+<li><strong>[MED]</strong> What is the best way to handle skill credentials for Mindbody/Vagaro API integration?</li>
+<li><strong>[LOW]</strong> Can skills implement file-based state that persists member operations across sessions?</li>
+<li><strong>[MED]</strong> How to sync TERRACOTTA skills across multiple agents (multi-location setup)?</li>
+<li><strong>[HIGH]</strong> Can compliance hooks verify that critical operations (Legionella log) were executed after maintenance skill?</li>
+</ul>
+<hr>
+<h2>Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skill loading, precedence, gating rules</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills-config.md</code> — Skill config schema</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/creating-skills.md</code> — Skill creation workflow</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/slash-commands.md</code> — Slash command dispatch</li>
+<li>Research/OpenClaw/findings/skill-dependencies-chaining.md — Skill chaining limitations</li>
+<li>Research/OpenClaw/findings/openclaw-skill-system.md — Full skill system reference</li>
+</ul>
+<hr>
+<em>Research by: Investigador Scout | 2026-04-23 06:15 CET</em>
+</body>
+</html>

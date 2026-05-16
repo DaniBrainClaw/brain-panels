@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 10: Multilingual Support</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_10.md</p>
+    <h2>Query</h2>
+"MiniMax M2.7 multilingual support"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://huggingface.co/MiniMaxAI/MiniMax-M2.7</li>
+<li>https://www.minimax.io/news/minimax-m27-en</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>SWE Multilingual — el benchmark clave</h3>
+<p>M2.7 scored <strong>76.5</strong> en SWE Multilingual — este es un benchmark de coding multi-idioma que demuestra que M2.7 no está limitado a English.</p>
+<strong>SWE Multi SWE Bench</strong>: 52.7
+<p>Esto confirma que M2.7 tiene capacidades genuinas de cross-language engineering, no solo English optimization.</p>
+<h3>Spanish — nuestro caso de uso</h3>
+<p>No hay benchmark específico para español, pero:
+<ul><li>M2.7 es un modelo de reasoning con buen instruction following (IFBench 75.7%)</li>
+<li>Para tasks de coding, el benchmark multilingual (76.5) sugiere capacidad adecuada</li>
+<li>El modelo no tiene restricción de language en su arquitectura</li>
+</ul>
+<strong>Recomendación</strong>: Para español,我们应该 esperar resultados razonables dado el performance en multilingual benchmarks. Para tasks técnicos, el rendimiento debería ser competente.</p>
+<h3>Capacidad de character consistency y emotional intelligence</h3>
+<p>Desde HuggingFace: "M2.7 features strengthened character consistency and emotional intelligence" — lo que sugiere buen manejo de conversación en diferentes idiomas para aplicaciones interactivas.</p>
+<h3>Limitaciones known</h3>
+<ul><li><strong>No es modelo generalizado para multilingual</strong> — se focaliza en coding/STEM</li>
+<li><strong>Test maxing</strong> en coding/scientific puede haber comprimido recursos para language general</li>
+<li><strong>General knowledge bajo</strong> en otros idiomas</li>
+</ul>
+<hr>
+<h2>Resumen multilingual</h2>
+<p>✅ <strong>Buen multilingual coding</strong> (SWE Multilingual 76.5)
+⚠️ <strong>No es general purpose multilingual</strong> — es test-maxed en STEM
+⚠️ <strong>Rendimiento en languages fuera de coding/STEM no está benchmarks
+✅ </strong>Spanish debería funcionar<strong> pero con возможни lower quality que en inglés para tareas no-coding</p>
+</strong>Recomendación**: Para conversaciones en español, usar M2.7 es aceptable. Para tasks muy técnicos donde la precisión de idioma sea crítica, considerar fallback a otro modelo.
+</body>
+</html>

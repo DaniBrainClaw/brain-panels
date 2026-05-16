@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INDEX — Auditoría Web Dani's Businesses</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 INDEX.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<strong>Total websites auditadas:</strong> 7 de 8 (fusionhouse.es reported as down)
+<strong>Total problemas identificados:</strong> ~50
+<strong>Prioridad alta:</strong> 15
+<hr>
+<h2>Resumen de Scores</h2>
+| Web | Negocio | Score | Veredicto |
+|-----|---------|-------|-----------|
+| greenaxis.es | Mantenimiento técnico | 7.5/10 | ✅ Mejor web |
+| liv-ing.com | Consultora hogar | 6.5/10 | ⚠️ Buena base |
+| dindonliving.com | E-commerce muebles | 6.5/10 | ⚠️ Funcional |
+| terracottavalladolid.com | Restaurante | 6.5/10 | ⚠️ Carta buena |
+| estudiovirtual.es | Renderizado 3D | 5.5/10 | ⚠️ SSL crítico |
+| gp3.es | Construcción | 5/10 | ❌ Stats = 0 matan credibility |
+| mf3.es | Arquitectura | 5/10 | ❌ Sin CTAs, multi-dominio |
+<hr>
+<h2>Problemas Comunes a TODAS las webs</h2>
+<h3>🔴 Críticos (arreglar esta semana)</h3>
+<ul><li><strong>estudiovirtual.es</strong> — HTTP sin SSL (no hay certificado)</li>
+<li><strong>mf3.es</strong> — Multi-dominio confusion (mf3.es vs mediterraneanfusion.es)</li>
+<li><strong>gp3.es</strong> — Stats "0"杀掉 credibilidad (91 KW, pero 0 metros, 0 reformas)</li>
+</ul>
+<h3>🟠 Alta Prioridad (Mes 1)</h3>
+<ul><li><strong>Todas</strong> — Sin meta descriptions personalizadas</li>
+<li><strong>Todas</strong> — Sin Schema markup (LocalBusiness, Service)</li>
+<li><strong>Todas</strong> — Sin testimonials visible (excepto Green Axis)</li>
+<li><strong>mf3.es, gp3.es, estudiovirtual.es</strong> — Sin página "Quiénes somos"</li>
+<li><strong>Todas</strong> — Sin CTAs claros ("Contactar", "Solicitar presupuesto")</li>
+</ul>
+<h3>🟡 Media Prioridad (Mes 2-3)</h3>
+<ul><li><strong>dindonliving.com</strong> — Imágenes muy pesadas (banners 1920x870)</li>
+<li><strong>terracottavalladolid.com</strong> — Sin horarios de apertura</li>
+<li><strong>dindonliving.com</strong> — URLs inconsistency (www vs non-www)</li>
+<li><strong>gp3.es, mf3.es</strong> — Falta portfolio de trabajos reales</li>
+<li><strong>Todas</strong> — Sin Google Business linking</li>
+<li><strong>Todas</strong> — Falta blog/content marketing</li>
+</ul>
+<h3>🟢 Baja Prioridad (Mes 4+)</h3>
+<ul><li><strong>Todas</strong> — Sin chat WhatsApp Business (excepto Green Axis)</li>
+<li><strong>terracottavalladolid.com</strong> — Sin menú PDF descargable</li>
+<li><strong>dindonliving.com</strong> — Sin email marketing automation</li>
+<li><strong>greenaxis.es</strong> — Sin animación/microinteracciones</li>
+</ul>
+<hr>
+<h2>Patrones Detectados</h2>
+<h3>Grupo empresarial unificado</h3>
+<ul><li><strong>Misma ubicación:</strong> Plaza Martí y Monsó, 1, Valladolid (la mayoría)</li>
+<li><strong>Mismo desarrollador:</strong> Diewaves (todas las webs)</li>
+<li><strong>Mismo grupo de WhatsApp:</strong> 633 577 208 (Green Axis), 649 894 751 (Terracotta), etc.</li>
+<li><strong>Cross-linking:</strong> greenaxis.es → mf3.es/proyectos/</li>
+</ul>
+<h3>Servicios relacionados</h3>
+<ul><li>MF3 (Arquitectura) + Green Path (Construcción) + Green Axis (Mantenimiento)</li>
+<li>MF3 + Estudio Virtual (Renderizado 3D)</li>
+<li>Living (Consultoría hogar) + MF3 (Reformas)</li>
+<li>Din Don Living (Tienda muebles) + MF3 (Interiorismo)</li>
+</ul>
+<hr>
+<h2>Prioridades de Mejora por Web</h2>
+<h3>greenaxis.es (7.5/10) — Prioridad: BAJA</h3>
+<ul><li>Añadir dirección física</li>
+<li>Implementar Schema LocalBusiness</li>
+<li>Crear galería proyectos antes/después</li>
+</ul>
+<h3>liv-ing.com (6.5/10) — Prioridad: MEDIA</h3>
+<ul><li>Añadir testimonios reales</li>
+<li>Optimizar cookie banner feo</li>
+<li>Crear página de servicios completa</li>
+</ul>
+<h3>dindonliving.com (6.5/10) — Prioridad: MEDIA</h3>
+<ul><li>Comprimir imágenes banners</li>
+<li>Fix URLs (www统一)</li>
+<li>Añadir dirección + teléfono en footer</li>
+</ul>
+<h3>terracottavalladolid.com (6.5/10) — Prioridad: MEDIA</h3>
+<ul><li>Añadir horarios de apertura</li>
+<li>Implementar Schema Restaurant</li>
+<li>Vincular Google Business</li>
+</ul>
+<h3>estudiovirtual.es (5.5/10) — Prioridad: ALTA</h3>
+<ul><li>⚠️ INSTALAR SSL/HTTPS — CRÍTICO</li>
+<li>Fix homepage stats (0=mat credibilidad)</li>
+<li>Crear página Quiénes somos</li>
+</ul>
+<h3>gp3.es (5/10) — Prioridad: ALTA</h3>
+<ul><li>Quitar o actualizar stats "0"</li>
+<li>Añadir CTAs en cada sección</li>
+<li>Crear página Quiénes somos</li>
+</ul>
+<h3>mf3.es (5/10) — Prioridad: ALTA</h3>
+<ul><li>Consolidar multi-dominio</li>
+<li>Añadir CTA "Contactar"</li>
+<li>Implementar meta descriptions</li>
+</ul>
+<hr>
+<h2>Acciones Rápidas (30 min cada una)</h2>
+| Web | Acción | Tiempo | Impacto |
+|-----|--------|--------|---------|
+| estudiovirtual.es | Instalar SSL | 30 min | 🔴🔴🔴 |
+| gp3.es | Quitar stats "0" | 5 min | 🔴🔴 |
+| mf3.es | Añadir CTA | 10 min | 🔴🔴 |
+| terracottavalladolid.com | Añadir horarios | 5 min | 🔴🔴 |
+| greenaxis.es | Añadir dirección | 5 min | 🔴 |
+<hr>
+<h2>Inversión Recomendada</h2>
+<h3>Fase 1 (€0 — cambios rápidos)</h3>
+<ul><li>Quitar stats "0"</li>
+<li>Añadir horarios, dirección, teléfono</li>
+<li>Fix URLs</li>
+<li>Instalar SSL en estudiovirtual</li>
+</ul>
+<h3>Fase 2 (€200-500 — mejoras técnicas)</h3>
+<ul><li>Schema markup en todas las webs</li>
+<li>Optimizar imágenes</li>
+<li>Meta descriptions</li>
+</ul>
+<h3>Fase 3 (€500-2000 — redesign)</h3>
+<ul><li>Landing pages nuevas</li>
+<li>Testimonials reales</li>
+<li>Portfolio galleries</li>
+</ul>
+<hr>
+<em>Investigador — completado.</em>
+</body>
+</html>

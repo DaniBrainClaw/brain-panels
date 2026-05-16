@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Config System — COMPLETE RESEARCH FINDINGS</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 openclaw-config-system.md</p>
+    <strong>Research Date:</strong> 2026-04-23  
+<strong>Topic:</strong> OpenClaw Config System (configuration-reference + configuration + skills-config)  
+<strong>Priority:</strong> MEDIUM (from backlog.md L26)  
+<strong>Research Depth:</strong> 6-Layer Exhaustive
+<hr>
+<h2>TABLE OF CONTENTS</h2>
+<ul><li><a href="#1-what-is--definition--core-concept">What Is — Definition & Core Concept</a></li>
+<li><a href="#2-how-it-works--architecture--mechanics">How It Works — Architecture & Mechanics</a></li>
+<li><a href="#3-uses--practical-applications">Uses — Practical Applications</a></li>
+<li><a href="#4-problems--known-issues--limitations">Problems — Known Issues & Limitations</a></li>
+<li><a href="#5-solutions--best-practices--workarounds">Solutions — Best Practices & Workarounds</a></li>
+<li><a href="#6-edge-cases--unusual-scenarios">Edge Cases — Unusual Scenarios</a></li>
+<li><a href="#7-new-questions-opened-by-this-research">NEW Questions Opened by This Research</a></li>
+<li><a href="#8-sources">Sources</a></li>
+</ul>
+<hr>
+<h2>1. WHAT IS — Definition & Core Concept</h2>
+<h3>Definition</h3>
+<strong>OpenClaw Config System</strong> is the centralized JSON5-based configuration subsystem that controls all aspects of the Gateway: channels, models, agents, skills, sandboxing, cron jobs, hooks, logging, auth profiles, secrets, and more. It lives in <code>~/.openclaw/openclaw.json</code> and is the single source of truth for OpenClaw behavior.
+<h3>Core Properties</h3>
+| Property | Description |
+|----------|-------------|
+| <strong>Format</strong> | JSON5 (comments + trailing commas allowed) |
+| <strong>Location</strong> | <code>~/.openclaw/openclaw.json</code> (primary); <code>~/.openclaw/</code> directory for related data |
+| <strong>Schema</strong> | Strict validation via JSON Schema — unknown keys cause Gateway <strong>refusal to start</strong> |
+| <strong>Schema Tool</strong> | <code>openclaw config schema</code> prints live schema with bundled/plugin/channel metadata merged |
+| <strong>Hot Reload</strong> | Gateway watches <code>openclaw.json</code> and applies changes automatically |
+| <strong>Fallback</strong> | If <code>openclaw.json</code> is missing, OpenClaw uses safe defaults for everything |
+| <strong>Includes</strong> | <code>$include</code> directive supports splitting config into multiple files with deep-merge |
+<h3>Config vs Configuration</h3>
+| Term | Meaning |
+|------|---------|
+| <strong>Config</strong> | The JSON5 file (<code>~/.openclaw/openclaw.json</code>) |
+| <strong>Configuration</strong> | The total set of all settings controlling OpenClaw behavior |
+<h3>Top-Level Config Structure</h3>
+<pre><code>{
+  // Core
+  $schema?: string,           // JSON Schema metadata
+  gateway?: { ... },          // Gateway-level settings
+  agents?: { ... },           // Agent defaults + agent list
+  channels?: { ... },         // Channel configs (telegram, discord, whatsapp, etc.)
+  
+  // Automation
+  cron?: { ... },             // Cron job configuration
+  hooks?: { ... },            // Hook system config
+  
+  // AI/ML
+  models?: { ... },           // Model providers + catalog
+  auth?: { ... },             // Auth profiles + cooldowns
+  
+  // Tools/Skills
+  skills?: { ... },           // Skills loading + per-skill config
+  tools?: { ... },            // Tool-specific config
+  
+  // Security
+  secrets?: { ... },          // Secret providers (env, file, exec, vault)
+  
+  // Observability
+  logging?: { ... },          // Logging config
+  diagnostics?: { ... },     // Diagnostics + OTEL export
+  
+  // Platform
+  acp?: { ... },              // ACP runtime config
+  cli?: { ... },              // CLI behavior
+  
+  // Meta
+  wizard?: { ... },           // Metadata from guided setup flows
+  update?: { ... },           // Auto-update channel + schedule
+  
+  // Experimental
+  plugins?: { ... },          // Plugin entries + config
+  broadcast?: { ... },        // Broadcast targets
+}
+</code></pre>
+<h3>Configuration Reference vs Configuration Overview</h3>
+| Document | Purpose |
+|----------|---------|
+| <strong>configuration-reference.md</strong> | Field-level schema semantics, every available key, all defaults |
+| <strong>configuration.md</strong> | Task-oriented overview: common tasks, quick setup, links to reference |
+| <strong>configuration-examples.md</strong> | Complete copy-paste configs for common scenarios |
+<hr>
+<h2>2. HOW IT WORKS — Architecture & Mechanics</h2>
+<h3>Config Loading & Validation</h3>
+<strong>Startup sequence:</strong>
+<ul><li>Gateway reads <code>~/.openclaw/openclaw.json</code></li>
+<li>Validates against JSON Schema (STRICT — invalid config = Gateway won't boot)</li>
+<li>If validation fails: only diagnostic commands work (<code>openclaw doctor</code>, <code>openclaw logs</code>, <code>openclaw health</code>, <code>openclaw status</code>)</li>
+<li>On success: Gateway starts with resolved config</li>
+</ul>
+<strong>Schema tooling:</strong>
+<ul><li><code>openclaw config schema</code> — prints live JSON Schema used by Control UI + validation</li>
+<li><code>config.schema.lookup</code> — returns one path-scoped schema node for drill-down</li>
+<li><code>pnpm config:docs:check</code> / <code>pnpm config:docs:gen</code> — validates config-doc baseline hash against schema surface</li>
+</ul>
+<strong>Hot reload:</strong>
+<ul><li>Gateway watches <code>openclaw.json</code> for changes</li>
+<li>Changes applied automatically without restart</li>
+<li>Some changes (hooks, skills) may require restart for full effect</li>
+</ul>
+<h3>Config Includes (<code>$include</code>)</h3>
+<pre><code>{
+  gateway: { port: 18789 },
+  agents: { $include: "./agents.json5" },
+  broadcast: {
+    $include: ["./clients/mueller.json5", "./clients/schmidt.json5"],
+  },
+}
+</code></pre>
+<strong>Merge behavior:</strong>
+<ul><li>Single file: replaces the containing object</li>
+<li>Array of files: deep-merged in order (later overrides earlier)</li>
+<li>Sibling keys: merged after includes (override included values)</li>
+<li>Nested includes: up to 10 levels deep</li>
+<li>Paths: resolved relative to the including file, but must stay inside the top-level config directory (<code>dirname</code> of <code>openclaw.json</code>)</li>
+<li>Errors: clear messages for missing files, parse errors, and circular includes</li>
+<li><code>../</code> forms only allowed when still resolving inside config boundary</li>
+</ul>
+<h3>SecretRef System</h3>
+<p>Secrets use an indirection layer to avoid plaintext credentials in config:</p>
+<pre><code>{ source: "env" | "file" | "exec", provider: "string", id: "string" }
+</code></pre>
+<strong>Validation rules:</strong>
+<ul><li><code>provider</code> pattern: <code>^[a-z][a-z0-9_-]{0,63}$</code></li>
+<li><code>source: "env"</code> id pattern: <code>^[A-Z][A-Z0-9_]{0,127}$</code></li>
+<li><code>source: "file"</code> id: absolute JSON pointer (e.g., <code>/providers/openai/apiKey</code>)</li>
+<li><code>source: "exec"</code> id pattern: <code>^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$</code></li>
+<li><code>source: "exec"</code> ids must NOT contain <code>.</code> or <code>..</code> path segments</li>
+</ul>
+<strong>Secret providers:</strong>
+<pre><code>{
+  secrets: {
+    providers: {
+      default: { source: "env" },
+      filemain: { source: "file", path: "~/.openclaw/secrets.json", mode: "json" },
+      vault: { source: "exec", command: "/usr/local/bin/openclaw-vault-resolver", passEnv: ["PATH", "VAULT_ADDR"] },
+    },
+    defaults: { env: "default", file: "filemain", exec: "vault" },
+  },
+}
+</code></pre>
+<strong>Resolution behavior:</strong>
+<ul><li>Secret refs resolved at activation time into an in-memory snapshot</li>
+<li>Request paths read the snapshot only (not re-resolved on every access)</li>
+<li>Active-surface filtering: unresolved refs on enabled surfaces fail startup/reload</li>
+<li>Inactive surfaces skipped with diagnostics</li>
+</ul>
+<h3>Auth Profiles</h3>
+<pre><code>{
+  auth: {
+    profiles: {
+      "anthropic:default": { provider: "anthropic", mode: "api_key" },
+      "openai-codex:personal": { provider: "openai-codex", mode: "oauth" },
+    },
+    order: {
+      anthropic: ["anthropic:default", "anthropic:work"],
+      "openai-codex": ["openai-codex:personal"],
+    },
+    cooldowns: {
+      billingBackoffHours: 5,
+      billingMaxHours: 24,
+      authPermanentBackoffMinutes: 10,
+      // ... more cooldowns
+    },
+  },
+}
+</code></pre>
+<ul><li>Per-agent profiles stored at <code><agentDir>/auth-profiles.json</code></li>
+<li>OAuth-mode profiles do NOT support SecretRef-backed auth-profile credentials</li>
+<li>Legacy OAuth imports from <code>~/.openclaw/credentials/oauth.json</code></li>
+</ul>
+<h3>Agent Configuration</h3>
+<pre><code>{
+  agents: {
+    defaults: {
+      workspace: "~/.openclaw/workspace",
+      model: { primary: "anthropic/claude-sonnet-4-6", fallbacks: ["openai/gpt-5.4"] },
+      models: {
+        "anthropic/claude-sonnet-4-6": { alias: "Sonnet" },
+        "openai/gpt-5.4": { alias: "GPT" },
+      },
+      skills: ["github", "weather"],
+      memorySearch: { provider: "openai", model: "text-embedding-3-small" },
+      sandbox: { mode: "non-main", scope: "agent" },
+      heartbeat: { every: "30m", target: "last" },
+      imageMaxDimensionPx: 1200,
+    },
+    list: [
+      { id: "main" },
+      { id: "writer", skills: ["docs-search"] },
+      { id: "locked-down", skills: [] },
+    ],
+  },
+}
+</code></pre>
+<h3>Channel Configuration</h3>
+<p>Each channel starts automatically when its config section exists (unless <code>enabled: false</code>):</p>
+<pre><code>{
+  channels: {
+    telegram: {
+      enabled: true,
+      botToken: "123:abc",
+      dmPolicy: "pairing",
+      allowFrom: ["tg:123"],
+      groups: { "<em>": { requireMention: true } },
+    },
+    discord: {
+      enabled: true,
+      token: "your-bot-token",
+      dmPolicy: "pairing",
+      allowFrom: ["1234567890"],
+      guilds: { "123456789012345678": { slug: "my-guild" } },
+    },
+    whatsapp: {
+      dmPolicy: "pairing",
+      allowFrom: ["+15555550123"],
+    },
+  },
+}
+</code></pre>
+<strong>DM policies:</strong> <code>pairing</code> (default) | <code>allowlist</code> | <code>open</code> | <code>disabled</code>
+<strong>Group policies:</strong> <code>allowlist</code> (default) | <code>open</code> | <code>disabled</code>
+<h3>Skills Configuration</h3>
+<pre><code>{
+  skills: {
+    allowBundled: ["gemini", "peekaboo"],
+    load: {
+      extraDirs: ["~/Projects/agent-scripts/skills"],
+      watch: true,
+      watchDebounceMs: 250,
+    },
+    install: {
+      preferBrew: true,
+      nodeManager: "npm",
+    },
+    entries: {
+      "image-lab": { enabled: true, apiKey: { source: "env", provider: "default", id: "GEMINI_API_KEY" } },
+      peekaboo: { enabled: true },
+      sag: { enabled: false },
+    },
+  },
+}
+</code></pre>
+<h3>Cron Configuration</h3>
+<pre><code>{
+  cron: {
+    enabled: true,
+    maxConcurrentRuns: 2,
+    sessionRetention: "24h",
+    runLog: { maxBytes: "2mb", keepLines: 2000 },
+    retry: {
+      maxAttempts: 3,
+      backoffMs: [30000, 60000, 300000],
+      retryOn: ["rate_limit", "overloaded", "network", "timeout", "server_error"],
+    },
+    failureAlert: { enabled: false, after: 3, cooldownMs: 3600000 },
+    failureDestination: { mode: "announce", channel: "last" },
+  },
+}
+</code></pre>
+<h3>Hooks Configuration</h3>
+<pre><code>{
+  hooks: {
+    internal: {
+      enabled: true,
+      entries: {
+        "session-memory": { enabled: true },
+        "command-logger": { enabled: false },
+        "bootstrap-extra-files": { enabled: true, paths: ["packages/</em>/AGENTS.md"] },
+      },
+      load: {
+        extraDirs: ["/path/to/more/hooks"],
+      },
+    },
+  },
+}
+</code></pre>
+<h3>Logging Configuration</h3>
+<pre><code>{
+  logging: {
+    level: "info",
+    file: "/tmp/openclaw/openclaw.log",
+    consoleLevel: "info",
+    consoleStyle: "pretty",
+    redactSensitive: "tools",
+    redactPatterns: ["\\bTOKEN\\b\\s<em>[=:]\s</em>(['\"]?)([^\s'\"]+)\1"],
+  },
+}
+</code></pre>
+<p>Default log file: <code>/tmp/openclaw/openclaw-YYYY-MM-DD.log</code>
+Max file size: 500 MB (524288000 bytes), then writes suppressed</p>
+<h3>Diagnostics + OTEL</h3>
+<pre><code>{
+  diagnostics: {
+    enabled: true,
+    flags: ["telegram.<em>"],
+    stuckSessionWarnMs: 30000,
+    otel: {
+      enabled: false,
+      endpoint: "https://otel-collector.example.com:4318",
+      protocol: "http/protobuf",
+      serviceName: "openclaw-gateway",
+      traces: true,
+      metrics: true,
+    },
+    cacheTrace: { enabled: false, filePath: "~/.openclaw/logs/cache-trace.jsonl" },
+  },
+}
+</code></pre>
+<h3>Config Editing Methods</h3>
+| Method | Command/Action |
+|--------|----------------|
+| <strong>Interactive wizard</strong> | <code>openclaw onboard</code> or <code>openclaw configure</code> |
+| <strong>CLI one-liners</strong> | <code>openclaw config get/set/unset</code> |
+| <strong>Control UI</strong> | http://127.0.0.1:18789 → Config tab |
+| <strong>Direct edit</strong> | Edit <code>~/.openclaw/openclaw.json</code> directly |
+<strong>CLI examples:</strong>
+<pre><code>openclaw config get agents.defaults.workspace
+openclaw config set agents.defaults.heartbeat.every "2h"
+openclaw config unset plugins.entries.brave.config.webSearch.apiKey
+</code></pre>
+<h3>Control UI Config Tab</h3>
+<ul><li>Renders a form from the live config schema</li>
+<li>Includes field <code>title</code>/<code>description</code> docs metadata</li>
+<li>Plugin and channel schemas merged when available</li>
+<li>Raw JSON editor as escape hatch</li>
+<li><code>config.schema.lookup</code> for drill-down tooling</li>
+</ul>
+<hr>
+<h2>3. USES — Practical Applications</h2>
+<h3>Common Config Tasks</h3>
+| Task | Config Section | Key Fields |
+|------|---------------|------------|
+| <strong>Connect a channel</strong> | <code>channels.<provider></code> | <code>enabled</code>, <code>botToken</code>/<code>token</code>, <code>dmPolicy</code>, <code>allowFrom</code> |
+| <strong>Set default model</strong> | <code>agents.defaults.model</code> | <code>primary</code>, <code>fallbacks[]</code>, <code>models{}</code> |
+| <strong>Configure memory search</strong> | <code>agents.defaults.memorySearch</code> | <code>provider</code>, <code>model</code>, <code>query.hybrid</code>, <code>query.mmr</code> |
+| <strong>Set up skills</strong> | <code>skills</code> + <code>agents.defaults.skills</code> | <code>entries{}</code>, <code>load.extraDirs</code>, per-agent <code>skills[]</code> |
+| <strong>Enable sandboxing</strong> | <code>agents.defaults.sandbox</code> | <code>mode: "non-main"|"all"</code>, <code>scope: "agent"|"session"</code> |
+| <strong>Configure cron jobs</strong> | <code>cron</code> | <code>enabled</code>, <code>maxConcurrentRuns</code>, <code>sessionRetention</code> |
+| <strong>Control logging</strong> | <code>logging</code> | <code>level</code>, <code>file</code>, <code>consoleStyle</code>, <code>redactSensitive</code> |
+| <strong>Set up secrets</strong> | <code>secrets.providers</code> | <code>source</code>, <code>path</code>/<code>command</code>, <code>passEnv</code> |
+| <strong>Configure auth profiles</strong> | <code>auth.profiles</code> | <code>provider</code>, <code>mode: "api_key"|"oauth"</code> |
+| <strong>Enable OTEL telemetry</strong> | <code>diagnostics.otel</code> | <code>enabled</code>, <code>endpoint</code>, <code>protocol</code>, <code>headers</code> |
+<h3>Config-Based Access Control</h3>
+<strong>Per-channel DM policy:</strong>
+<ul><li><code>pairing</code> (default): unknown senders get one-time pairing code; owner approves</li>
+<li><code>allowlist</code>: only senders in <code>allowFrom</code> (or paired allow store)</li>
+<li><code>open</code>: allow all DMs (requires <code>allowFrom: ["</em>"]</code>)</li>
+<li><code>disabled</code>: ignore all DMs</li>
+</ul>
+<strong>Per-channel group policy:</strong>
+<ul><li><code>allowlist</code> (default): only groups matching configured allowlist</li>
+<li><code>open</code>: bypass group allowlists (mention-gating still applies)</li>
+<li><code>disabled</code>: block all group/room messages</li>
+</ul>
+<strong>Per-agent skill allowlists:</strong>
+<pre><code>{
+  agents: {
+    defaults: { skills: ["github", "weather"] },
+    list: [
+      { id: "writer" },           // inherits defaults → github, weather
+      { id: "docs", skills: ["docs-search"] },  // replaces defaults
+      { id: "locked-down", skills: [] },        // no skills
+    ],
+  },
+}
+</code></pre>
+<h3>Model Configuration</h3>
+<pre><code>{
+  agents: {
+    defaults: {
+      model: {
+        primary: "anthropic/claude-sonnet-4-6",
+        fallbacks: ["openai/gpt-5.4"],
+      },
+      models: {
+        "anthropic/claude-sonnet-4-6": { alias: "Sonnet" },
+        "openai/gpt-5.4": { alias: "GPT" },
+      },
+    },
+  },
+}
+</code></pre>
+<strong>Model refs:</strong> <code>provider/model</code> format (e.g., <code>anthropic/claude-opus-4-6</code>)
+<strong>Model catalog:</strong> <code>agents.defaults.models</code> acts as allowlist for <code>/model</code>
+<h3>Memory Search Configuration</h3>
+<pre><code>{
+  agents: {
+    defaults: {
+      memorySearch: {
+        provider: "openai",        // auto-detected if omitted
+        model: "text-embedding-3-small",
+        fallback: "none",
+        remote: { baseUrl, apiKey, headers },
+        query: {
+          hybrid: { vectorWeight: 0.7, textWeight: 0.3, mmr: { enabled: true, lambda: 0.7 } },
+          temporalDecay: { enabled: true, halfLifeDays: 30 },
+        },
+        extraPaths: ["../team-docs"],
+      },
+    },
+  },
+}
+</code></pre>
+<h3>Cron Job Configuration</h3>
+<pre><code>{
+  cron: {
+    enabled: true,
+    maxConcurrentRuns: 2,
+    sessionRetention: "24h",
+    runLog: { maxBytes: "2mb", keepLines: 2000 },
+    retry: { maxAttempts: 3, backoffMs: [30000, 60000, 300000] },
+    failureAlert: { enabled: true, after: 3, cooldownMs: 3600000, mode: "announce" },
+    failureDestination: { mode: "announce", channel: "last" },
+  },
+}
+</code></pre>
+<h3>Secrets Management Setup</h3>
+<pre><code>{
+  secrets: {
+    providers: {
+      default: { source: "env" },
+      vault: { source: "exec", command: "/usr/local/bin/vault-resolver", passEnv: ["VAULT_ADDR"] },
+    },
+  },
+}
+</code></pre>
+<h3>Split Config with $include</h3>
+<pre><code>// ~/.openclaw/openclaw.json
+{
+  gateway: { port: 18789 },
+  agents: { $include: "./agents.json5" },
+  channels: { $include: ["./channels/telegram.json5", "./channels/discord.json5"] },
+}
+</code></pre>
+<hr>
+<h2>4. PROBLEMS — Known Issues & Limitations</h2>
+<h3>Strict Validation = All-or-Nothing</h3>
+<strong>Problem:</strong> OpenClaw ONLY accepts configs that fully match the schema. Unknown keys, malformed types, or invalid values cause the Gateway to <strong>refuse to start</strong>.
+<strong>Impact:</strong> 
+<ul><li>Gateway won't boot if config has ANY error</li>
+<li>Only diagnostic commands work (<code>openclaw doctor</code>, <code>openclaw logs</code>, <code>openclaw health</code>, <code>openclaw status</code>)</li>
+</ul>
+<strong>Mitigation:</strong>
+<ul><li>Run <code>openclaw doctor</code> to see exact issues</li>
+<li>Run <code>openclaw doctor --fix</code> (or <code>--yes</code>) to apply repairs</li>
+<li>Always validate locally before deploying</li>
+</ul>
+<h3>No Partial Config Hot-Reload</h3>
+<strong>Problem:</strong> Some config changes require full Gateway restart to take effect.
+<strong>Affected areas:</strong>
+<ul><li>Hook handlers (must restart to reload handlers)</li>
+<li>Plugin enable/disable (some require restart)</li>
+<li>Skill binary requirements (checked at load time)</li>
+</ul>
+<strong>Not affected:</strong>
+<ul><li>Most channel configs (hot reloaded)</li>
+<li>Logging levels (hot reloaded)</li>
+<li>Cron settings (hot reloaded)</li>
+</ul>
+<h3>SecretRef Complexity</h3>
+<strong>Problem:</strong> SecretRef system is powerful but complex to configure correctly.
+<strong>Issues:</strong>
+<ul><li>Id patterns have strict validation (env: <code>^[A-Z][A-Z0-9_]{0,127}$</code>, exec: no <code>.</code> or <code>..</code>)</li>
+<li>Secret refs resolved at activation time only — not re-resolved on every access</li>
+<li>Inactive surfaces skipped but can cause confusion</li>
+<li>No SecretRef support for OAuth-mode auth profile credentials</li>
+</ul>
+<h3>Config Schema Drift</h3>
+<strong>Problem:</strong> <code>docs/</code> config references can drift from actual schema.
+<strong>Detection:</strong>
+<ul><li><code>pnpm config:docs:check</code> detects drift between docs-facing config baseline and current schema surface</li>
+<li><code>pnpm config:docs:gen</code> regenerates docs baseline</li>
+</ul>
+<strong>Mitigation:</strong> Run <code>pnpm config:docs:check</code> regularly in CI/CD
+<h3>No Config Validation in CI by Default</h3>
+<strong>Problem:</strong> Schema validation only runs at Gateway startup.
+<strong>Gap:</strong> No built-in <code>openclaw config validate</code> command for pre-deployment validation.
+<strong>Workaround:</strong> Use <code>pnpm config:docs:check</code> or start Gateway in diagnostic mode
+<h3>Config Includes Path Security</h3>
+<strong>Problem:</strong> <code>$include</code> paths must stay inside config directory.
+<strong>Restriction:</strong> <code>../</code> forms only allowed when still resolving inside config directory boundary.
+<strong>Impact:</strong> Cannot include files from outside <code>~/.openclaw/</code>
+<h3>Skill Env Injection Scope</h3>
+<strong>Problem:</strong> <code>skills.entries.<em>.env</code> and <code>skills.entries.</em>.apiKey</code> inject secrets into <strong>host</strong> process for agent turn, NOT the sandbox.
+<strong>Impact:</strong> 
+<ul><li>Sandboxed runs don't inherit these env vars</li>
+<li>Must use <code>agents.defaults.sandbox.docker.env</code> or bake into custom image</li>
+<li>Security risk if skill env vars contain sensitive data that could leak</li>
+</ul>
+<h3>Secret Storage Gap</h3>
+<strong>Problem:</strong> No built-in encrypted secrets storage.
+<strong>Available options:</strong>
+<ul><li><code>source: "env"</code> — environment variables</li>
+<li><code>source: "file"</code> — JSON file (not encrypted by default)</li>
+<li><code>source: "exec"</code> — external vault/exec resolver</li>
+</ul>
+<strong>Gap:</strong> No native HashiCorp Vault, AWS Secrets Manager, or similar integration built-in
+<h3>Auth Profile Per-Agent Storage</h3>
+<strong>Problem:</strong> Per-agent auth profiles stored at <code><agentDir>/auth-profiles.json</code>.
+<strong>Implication:</strong> If agent directory is lost/corrupted, auth profiles for that agent are lost
+<h3>Large Log File = Silent Failure</h3>
+<strong>Problem:</strong> When <code>logging.file</code> exceeds <code>maxFileBytes</code> (default 500MB), writes are <strong>silently suppressed</strong>.
+<strong>Impact:</strong> No logging after limit hit — hard to debug
+<strong>Mitigation:</strong> Use external log rotation for production
+<hr>
+<h2>5. SOLUTIONS — Best Practices & Workarounds</h2>
+<h3>Best Practice: Validate Before Deploy</h3>
+<pre><code><h1>Always run doctor before restarting gateway</h1>
+openclaw doctor
+<h1>Apply fixes automatically</h1>
+openclaw doctor --fix --yes
+</code></pre>
+<h3>Best Practice: Use Config Includes for Modular Setup</h3>
+<pre><code>// ~/.openclaw/openclaw.json
+{
+  $include: "./base.json5",
+  channels: { $include: "./channels.json5" },
+  agents: { $include: "./agents.json5" },
+}
+</code></pre>
+<strong>Benefit:</strong> Teams can own their slice; reduces merge conflicts
+<h3>Best Practice: Use SecretRefs for All Credentials</h3>
+<pre><code>// BAD: plaintext token
+{ channels: { telegram: { botToken: "123:abc" } } }
+<p>// GOOD: SecretRef
+{ 
+  channels: { 
+    telegram: { 
+      botToken: { source: "env", provider: "default", id: "TELEGRAM_BOT_TOKEN" } 
+    } 
+  } 
+}
+</code></pre></p>
+<h3>Best Practice: Hot Reload-Friendly Changes</h3>
+<strong>Changes that apply without restart:</strong>
+<ul><li>Channel config tweaks</li>
+<li>Logging level changes</li>
+<li>Cron job config</li>
+<li>Model fallbacks</li>
+<li>Skill enable/disable</li>
+</ul>
+<strong>Changes requiring restart:</strong>
+<ul><li>New hooks</li>
+<li>Plugin enable/disable</li>
+<li>Sandbox mode changes</li>
+<li>Skills with binary requirements</li>
+</ul>
+<h3>Best Practice: Config Backup + Version Control</h3>
+<pre><code><h1>Backup before editing</h1>
+cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.backup-$(date +%Y%m%d)
+<h1>Use git</h1>
+cd ~/.openclaw && git init && git add openclaw.json
+</code></pre>
+<h3>Best Practice: Use Control UI for Exploration</h3>
+<ul><li>Navigate to http://127.0.0.1:18789</li>
+<li>Use Config tab form view (validates as you fill)</li>
+<li>Switch to Raw JSON for direct editing</li>
+<li>Uses live schema with field documentation</li>
+</ul>
+<h3>Best Practice: Monitor Log Size</h3>
+<pre><code><h1>Check current log size</h1>
+ls -lh /tmp/openclaw/openclaw-<em>.log
+<h1>Set up external rotation (example: logrotate)</h1>
+<h1>/etc/logrotate.d/openclaw</h1>
+/tmp/openclaw/openclaw-</em>.log {
+  daily
+  rotate 7
+  compress
+  delaycompress
+  missingok
+  notifempty
+}
+</code></pre>
+<h3>Best Practice: Sandbox Skill Secrets</h3>
+<p>For sandboxed runs with skill env vars:</p>
+<pre><code>{
+  agents: {
+    defaults: {
+      sandbox: {
+        mode: "non-main",
+        scope: "agent",
+        docker: {
+          env: {
+            GEMINI_API_KEY: "from-host-env-or-secrets",
+          },
+        },
+      },
+    },
+  },
+}
+</code></pre>
+<h3>Best Practice: Schema Validation in CI</h3>
+<pre><code><h1>.github/workflows/openclaw-config.yml</h1>
+<ul><li>name: Validate OpenClaw config</li>
+</ul>  run: |
+    openclaw doctor || openclaw doctor --fix
+    pnpm config:docs:check
+</code></pre>
+<h3>Best Practice: Use allowBundled for Controlled Skill Sets</h3>
+<pre><code>{
+  skills: {
+    allowBundled: ["github", "weather", "docs-search"],
+  },
+  agents: {
+    defaults: {
+      skills: ["github", "weather"],
+    },
+  },
+}
+</code></pre>
+<strong>Effect:</strong> Only listed bundled skills eligible; workspace/managed skills unaffected
+<h3>Workaround: Config Edit Without Restart</h3>
+<p>For changes that SHOULD hot-reload but don't:</p>
+<ul><li>Edit <code>~/.openclaw/openclaw.json</code></li>
+<li>Wait for file watcher detection</li>
+<li>If no effect: <code>openclaw gateway restart</code></li>
+</ul>
+<h3>Workaround: Diagnose Config Issues</h3>
+<pre><code><h1>Full diagnostic</h1>
+openclaw doctor
+<h1>Check specific config section</h1>
+openclaw config get agents.defaults
+<h1>Print full schema</h1>
+openclaw config schema
+</code></pre>
+<hr>
+<h2>6. EDGE CASES — Unusual Scenarios</h2>
+<h3>Edge Case 1: Circular $include</h3>
+<strong>Scenario:</strong> Config A includes B, B includes A
+<strong>Behavior:</strong> Clear error message with circular include detection
+<strong>Impact:</strong> Config fails to load
+<h3>Edge Case 2: $include Outside Config Directory</h3>
+<strong>Scenario:</strong> <code>$include: "../other-config.json5"</code>
+<strong>Behavior:</strong> Resolves only if still inside <code>~/.openclaw/</code> directory boundary
+<strong>Impact:</strong> If <code>../</code> escapes boundary, load fails with clear error
+<h3>Edge Case 3: Unknown Keys in Config</h3>
+<strong>Scenario:</strong> Accidental typo or deprecated key
+<strong>Behavior:</strong> Gateway REFUSES to start (strict validation)
+<strong>Impact:</strong> Only diagnostic commands work; must fix with <code>openclaw doctor --fix</code>
+<h3>Edge Case 4: Schema Mismatch After Upgrade</h3>
+<strong>Scenario:</strong> Upgraded OpenClaw; new required fields or changed types
+<strong>Behavior:</strong> Config no longer valid against new schema
+<strong>Impact:</strong> Gateway won't start; <code>openclaw doctor</code> shows exact issues
+<h3>Edge Case 5: SecretRef to Missing Env Var</h3>
+<strong>Scenario:</strong> <code>{ source: "env", provider: "default", id: "NONEXISTENT_VAR" }</code>
+<strong>Behavior:</strong> Fails at activation time for enabled surfaces; inactive surfaces skip with diagnostics
+<strong>Impact:</strong> Gateway may fail to start if secret is for enabled component
+<h3>Edge Case 6: Concurrent Config Writes</h3>
+<strong>Scenario:</strong> Multiple processes writing to <code>openclaw.json</code> simultaneously
+<strong>Behavior:</strong> No locking mechanism; last write wins
+<strong>Impact:</strong> Potential config corruption or lost changes
+<strong>Mitigation:</strong> Use atomic write pattern (write to temp file, then rename)
+<h3>Edge Case 7: Log File Size Limit Hit</h3>
+<strong>Scenario:</strong> <code>logging.file</code> grows past <code>maxFileBytes</code> (500MB default)
+<strong>Behavior:</strong> Writes silently suppressed; no logging after limit
+<strong>Impact:</strong> Hard to debug — appears as if logging stopped
+<strong>Mitigation:</strong> External log rotation; monitor file sizes
+<h3>Edge Case 8: Skills Watcher + Rapid Edits</h3>
+<strong>Scenario:</strong> Rapidly editing <code>SKILL.md</code> files
+<strong>Behavior:</strong> <code>watchDebounceMs</code> (default 250ms) debounces reloads
+<strong>Impact:</strong> May miss changes or reload multiple times
+<h3>Edge Case 9: Per-Agent Skills Override</h3>
+<strong>Scenario:</strong> <code>{ id: "writer", skills: ["docs-search"] }</code> (no skills property inherits)
+<strong>Behavior:</strong> Explicit <code>skills[]</code> list REPLACES defaults (does not merge)
+<strong>Impact:</strong> Agent has NO skills unless explicitly listed
+<strong>Mitigation:</strong> Always include all needed skills in explicit list
+<h3>Edge Case 10: Auth Profile OAuth + SecretRef</h3>
+<strong>Scenario:</strong> <code>{ provider: "openai-codex", mode: "oauth" }</code> with SecretRef credential
+<strong>Behavior:</strong> OAuth-mode profiles do NOT support SecretRef-backed credentials
+<strong>Impact:</strong> Must use other auth mechanism for OAuth providers
+<h3>Edge Case 11: Nested $include Depth</h3>
+<strong>Scenario:</strong> 10+ levels of nested <code>$include</code>
+<strong>Behavior:</strong> Error after 10 levels of nesting
+<strong>Impact:</strong> Cannot modularize beyond 10 levels
+<h3>Edge Case 12: Hot Reload of Hooks</h3>
+<strong>Scenario:</strong> Edit hook handler while Gateway running
+<strong>Behavior:</strong> Hook changes NOT picked up without restart
+<strong>Impact:</strong> Must restart Gateway for hook changes
+<strong>Note:</strong> This is a known limitation; workspace hook enable/disable may also need restart
+<h3>Edge Case 13: Config Secrets in Logs</h3>
+<strong>Scenario:</strong> <code>logging.redactSensitive: "tools"</code> only redact tools calls
+<strong>Behavior:</strong> Other log lines may contain config values with secrets
+<strong>Impact:</strong> Potential secret exposure in logs
+<strong>Mitigation:</strong> <code>redactPatterns</code> for additional patterns; avoid logging raw config
+<h3>Edge Case 14: Skills Watcher Disabled</h3>
+<strong>Scenario:</strong> <code>skills.load.watch: false</code>
+<strong>Behavior:</strong> Skill changes require new session to take effect
+<strong>Impact:</strong> Development workflow slower
+<strong>Mitigation:</strong> Enable watcher during development
+<h3>Edge Case 15: Sandbox + Skills Binary Requirements</h3>
+<strong>Scenario:</strong> Skill requires <code>bins: ["uv"]</code> but sandbox container doesn't have it
+<strong>Behavior:</strong> Skill not eligible in sandboxed runs
+<strong>Impact:</strong> Works on host, fails in sandbox
+<strong>Mitigation:</strong> Use <code>agents.defaults.sandbox.docker.setupCommand</code> to install binaries in container
+<hr>
+<h2>7. NEW QUESTIONS OPENED BY THIS RESEARCH</h2>
+<h3>a) Definition & Scope</h3>
+<ul><li>[ ] What is exact validation difference between "strict" schema and "lenient" fallback? <strong>[MED]</strong></li>
+<li>[ ] Can <code>$include</code> paths use symlinks? <strong>[LOW]</strong></li>
+<li>[ ] What happens when two <code>$include</code> files define the same top-level key? <strong>[MED]</strong></li>
+</ul>
+<h3>b) Internal Mechanics</h3>
+<ul><li>[ ] Does <code>openclaw config schema</code> include plugin/channel schemas dynamically? <strong>[HIGH]</strong></li>
+<li>[ ] What is exact order of <code>$include</code> merge (depth-first vs breadth-first)? <strong>[MED]</strong></li>
+<li>[ ] Can SecretRef resolve from other SecretRef? <strong>[MED]</strong></li>
+<li>[ ] What is the <code>config.schema.lookup</code> output format exactly? <strong>[LOW]</strong></li>
+</ul>
+<h3>c) Security</h3>
+<ul><li>[ ] Is there a built-in config audit log (who changed what)? <strong>[HIGH]</strong></li>
+<li>[ ] Can malicious <code>$include</code> file escape directory boundary via symlink? <strong>[HIGH]</strong></li>
+<li>[ ] Does <code>logging.redactPatterns</code> regex support有什么限制？ <strong>[MED]</strong></li>
+<li>[ ] Are auth profiles encrypted at rest in <code><agentDir>/auth-profiles.json</code>? <strong>[MED]</strong></li>
+<li>[ ] Can a compromised config overwrite gateway-level security settings? <strong>[HIGH]</strong></li>
+</ul>
+<h3>d) Performance</h3>
+<ul><li>[ ] What is the memory impact of large <code>openclaw.json</code> with many <code>$include</code> files? <strong>[LOW]</strong></li>
+<li>[ ] Does hot reload watch every <code>$include</code> file or just main config? <strong>[MED]</strong></li>
+<li>[ ] What is the startup time impact of many secrets to resolve? <strong>[LOW]</strong></li>
+</ul>
+<h3>e) Tools & Automation</h3>
+<ul><li>[ ] Can <code>openclaw config</code> CLI export config as SecretRef-free (for sharing)? <strong>[MED]</strong></li>
+<li>[ ] Is there an <code>openclaw config diff</code> command to compare configs? <strong>[MED]</strong></li>
+<li>[ ] Can <code>openclaw config validate</code> be run without starting Gateway? <strong>[MED]</strong></li>
+<li>[ ] Does <code>pnpm config:docs:check</code> run in CI automatically? <strong>[LOW]</strong></li>
+</ul>
+<h3>f) Integrations</h3>
+<ul><li>[ ] Can <code>$include</code> pull from remote URLs (http/https)? <strong>[MED]</strong></li>
+<li>[ ] Is there a Vault provider template for secrets resolution? <strong>[MED]</strong></li>
+<li>[ ] Can <code>auth.profiles</code> use SecretRef for <code>api_key</code> mode? <strong>[HIGH]</strong></li>
+<li>[ ] Are there channel-specific config <code>$include</code> patterns? <strong>[LOW]</strong></li>
+</ul>
+<h3>g) Skills Config</h3>
+<ul><li>[ ] Can workspace skills override bundled skill binary requirements? <strong>[MED]</strong></li>
+<li>[ ] What is exact precedence when skill exists in multiple locations? <strong>[HIGH]</strong></li>
+<li>[ ] Can skills be dynamically enabled/disabled without restart? <strong>[MED]</strong></li>
+<li>[ ] Does skills watcher handle rapid multi-file edits correctly? <strong>[MED]</strong></li>
+</ul>
+<h3>h) Troubleshooting</h3>
+<ul><li>[ ] What is the exact error message for "schema validation failed"? <strong>[LOW]</strong></li>
+<li>[ ] How to recover from corrupted <code>openclaw.json</code>? <strong>[MED]</strong></li>
+<li>[ ] Does <code>openclaw doctor --fix</code> ever make things worse? <strong>[MED]</strong></li>
+<li>[ ] Can Gateway start with ONLY <code>$schema</code> key (all other config omitted)? <strong>[MED]</strong></li>
+</ul>
+<h3>i) Edge Cases</h3>
+<ul><li>[ ] What happens when <code>maxFileBytes</code> is set to 0? <strong>[MED]</strong></li>
+<li>[ ] Can config hot reload trigger infinite restart loop? <strong>[MED]</strong></li>
+<li>[ ] What is interaction between <code>skills.allowBundled</code> and per-agent <code>skills[]</code> allowlists? <strong>[HIGH]</strong></li>
+<li>[ ] Does config merge preserve ordering of array items? <strong>[MED]</strong></li>
+</ul>
+<hr>
+<h2>8. SOURCES</h2>
+<h3>Primary Sources (OpenClaw Docs)</h3>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/gateway/configuration-reference.md</code> — Full field-level config reference (3742 lines)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/gateway/configuration.md</code> — Task-oriented config overview</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/gateway/configuration-examples.md</code> — Complete copy-paste configs</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills-config.md</code> — Skills config schema + examples</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skills loading, precedence, gating rules</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/creating-skills.md</code> — Building custom skills</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/reference/memory-config.md</code> — Memory search config reference</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/cli/config.md</code> — CLI config commands</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/cli/configure.md</code> — Interactive config wizard</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Hooks (related config under <code>hooks.internal</code>)</li>
+</ul>
+<h3>Internal Sources (from this workspace)</h3>
+<ul><li><code>Research/OpenClaw/index.md</code> — Research index showing L26: OpenClaw Config System as pending</li>
+<li><code>Research/OpenClaw/findings/openclaw-hooks-system.md</code> — Hooks system (related config under <code>hooks.internal</code>)</li>
+<li><code>Research/OpenClaw/findings/extension-security-model.md</code> — Extension security model (related to secrets/config access)</li>
+</ul>
+<h3>Key Findings Summary</h3>
+| Aspect | Finding |
+|--------|---------|
+| Config format | JSON5, strict schema validation, unknown keys fail startup |
+| Config location | <code>~/.openclaw/openclaw.json</code> |
+| Hot reload | Yes, Gateway watches file; some changes need restart |
+| Includes | <code>$include</code> with deep-merge, up to 10 levels, must stay in config dir |
+| SecretRef | 3 sources: env/file/exec; resolved at activation, not per-request |
+| Schema tooling | <code>openclaw config schema</code>, <code>config.schema.lookup</code>, <code>pnpm config:docs:check</code> |
+| Per-agent config | <code>agents.list[].skills[]</code> replaces defaults (doesn't merge) |
+| Skills locations | 6 locations with precedence: workspace > .agents > ~/.agents > ~/.openclaw > bundled > extraDirs |
+| Logging | Default <code>/tmp/openclaw/openclaw-YYYY-MM-DD.log</code>, 500MB max then silent failure |
+| Auth profiles | Per-agent at <code><agentDir>/auth-profiles.json</code>, OAuth + SecretRef NOT supported |
+| OTEL | Built-in OTEL export via <code>diagnostics.otel</code> config |
+| Control UI | http://127.0.0.1:18789 Config tab with live schema form |
+<hr>
+<em>Research by: Investigador Scout</em>  
+<em>Date: 2026-04-23 03:45 CET</em>  
+<em>Status: COMPLETE</em>
+</body>
+</html>

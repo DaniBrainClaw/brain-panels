@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 8: Reasoning Chain Capabilities</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_8.md</p>
+    <h2>Query</h2>
+"MiniMax M2.7 reasoning chain capabilities"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://computertech.co/minimax-m2-7-review/</li>
+<li>https://www.mindstudio.ai/blog/what-is-minimax-m27-self-evolving-model</li>
+<li>https://artificialanalysis.ai/models/minimax-m2.7</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>M2.7 es un reasoning model nativo</h3>
+<p>No es un modelo separado — tiene chain-of-thought integrado que activa automáticamente en tareas complejas.</p>
+<h3>Características del reasoning</h3>
+<ul><li><strong>Extended thinking / chain-of-thought</strong> — trabaja problemas complejos antes de responder</li>
+<li><strong>No se puede ajustar la profundidad</strong> — todas las tareas (incluso simples) reciben el tratamiento completo</li>
+<li><strong>Genera 87M tokens de output</strong> en la evaluación de Intelligence Index — 4x el promedio</li>
+<li><strong>La verbosidad es inevitable</strong> — no hay modo "fast" con reasoning reducido</li>
+</ul>
+<h3>Comportamiento en coding — deep reading antes de escribir</h3>
+<p>Kilo.ai highlight: M2.7 "reads extensively before writing" — pulling in adjacent files, analyzing dependencies, tracing call chains antes de tocar código.</p>
+<p>Esto llevó a:
+<ul><li>47% pass rate en Kilo Bench (2do lugar entre 89 tareas)</li>
+<li>Resolvió problemas que otros modelos no pudieron</li>
+<li><strong>Pero</strong>: causa timeouts en workflows sensibles al tiempo</li>
+</ul>
+<h3>Speed / reasoning tradeoff</h3></p>
+| Aspect | M2.7 | Promedio reasoning models |
+|--------|------|--------------------------|
+| Speed | 44 TPS | ~110 TPS |
+| TTFT | alto | bajo |
+| Reasoning depth | máximo siempre | ajustable |
+<p>M2.7 no tiene "fast reasoning mode" — si necesitas velocidad, usa el highspeed variant.</p>
+<h3>Self-evolving training — cómo mejora su reasoning</h3>
+<p>El reasoning de M2.7 viene de un proceso de RL donde:
+<ul><li>Un agente autónomo observa training runs</li>
+<li>Detecta failures, diagnosis, aplica fixes</li>
+<li>Recibe feedback basado en si sus intervenciones mejoran el modelo</li>
+<li>El agente se mejora con el tiempo — meta-learning</li>
+</ul>
+Esto es lo que MiniMax claims como "self-evolution" — el modelo participa en mejorar su propio training.</p>
+<h3>Benchmark scores relevantes para reasoning</h3>
+| Benchmark | Score | Notes |
+|-----------|-------|-------|
+| GPQA Diamond | 87.4% | Graduate-level scientific reasoning |
+| HLE | 28.1% | Humanity's Last Exam — tareas muy duras |
+| SciCode | 47% | Scientific computing |
+| TerminalBench Hard | 39.4% | Agentic terminal tasks |
+<hr>
+<h2>Resumen reasoning</h2>
+<p>✅ <strong>Excelente para problemas complejos que requieren análisis profundo</strong>
+✅ <strong>Lee y analiza exhaustivamente antes de responder</strong>
+✅ <strong>Resuelve problemas que otros modelos no pueden</strong>
+⚠️ <strong>No hay control sobre profundidad de reasoning</strong>
+⚠️ <strong>Muy lento (44 TPS vs 110 TPS promedio)</strong>
+⚠️ <strong>Verboso — 4x más output que el promedio</strong>
+⚠️ <strong>Puede timeout en workflows de baja latencia</strong></p>
+<strong>Best for</strong>: coding tasks complejos, debugging, análisis profundo
+<strong>Cuidado con</strong>: tasks rápidos, respuestas cortas, workflows time-sensitive
+</body>
+</html>

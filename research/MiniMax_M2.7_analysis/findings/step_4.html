@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 4: Code Generation Performance</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_4.md</p>
+    <h2>Query</h2>
+"MiniMax M2.7 code generation performance"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://kilo.ai/models/minimax-m27</li>
+<li>https://minimaxm27.net/</li>
+<li>https://www.minimax.io/news/minimax-m27-en</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>Coding Benchmarks — Resumen completo</h3>
+| Benchmark | M2.7 | Competitors |
+|-----------|------|-------------|
+| SWE-Pro | 56.22% | ~57% Opus 4.6, 55.6% GPT-5.3 |
+| SWE-bench Verified | 78% | 55% Opus 4.6 |
+| VIBE-Pro (repo-level) | 55.6% | ~Opus 4.6 level |
+| Terminal Bench 2 | 57.0% | 59.1% Claude Code, 54.0% GPT-5.2 |
+| PinchBench | 71.2% | — |
+| GDPval-AA (Office) | ELO 1495 | 1633 Claude Code, 1462 GPT-5.2 |
+<h3>Unique strengths</h3>
+<ul><li><strong>End-to-end project delivery</strong> (VIBE-Pro 55.6%) — no solo isolated patches</li>
+<li><strong>Multilingual coding</strong>: SWE Multilingual 76.5 — genuine cross-language engineering</li>
+<li><strong>Bug hunting</strong>: encuentra bugs que otros modelos no encuentran (89-task Kilo Bench)</li>
+<li><strong>Security audit</strong>: encuentra las 10 vulnerabilidades planted como Opus</li>
+</ul>
+<h3>Real-world test (Kilo Code - 3 TypeScript codebases)</h3>
+| Metric | M2.7 | Claude Opus 4.6 |
+|--------|------|-----------------|
+| Bugs encontrados | 6/6 | 6/6 |
+| Vulnerabilidades encontradas | 10/10 | 10/10 |
+| Tests escritos | 20 (unit) | 41 (integration) |
+| Costo por tarea | $0.27 | $3.67 |
+| Quality ratio | 90% | 100% |
+<strong>M2.7 tuvo fix técnicamente mejor para currency bug</strong> (integer math vs floats).
+<h3>Donde Opus gana en code generation</h3>
+<ul><li><strong>Test coverage</strong>: 41 integration tests vs 20 unit tests</li>
+<li><strong>Architecture</strong>: modular directory structure vs flat</li>
+<li><strong>Rollback logic</strong>: maneja partial failures</li>
+<li><strong>Security fixes</strong>: más completos (rate limiting por endpoint vs single)</li>
+</ul>
+<h3>Coding tool compatibility</h3>
+<ul><li>Claude Code ✅</li>
+<li>Cursor ✅</li>
+<li>Cline ✅</li>
+<li>Codex CLI ✅</li>
+<li>OpenCode ✅</li>
+<li>Roo Code ✅</li>
+<li>Kilo Code ✅</li>
+<li>Droid ✅</li>
+<li>TRAE ✅</li>
+<li>Grok CLI ✅</li>
+</ul>
+<h3>Speed</h3>
+<ul><li>Standard: 45.7 TPS (2.4x más lento que el promedio de su tier)</li>
+<li>Highspeed: claimado 100 TPS (no verificado independientemente)</li>
+</ul>
+<h3>Context window for coding</h3>
+<ul><li>204,800 tokens total (input + output)</li>
+<li>Recommended: mantener input+output dentro de 200K</li>
+<li>Full attention architecture → degrada en contexts largos</li>
+</ul>
+<hr>
+<h2>Resumen</h2>
+<p>M2.7 es <strong>excelente para coding</strong> por costo-beneficio:
+<ul><li>Encuentra todos los bugs que Opus</li>
+<li>Fixes técnicamente correctos</li>
+<li>90% de la calidad por 7% del costo</li>
+</ul>
+<strong>No es ideal para</strong>:
+<ul><li>Proyectos que requieren arquitectura modular (usar Opus)</li>
+<li>Tasks que necesitan muchos tests de integración (usar Opus)</li>
+</ul><li>Vibe-coding / natural language to code (BridgeBench regressed vs M2.5)</li></p>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub + BRAIN Integration — Resumen de Posibilidades</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 INDEX.md</p>
+    <strong>Investigador — 2026-05-16</strong>
+<hr>
+<h2>Qué puedes hacer Dani con tu cuenta GitHub (DaniBrainClaw) + BRAIN en VPS</h2>
+<hr>
+<h2>1. Backup Automático de Configuración de BRAIN</h2>
+<h3>Qué es:</h3>
+BRAIN hace sync automático de sus archivos de configuración a un repo privado en GitHub.
+<h3>Archivos que se respaldan:</h3>
+<ul><li><code>AGENTS.md</code>, <code>SOUL.md</code>, <code>USER.md</code>, <code>MEMORY.md</code>, <code>TOOLS.md</code></li>
+<li>Skills personalizados</li>
+<li>Scripts de automatización</li>
+<li>Daily memory files</li>
+</ul>
+<h3>Por qué:</h3>
+<ul><li><strong>Versioning automático</strong> — cada cambio tiene timestamp</li>
+<li><strong>Rollback</strong> — volver a cualquier versión anterior</li>
+<li><strong> Disaster recovery</strong> — si BRAIN se rompe, restaurar es fácil</li>
+<li><strong>Gratis</strong> — GitHub Free tier es suficiente</li>
+</ul>
+<h3>Setup:</h3>
+<ul><li>Crear repo privado <code>brain-config-backup</code></li>
+<li>BRAIN ejecuta script diario via cron</li>
+<li>Cada día a las 3 AM: sync + commit automático</li>
+</ul>
+<hr>
+<h2>2. GitHub Pages para Presencia Online</h2>
+<h3>Qué es:</h3>
+Usar GitHub Pages para hosting de páginas web estáticas.
+<h3>Usos para Dani:</h3>
+<ul><li><strong>Portfolio profesional</strong> — mostrar servicios de consultoría</li>
+<li><strong>Landing pages</strong> — páginas de venta sin pagar hosting</li>
+<li><strong>Blog técnico</strong> — para Green Axis o Mediterranean Fusion</li>
+<li><strong>Dashboard público</strong> — stats de BRAIN visibles online</li>
+<li><strong>Documentation</strong> — docs de skills y configuración</li>
+</ul>
+<h3>Ventajas:</h3>
+<ul><li>Gratis (excepto dominio custom)</li>
+<li>SSL automático</li>
+<li>CDN global</li>
+<li>Deploy con solo push a git</li>
+</ul>
+<h3>Stack recomendado:</h3>
+<ul><li><strong>Jekyll</strong> — para blogs y documentation (integrado con GitHub)</li>
+<li><strong>Docusaurus</strong> — para API docs</li>
+<li><strong>Carrd.co + GitHub Pages</strong> — landing pages rápidas</li>
+</ul>
+<hr>
+<h2>3. GitHub Actions para Automatización</h2>
+<h3>Qué es:</h3>
+GitHub Actions ejecuta workflows automáticos en respuesta a eventos.
+<h3>Para BRAIN:</h3>
+<ul><li><strong>Health check diario</strong> — verificar que BRAIN responde</li>
+<li><strong>Backup automático</strong> — ejecutar sync a diario</li>
+<li><strong>Test de skills</strong> — antes de instalar nuevo skill, testearlo</li>
+<li><strong>Auto-optimization</strong> — revisión nocturna de archivos</li>
+<li><strong>Alertas</strong> — crear issue si algo falla</li>
+</ul>
+<h3>Ejemplo: Health Check Workflow</h3>
+<pre><code>name: BRAIN Health Check
+on:
+  schedule:
+    - cron: '0 6 <em> </em> <em>'  # 6 AM diario
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check BRAIN
+        run: |
+          curl -s http://localhost:18789/health || exit 1
+      - name: Alert on failure
+        if: failure()
+        run: |
+          # Crear issue en GitHub
+          curl -X POST ...(url de API de GitHub)...
+</code></pre>
+<hr>
+<h2>4. GitHub Agentic Workflows (Nuevo 2026)</h2>
+<h3>Qué es:</h3>
+Escribir tareas en Markdown que GitHub ejecuta con IA.
+<h3>Ejemplo:</h3>
+<pre><code><h1>Review de código de Dani</h1>
+Check the most recent commit in the brain-config repo.
+If there are issues with the AGENTS.md file, summarize them.
+</code></pre>
+<p>GitHub ejecuta un agent de IA para cumplir la tarea automáticamente.</p>
+<h3>Limitaciones:</h3>
+<ul><li>Requiere configuración adicional</li>
+<li>No es necesario para el uso básico de BRAIN</li>
+</ul>
+<hr>
+<h2>5. GitHub como Almacenamiento de Archivos Grandes</h2>
+<h3>Límites Free Tier:</h3>
+| Recurso | Límite |
+|---------|--------|
+| Repo size | 100 GB |
+| Archivo máximo | 100 MB |
+| Git LFS Storage | 10 GB |
+| Git LFS Bandwidth | 10 GB/month |
+| API Requests | 5,000/hour |
+<h3>Recomendación:</h3>
+<ul><li><strong>Archivos de texto/código:</strong> GitHub normal (suficiente para BRAIN)</li>
+<li><strong>Archivos grandes (>100MB):</strong> Usar Git LFS o alternativa (S3, Backblaze)</li>
+<li><strong>Datasets:</strong> No guardar en GitHub, usar cloud storage dedicado</li>
+</ul>
+<hr>
+<h2>6. Backup de Todos los Repos con git-backup</h2>
+<h3>Qué es:</h3>
+Tool que hace backup automático de TODOS tus repos de GitHub y GitLab.
+<h3>Setup:</h3>
+<pre><code><h1>Instalar</h1>
+curl -s https://raw.githubusercontent.com/ChappIO/git-backup/main/install.sh | bash
+<h1>Config (git-backup.yml)</h1>
+github:
+  - job_name: DaniBrainClaw
+    access_token: ghp_XXXXX
+<h1>Ejecutar</h1>
+git-backup -backup.path /path/to/backups
+</code></pre>
+<h3>Lo que hace:</h3>
+<ul><li>Clona todos los repos (propios, starred, collaborator, org member)</li>
+<li>guarda en carpeta local</li>
+<li>Ejecutar via cron para backup automático</li>
+</ul>
+<hr>
+<h2>7. CI/CD Pipeline para AI Agents</h2>
+<h3>Arquitectura:</h3>
+<pre><code>Test → Build → Deploy Staging → Evaluate Agent → Deploy Production
+</code></pre>
+<h3>Para qué:</h3>
+<ul><li>Si BRAIN desarrolla código, testearlo antes de deployar</li>
+<li>Evaluation gate para validar outputs de IA</li>
+<li>Versionado semántico automático</li>
+</ul>
+<h3>No es necesario para:</h3>
+<ul><li>Uso normal de BRAIN como asistente personal</li>
+<li>Solo relevante si BRAIN genera código en producción</li>
+</ul>
+<hr>
+<h2>Resumen de Prioridades</h2>
+| Prioridad | Uso | Esfuerzo | Beneficio |
+|-----------|-----|----------|-----------|
+| 🔴 ALTA | Backup automático de config | Bajo | Alto |
+| 🟠 MEDIA | GitHub Pages (portfolio/landing) | Medio | Medio |
+| 🟡 BAJA | GitHub Actions (health check) | Bajo | Medio |
+| 🟡 BAJA | git-backup (todos los repos) | Medio | Medio |
+| ⚪ OPCIONAL | Agentic Workflows | Alto | Bajo |
+<hr>
+<h2>Empezar Hoy</h2>
+<h3>Paso 1: Crear repo de backup</h3>
+<pre><code><h1>En tu máquina local o VPS</h1>
+mkdir -p ~/DaniBrainClaw/brain-config-backup
+cd ~/DaniBrainClaw/brain-config-backup
+git init
+git remote add origin https://github.com/DaniBrainClaw/brain-config-backup.git
+</code></pre>
+<h3>Paso 2: Script de sync</h3>
+<pre><code>#!/bin/bash
+<h1>sync-brain-config.sh</h1>
+cd ~/DaniBrainClaw/brain-config-backup
+rsync -av --exclude='node_modules' --exclude='</em>.log' ~/.openclaw/ .
+git add -A
+git commit -m "Auto-backup: $(date '+%Y-%m-%d %H:%M:%S')"
+git push origin main
+</code></pre>
+<h3>Paso 3: Automatizar con cron</h3>
+<pre><code><h1>crontab -e</h1>
+0 3 <em> </em> <em> ~/DaniBrainClaw/sync-brain-config.sh
+</code></pre>
+<hr>
+<h2>Archivos del Investigación</h2>
+<pre><code>Research/GitHub_BRAIN_Integration/
+├── sources.md         # 32 fuentes documentadas
+├── INDEX.md           # Este archivo
+├── SUMMARY_DANI.md    # Resumen ejecutivo en español
+└── findings/
+    ├── step_1.md      # Backup system (OpenClaw + GitHub)
+    ├── step_2.md      # CI/CD para AI agents
+    ├── step_3.md      # GitHub Pages más allá de static sites
+    ├── step_4.md      # git-backup y herramientas
+    └── step_5.md      # Límites de API y storage
+</code></pre>
+<hr>
+</em>Investigador — Investigación completada.*
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUMMARY_DANI — Auditoría Web del Grupo Mediterranean Fusion</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 SUMMARY_DANI.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<strong>Auditada por:</strong> Investigador
+<strong>Tiempo de investigación:</strong> ~45 minutos
+<strong>Webs auditadas:</strong> 7 de 8 (fusionhouse.es reported as down)
+<hr>
+<h2>TL;DR</h2>
+<strong>Tienes 7 webs. La mayoría necesitan mejoras críticas.</strong>
+La mejor: <strong>greenaxis.es</strong> (7.5/10)
+La peor: <strong>mf3.es</strong> y <strong>gp3.es</strong> (5/10)
+<strong>Problema #1:</strong> estudiovirtual.es NO tiene SSL — CRÍTICO
+<strong>Problema #2:</strong> gp3.es tiene estadísticas "0" — mata credibilidad
+<strong>Problema #3:</strong> mf3.es tiene multi-dominio confusión
+<hr>
+<h2>Los Números</h2>
+| Web | Score | Prioridad |
+|-----|-------|-----------|
+| greenaxis.es | 7.5/10 | Baja |
+| liv-ing.com | 6.5/10 | Media |
+| dindonliving.com | 6.5/10 | Media |
+| terracottavalladolid.com | 6.5/10 | Media |
+| estudiovirtual.es | 5.5/10 | ALTA 🔴 |
+| gp3.es | 5/10 | ALTA 🔴 |
+| mf3.es | 5/10 | ALTA 🔴 |
+<hr>
+<h2>Acciones Inmediatas (Esta Semana)</h2>
+<h3>🔴 CRÍTICO — Arreglar YA</h3>
+<strong>1. estudiovirtual.es — Instalar SSL (30 min)</strong>
+<pre><code>Este sitio está en HTTP puro. Sin certificado.
+Esto significa:
+<ul><li>Chrome marca como "no seguro"</li>
+<li>Datos de clientes en riesgo</li>
+<li>SEO penalizado por Google</li>
+</ul>
+ACCIÓN: Comprar e instalar certificado SSL
+(Hoy día es gratis con Let's Encrypt)
+</code></pre>
+<strong>2. gp3.es — Quitar estadísticas "0" (5 min)</strong>
+<pre><code>"91 KW Instalados" ✅ (bien)
+"0 Metros Construidos" ❌ (crédito)
+"0 Reformas Realizadas" ❌ (crédito)
+<p>Esto destruye tu credibilidad.
+El usuario ve "91" y luego "0" y piensa:
+"si tienen 91 KW por qué no tienen ni un metro construido?"</p>
+<p>ACCIÓN: Poner números reales o QUITAR los contadores
+</code></pre></p>
+<strong>3. mf3.es — Consolidar multi-dominio</strong>
+<pre><code>mf3.es → web principal
+mediterraneanfusion.es → submarcas
+<p>El usuario se confunde. Visitas mf3.es y luego
+encuentras mediterraneanfusion.es con contenido diferente.</p>
+<p>ACCIÓN: Decidir cuál es el principal y unificar
+</code></pre></p>
+<hr>
+<h2>Acciones Rápidas (1 hora total)</h2>
+| Web | Qué hacer | Tiempo |
+|-----|-----------|--------|
+| terracottavalladolid.com | Añadir horarios de apertura | 5 min |
+| greenaxis.es | Añadir dirección física en footer | 5 min |
+| Todas | Añadir meta description | 15 min |
+| Todas | Fix URLs (www统一) | 10 min |
+| dindonliving.com | Comprimir imágenes banners | 25 min |
+<hr>
+<h2>El Diagnóstico Completo</h2>
+<h3>✅ Lo que funciona bien</h3>
+<ul><li><strong>Green Axis</strong> — mejor web. Propuesta clara, testimonials reales, proceso definido</li>
+<li><strong>Terracotta</strong> — carta muy completa y detallada</li>
+<li><strong>Din Don Living</strong> — ecommerce funcional con carrito</li>
+<li><strong>Living</strong> — propuesta de valor clara con método</li>
+</ul>
+<h3>❌ Lo que NO funciona</h3>
+<ul><li><strong>estudiovirtual.es</strong> — Sin SSL (arreglar YA)</li>
+<li><strong>gp3.es</strong> — Stats="0" = sin credibilidad</li>
+<li><strong>mf3.es</strong> — Sin CTAs, navegación confusa</li>
+<li><strong>Todas</strong> — Sin meta descriptions, sin Schema markup</li>
+<li><strong>Todas</strong> — Sin testimonials (excepto Green Axis)</li>
+</ul>
+<hr>
+<h2>El Grupo Empresarial</h2>
+<p>Todas las webs están relacionadas:</p>
+<pre><code>Plaza Martí y Monsó, 1, Valladolid
+├── MF3 (Arquitectura) ← mf3.es
+├── Living (Consultora hogar) ← liv-ing.com
+├── Green Path (Construcción) ← gp3.es
+├── Green Axis (Mantenimiento) ← greenaxis.es ⭐
+├── Din Don Living (Tienda muebles) ← dindonliving.com
+├── Estudio Virtual (Render 3D) ← estudiovirtual.es
+└── Terracotta (Restaurante) ← terracottavalladolid.com
+</code></pre>
+<strong>Fusion House</strong> (fusionhouse.es) — reported as DOWN
+<hr>
+<h2>Siguiente Paso</h2>
+<strong>¿Qué quieres automatizar primero?</strong>
+<p>Opciones:
+<ul><li><strong>Centralizar atención</strong> — WhatsApp Business + respuestas automáticas</li>
+<li><strong>Capturar leads</strong> — Forms de contacto optimizados para cada web</li>
+<li><strong>SEO técnico</strong> — Schema markup + meta descriptions</li>
+<li><strong>CRM básico</strong> — Seguimiento de clientes y prospects</li>
+</ul>
+La auditoría está en <code>Research/Web_Audit/</code>
+Las auditorías detalladas en <code>Research/Web_Audit/findings/</code></p>
+<strong>Decide qué priorizamos.</strong>
+</body>
+</html>

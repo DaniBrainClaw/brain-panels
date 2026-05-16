@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extra Step 1: MiniMax M2.7 Multimodal — Vision, Images, Audio</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_extra_1.md</p>
+    <h2>Query</h2>
+"MiniMax M2.7 multimodal vision images audio capabilities"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://www.reddit.com/r/MiniMax_AI/comments/1skfbw9/m27_vision_support/</li>
+<li>https://github.com/MiniMax-AI/MiniMax-M2/issues/92</li>
+<li>https://www.buildfastwithai.com/blogs/minimax-m2-7-review</li>
+<li>https://artificialanalysis.ai/models/minimax-m2-7</li>
+<li>https://winbuzzer.com/2026/04/14/minimax-launches-mmx-cli-ai-agents-get-multimodal-powers-xcxwbn/</li>
+<li>https://www.deeplearning.ai/the-batch/minimaxs-m2-7-model-competes-with-gemini-and-opus</li>
+<li>https://wavespeed.ai/landing/minimax-m2.7</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>Veredicto: M2.7 es TEXT-ONLY, NO multimodal</h3>
+<strong>Respuesta oficial de MiniMax</strong>: M2.7 es un modelo de <strong>reasoning-only text</strong>. No procesa imágenes ni audio.
+<p>Desde GitHub issue #92 (respuesta de MiniMax):
+<blockquote>"Minimax subscription cannot do image analysis via the Anthropic API — that's a hard limitation on their end, confirmed by their own docs."</blockquote></p>
+<p>Desde Artificial Analysis:
+<blockquote>"No, MiniMax-M2.7 does not support image input. It can only process text."</blockquote></p>
+<h3>Qué dicen los marketers (Marketing vs Realidad)</h3>
+<p>WaveSpeed AI dice: "Multi-Modal Reasoning — MiniMax M2.7 processes text, images, and documents natively"</p>
+<strong>Esto es marketing falso.</strong> Los datos técnicos oficiales de MiniMax y terceros confirman que M2.7 es text-only.
+<h3>MiniMax SÍ tiene multimodal — pero es M2.5</h3>
+<p>MiniMax M2.5 sí es multimodal:
+<blockquote>"A 'native' multimodal model is trained on different types of data (text, image, audio) at the same time"</blockquote></p>
+<p>M2.7 sacrificó capabilities multimodales por mejor reasoning/performance.</p>
+<h3>MMX-CLI — Multimodal via CLI separado</h3>
+<p>MiniMax liberó MMX-CLI (CLI abierto) que incluye:
+<ul><li><code>mmx text</code> — genera texto (usa M2.7)</li>
+<li><code>mmx image</code> — genera imágenes (otro modelo)</li>
+<li><code>mmx video</code> — genera video ( Hailuo-2.3)</li>
+<li><code>mmx speech</code> — síntesis de voz (30+ voces)</li>
+<li><code>mmx music</code> — genera música</li>
+<li><code>mmx vision</code> — visión artificial (modelo separado)</li>
+<li><code>mmx search</code> — búsqueda web</li>
+</ul>
+<strong>Importante</strong>: esto NO es M2.7 siendo multimodal. Es un wrapper que conecta a múltiples modelos especializados.</p>
+<h3>La historia de MiniMax con multimodal</h3>
+<ul><li>M2.5: multimodal nativo</li>
+<li>M2.7: text-only, otimizado para reasoning</li>
+<li>Image-01: modelo separado para texto→imagen</li>
+</ul>
+<h3>Implicación para BRAIN</h3>
+<p>Si necesitamos capacidades visuales (analizar imágenes, documentos con charts, etc.), M2.7 no las tiene. Opciones:</p>
+<ul><li><strong>MMX-CLI</strong> — usar el CLI wrapper para tareas multimodales</li>
+<li><strong>Gemini 3.1 Pro</strong> — para análisis de imágenes</li>
+<li><strong>M2.5</strong> — versión anterior que sí era multimodal</li>
+</ul>
+<hr>
+<h2>Resumen</h2>
+| Capacidad | M2.7 | M2.5 | Gemini 3.1 |
+|-----------|------|------|------------|
+| Text | ✅ | ✅ | ✅ |
+| Images | ❌ | ✅ | ✅ |
+| Audio | ❌ | ✅ | ✅ |
+| Video | ❌ | ❌ | ✅ |
+| reasoning | ✅ | ⚠️ | ✅ |
+<strong>M2.7 = text-only reasoning model.</strong> No es multimodal.
+<strong>Para tasks visuales → Gemini 3.1 Pro o usar MMX-CLI por separado.</strong>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 1: MiniMax M2.7 Model Capabilities Benchmark</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_1.md</p>
+    <h2>Query</h2>
+"MiniMax M2.7 model capabilities benchmark"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://www.minimax.io/models/text/m27 — Página oficial del modelo</li>
+<li>https://wavespeed.ai/blog/posts/minimax-m2-7-self-evolving-agent-model-features-benchmarks-2026/ — Análisis completo en WaveSpeed</li>
+<li>https://openrouter.ai/minimax/minimax-m2.7/benchmarks — Benchmarks en OpenRouter</li>
+<li>https://www.minimax.io/news/minimax-m27-en — Announcement oficial</li>
+<li>https://huggingface.co/MiniMaxAI/MiniMax-M2.7 — HuggingFace page</li>
+<li>https://artificialanalysis.ai/models/minimax-m2-7 — Artificial Analysis</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>Specs básicas</h3>
+<ul><li><strong>Parámetros activados</strong>: 10B (el más pequeño en Tier-1)</li>
+<li><strong>Contexto</strong>: ~200K tokens</li>
+<li><strong>Velocidad</strong>: 100 tokens/segundo</li>
+<li><strong>Input cost</strong>: $0.30/M tokens</li>
+<li><strong>Output cost</strong>: $1.20/M tokens</li>
+<li><strong>Cache blended</strong>: $0.06/M tokens (con cache automático)</li>
+</ul>
+<h3>Benchmark results</h3>
+| Benchmark | M2.7 | Competitor |
+|-----------|------|------------|
+| SWE-Pro | 56.22% | ~57% (Claude Opus 4.6) |
+| SWE-bench Verified | 78% | 55% (Claude Opus 4.6) |
+| VIBE-Pro (end-to-end) | 55.6% | — |
+| Terminal Bench 2 | 57.0% | — |
+| GDPval-AA (Office) | ELO 1495 | Highest among open-source |
+| MM Claw (Agent eval) | 62.7% | ~Sonnet 4.6 level |
+| MLE-Bench Lite | 66.6% | Tied with Gemini 3.1 |
+| Skill Adherence (40 tasks >2000 tokens) | 97% | — |
+<h3>SWE-bench Verified: 78% vs 55%</h3>
+M2.7 outperforma significativamente a Claude Opus 4.6 en SWE-bench Verified (78% vs 55%). Esto es notable porque SWE-bench Verified es un benchmark de coding más moderno y completo que SWE-Pro.
+<h3>Agentic capabilities</h3>
+<ul><li>97% skill adherence en 40 tareas complejas (>2000 tokens cada una)</li>
+<li>Near-Sonnet 4.6 en MMClaw (agente evaluation)</li>
+<li>Auto-mejora: 100+ iteraciones de optimización de scaffold durante training</li>
+</ul>
+<h3>Software Engineering</h3>
+<ul><li>End-to-end project delivery (no solo isolated patches)</li>
+<li>Log analysis y debugging</li>
+<li>Code security review</li>
+<li>Machine learning pipeline development</li>
+</ul>
+<h3>Office Suite</h3>
+<ul><li>Excel operations y formula generation</li>
+<li>PowerPoint creation y editing</li>
+<li>Word document manipulation</li>
+<li>Multi-turn modification support</li>
+</ul>
+<hr>
+<h2>Notas</h2>
+<ul><li>M2.7 es 3x más rápido que Claude Opus (100 TPS vs ~33 TPS)</li>
+<li>50x más barato que Opus en input ($0.30 vs $15 per million)</li>
+<li>60x más barato en output ($1.20 vs $75 per million)</li>
+</ul><li>Modelo con solo 10B parámetros iguala/rivaliza con modelos de 100B+</li>
+</body>
+</html>

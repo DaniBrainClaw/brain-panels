@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extension Tool Integration — COMPLETE RESEARCH FINDINGS</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 extension-tool-integration.md</p>
+    <strong>Research Date:</strong> 2026-04-23
+<strong>Topic:</strong> L23 — Extension Tool Integration
+<strong>Priority:</strong> HIGH
+<strong>Research Depth:</strong> 6-Layer Exhaustive Analysis
+<hr>
+<h2>TABLE OF CONTENTS</h2>
+<ul><li><a href="#1-what-is--definition">What Is — Definition</a></li>
+<li><a href="#2-how-it-works--mechanics">How It Works — Mechanics</a></li>
+<li><a href="#3-uses--applications">Uses — Applications</a></li>
+<li><a href="#4-problems--limitations">Problems — Limitations</a></li>
+<li><a href="#5-solutions--best-practices">Solutions — Best Practices</a></li>
+<li><a href="#6-edge-cases">Edge Cases</a></li>
+<li><a href="#7-creative-uses">Creative Uses</a></li>
+<li><a href="#8-new-questions-opened-by-this-research">NEW Questions Opened by This Research</a></li>
+<li><a href="#9-sources">Sources</a></li>
+</ul>
+<hr>
+<h2>1. WHAT IS — Definition</h2>
+<h3>Core Definition</h3>
+<strong>Extension Tool Integration</strong> is the system by which <strong>pi-hooks</strong> (custom Pi extensions) can register, manage, and intercept LLM-callable tools via the ExtensionAPI. Extensions can:
+<ul><li><strong>Register new tools</strong> that the LLM can call during agent execution</li>
+<li><strong>Modify active tools</strong> dynamically during a session</li>
+<li><strong>Intercept tool calls</strong> before execution (<code>tool_call</code> event)</li>
+<li><strong>Intercept tool results</strong> after execution (<code>tool_result</code> event)</li>
+<li><strong>Control which tools are available</strong> via active tool list</li>
+</ul>
+<h3>Key Components</h3>
+| Component | Type | Purpose |
+|-----------|------|---------|
+| <code>api.registerTool()</code> | Method | Register a new LLM-callable tool |
+| <code>api.getActiveTools()</code> | Method | Get list of currently active tool names |
+| <code>api.getAllTools()</code> | Method | Get all configured tools with schema and metadata |
+| <code>api.setActiveTools()</code> | Method | Enable/disable tools by name dynamically |
+| <code>tool_call</code> event | Event | Fire before tool execution (can block/modify) |
+| <code>tool_result</code> event | Event | Fire after tool execution (can modify result) |
+<h3>Extension vs Built-in Tools</h3>
+| Aspect | Built-in Tools | Extension-Registered Tools |
+|--------|----------------|---------------------------|
+| <strong>Registration</strong> | Hardcoded in Pi runtime | Dynamic via <code>registerTool()</code> |
+| <strong>Schema</strong> | Fixed TypeBox | Dynamic TypeBox schema |
+| <strong>Lifecycle</strong> | Always available | Can be added/removed at runtime |
+| <strong>Execution</strong> | Internal to Pi | Custom handler in extension |
+| <strong>Sandboxing</strong> | Follows sandbox policy | Runs in extension context |
+<hr>
+<h2>2. HOW IT WORKS — Mechanics</h2>
+<h3>Tool Registration Flow</h3>
+<pre><code>// Extension factory receives ExtensionAPI
+export default function myExtension(api: ExtensionAPI): void {
+  // Step 1: Register a tool with TypeBox schema
+  api.registerTool({
+    name: "my_custom_tool",
+    label: "My Custom Tool",
+    description: "Does something useful based on input",
+    parameters: T.Object({
+      input: T.String(),
+      count: T.Optional(T.Number())
+    }),
+    execute: async (
+      toolCallId: string,
+      params: { input: string; count?: number },
+      signal: AbortSignal | undefined,
+      onUpdate: AgentToolUpdateCallback | undefined,
+      ctx: ExtensionContext
+    ): Promise<AgentToolResult> => {
+      // Custom tool execution logic
+      return { result: <code>Processed: ${params.input}</code> };
+    }
+  });
+}
+</code></pre>
+<h3>Tool Execution Pipeline</h3>
+<pre><code>LLM decides to call tool
+        │
+        ▼
+┌───────────────────┐
+│ tool_call event   │ ◄─── Can block, modify args, or allow
+│ (before exec)     │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ Tool execution    │ ◄─── Extension's execute() handler
+│ (custom logic)    │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ tool_result event│ ◄─── Can modify result content
+│ (after exec)     │
+└─────────┬─────────┘
+          │
+          ▼
+    Result to LLM
+</code></pre>
+<h3>Active Tool Management</h3>
+<p>Extensions can dynamically control which tools the LLM sees:</p>
+<pre><code>// Get currently active tool names
+const activeTools = api.getActiveTools(); // ["read", "exec", "message"]
+<p>// Get ALL tools with metadata
+const allTools = api.getAllTools();
+// Returns: { name, description, parameters }[]</p>
+<p>// Dynamically enable/disable tools
+api.setActiveTools(["read", "my_custom_tool"]);
+// Only read + my_custom_tool available to LLM
+</code></pre></p>
+<h3>Tool Call Interception</h3>
+<pre><code>// Intercept BEFORE tool execution
+api.on("tool_call", async (event, ctx) => {
+  if (event.toolName === "exec" && event.input.command.includes("rm -rf")) {
+    return { block: true, reason: "Dangerous command blocked" };
+  }
+  // Or modify arguments:
+  // return { args: { ...event.args, safe: true } };
+  return { allow: true };
+});
+<p>// Intercept AFTER tool execution
+api.on("tool_result", async (event, ctx) => {
+  // Modify result content
+  if (event.toolName === "read" && event.result.error) {
+    return { result: { content: "File read failed (sanitized)" } };
+  }
+  // Or just allow through
+  return { allow: true };
+});
+</code></pre></p>
+<h3>Tool Definition Interface</h3>
+<pre><code>interface ToolDefinition<TParams, TDetails, TState> {
+  name: string;           // Tool name for LLM calls
+  label: string;          // Human-readable label
+  description: string;    // LLM-facing description
+  promptSnippet?: string; // One-line snippet for system prompt
+  promptGuidelines?: string[]; // Guidelines when tool is active
+  parameters: TSchema;    // TypeBox parameter schema
+  prepareArguments?: (args: unknown) => Static<TParams>;
+  execute: (
+    toolCallId: string,
+    params: Static<TParams>,
+    signal: AbortSignal | undefined,
+    onUpdate: AgentToolUpdateCallback<TDetails> | undefined,
+    ctx: ExtensionContext
+  ) => Promise<AgentToolResult<TDetails>>;
+  renderCall?: (args, theme, context) => Component;
+  renderResult?: (result, options, theme, context) => Component;
+}
+</code></pre>
+<hr>
+<h2>3. USES — Applications</h2>
+<h3>Use 1: Custom API Integration</h3>
+<pre><code>// Register a tool that calls external APIs
+api.registerTool({
+  name: "weather",
+  label: "Weather Lookup",
+  description: "Get current weather for a location",
+  parameters: T.Object({
+    city: T.String(),
+    units: T.Optional(T.Enum(["celsius", "fahrenheit"]))
+  }),
+  execute: async (toolCallId, params, signal, onUpdate, ctx) => {
+    const response = await fetch(
+      <code>https://api.weather.com/v3/wx?city=${params.city}&units=${params.units}</code>
+    );
+    return { result: await response.text() };
+  }
+});
+</code></pre>
+<h3>Use 2: Database Operations</h3>
+<pre><code>// Register database tools
+api.registerTool({
+  name: "db_query",
+  label: "Database Query",
+  description: "Execute a read-only database query",
+  parameters: T.Object({
+    query: T.String()
+  }),
+  execute: async (toolCallId, params, signal, onUpdate, ctx) => {
+    // Validate query is SELECT only
+    if (!params.query.trim().toUpperCase().startsWith("SELECT")) {
+      return { result: { error: "Only SELECT queries allowed" } };
+    }
+    // Execute with connection from ctx
+    const result = await ctx.sessionManager.db.query(params.query);
+    return { result: JSON.stringify(result) };
+  }
+});
+</code></pre>
+<h3>Use 3: Tool Call Blocking/Security</h3>
+<pre><code>// Security: block dangerous tool calls
+api.on("tool_call", async (event, ctx) => {
+  const dangerous = [
+    { tool: "exec", pattern: /rm\s+-[rf]/ },
+    { tool: "write", pattern: /\/etc\/passwd/ },
+    { tool: "edit", pattern: /\.ssh\/authorized_keys/ }
+  ];
+<p>for (const rule of dangerous) {
+    if (event.toolName === rule.tool) {
+      const args = JSON.stringify(event.args);
+      if (rule.pattern.test(args)) {
+        return { block: true, reason: <code>Blocked: ${rule.tool} with dangerous args</code> };
+      }
+    }
+  }
+  return { allow: true };
+});
+</code></pre></p>
+<h3>Use 4: Result Sanitization</h3>
+<pre><code>// Sanitize sensitive data from results
+api.on("tool_result", async (event, ctx) => {
+  if (event.toolName === "exec" && event.result.content) {
+    // Redact API keys in command output
+    const sanitized = event.result.content.replace(
+      /[a-zA-Z0-9]{20,}/g,
+      "[REDACTED]"
+    );
+    return { result: { content: sanitized } };
+  }
+  return { allow: true };
+});
+</code></pre>
+<h3>Use 5: Dynamic Tool Activation</h3>
+<pre><code>// Enable tools based on context
+api.on("session_start", async (event, ctx) => {
+  // Check workspace for specific files
+  const files = await ctx.exec("ls", ["."], {});
+  if (files.stdout.includes("database.py")) {
+    api.setActiveTools([...api.getActiveTools(), "db_query"]);
+  }
+});
+</code></pre>
+<h3>Use 6: Tool Usage Analytics</h3>
+<pre><code>// Track tool usage
+const toolStats = new Map();
+api.on("tool_execution_end", (event, ctx) => {
+  const count = toolStats.get(event.toolName) || 0;
+  toolStats.set(event.toolName, count + 1);
+  ctx.ui.setStatus("tool-stats", <code>Tools: ${count + 1}</code>);
+});
+</code></pre>
+<hr>
+<h2>4. PROBLEMS — Limitations</h2>
+<h3>Problem 1: No Sandbox Isolation (CRITICAL)</h3>
+<p>Extensions run <strong>in-process</strong> with the Gateway. A malicious extension can:
+<ul><li>Access all process memory</li>
+<li>Read/write any file on the system</li>
+<li>Make arbitrary network requests</li>
+<li>Access all credentials via <code>ctx.sessionManager</code></li>
+</ul>
+<strong>Impact</strong>: Compromised extension = full system compromise</p>
+<h3>Problem 2: No Tool Schema Validation After Mutation</h3>
+<blockquote>"Later <code>tool_call</code> handlers see earlier mutations. No re-validation is performed after mutation."</blockquote>
+<p>If a <code>tool_call</code> handler modifies arguments, there's no re-validation against the schema.</p>
+<strong>Impact</strong>: Malformed arguments could reach the tool handler
+<h3>Problem 3: Tool Name Collisions</h3>
+<p>If two extensions register tools with the same name, the last one wins — unpredictable behavior.</p>
+<strong>Impact</strong>: Unclear which tool the LLM will call
+<h3>Problem 4: No Type Safety at Runtime</h3>
+<p>The TypeBox schema is used for validation, but extension handlers receive <code>unknown</code> types that must be cast.</p>
+<strong>Impact</strong>: Runtime errors if parameters are wrong
+<h3>Problem 5: No Built-in Error Handling</h3>
+<p>If a tool handler throws, there's no automatic catch — the session may crash.</p>
+<strong>Impact</strong>: Extension bugs can break the agent
+<h3>Problem 6: Active Tool List Race Conditions</h3>
+<p>If multiple extensions call <code>setActiveTools()</code> concurrently, the final state is unpredictable.</p>
+<strong>Impact</strong>: Unclear which tools are actually active
+<h3>Problem 7: Context Access in Tool Handlers</h3>
+<p>Tool handlers receive <code>ExtensionContext</code> which includes:
+<ul><li><code>ctx.sessionManager</code> — full session access</li>
+<li><code>ctx.modelRegistry</code> — all API keys</li>
+<li><code>ctx.cwd</code> — file system access</li>
+</ul>
+<strong>Impact</strong>: Tool handlers have the same privileges as the extension itself</p>
+<hr>
+<h2>5. SOLUTIONS — Best Practices</h2>
+<h3>Solution 1: Wrap All Handlers in Try/Catch</h3>
+<pre><code>api.registerTool({
+  name: "my_tool",
+  // ... other fields
+  execute: async (toolCallId, params, signal, onUpdate, ctx) => {
+    try {
+      // Safe handler code
+      const result = await doSomething(params);
+      return { result };
+    } catch (error) {
+      // Log error, return safe result
+      console.error("Tool error:", error);
+      return { result: { error: "Operation failed" } };
+    }
+  }
+});
+</code></pre>
+<h3>Solution 2: Use Unique Tool Names with Namespace</h3>
+<pre><code>// Bad: collision risk
+api.registerTool({ name: "query", ... });
+<p>// Good: namespaced
+api.registerTool({ name: "myorg_database_query", ... });
+</code></pre></p>
+<h3>Solution 3: Validate Arguments in Tool Handler</h3>
+<pre><code>execute: async (toolCallId, params, signal, onUpdate, ctx) => {
+  // Explicit validation
+  if (typeof params.input !== "string" || params.input.length > 1000) {
+    return { result: { error: "Invalid input" } };
+  }
+  // Proceed with logic
+  return { result: doSomething(params.input) };
+}
+</code></pre>
+<h3>Solution 4: Use Read-Only Session Access When Possible</h3>
+<pre><code>// Prefer read-only operations
+const messages = ctx.sessionManager.getMessages();
+const entry = ctx.sessionManager.getEntry(entryId);
+<p>// Avoid writing unless necessary
+// ctx.sessionManager.appendEntry() // Use sparingly
+</code></pre></p>
+<h3>Solution 5: Implement Proper AbortSignal Handling</h3>
+<pre><code>execute: async (toolCallId, params, signal, onUpdate, ctx) => {
+  // Check abort signal periodically
+  if (signal?.aborted) {
+    return { result: { error: "Aborted" } };
+  }
+<p>// Pass signal to async operations
+  const response = await fetch(url, { signal });</p>
+<p>// Update progress
+  onUpdate?.({ status: "downloading", progress: 50 });</p>
+<p>return { result };
+}
+</code></pre></p>
+<h3>Solution 6: Use Tool Events for Cross-Cutting Concerns</h3>
+<pre><code>// Separate security checks from tool implementation
+api.on("tool_call", async (event, ctx) => {
+  // Security check once
+  if (isBlocked(event.toolName, event.args)) {
+    return { block: true, reason: "Security policy" };
+  }
+  return { allow: true };
+});
+<p>// Tool implementation is clean
+api.registerTool({
+  name: "sensitive_operation",
+  execute: async (...) => {
+    // No security logic here
+    return { result: doOperation() };
+  }
+});
+</code></pre></p>
+<hr>
+<h2>6. EDGE CASES</h2>
+<h3>Edge Case 1: Extension Throws During Tool Registration</h3>
+<strong>Scenario</strong>: <code>registerTool()</code> throws during extension load
+<strong>Impact</strong>: Extension fails to load → Gateway may crash
+<strong>Mitigation</strong>: Wrap registration in try/catch at load time
+<h3>Edge Case 2: Tool Handler Returns Invalid Result Type</h3>
+<strong>Scenario</strong>: Tool returns wrong shape for <code>AgentToolResult</code>
+<strong>Impact</strong>: LLM receives malformed result → unpredictable behavior
+<strong>Mitigation</strong>: Validate return type matches interface
+<h3>Edge Case 3: Multiple Extensions Register Same Tool Name</h3>
+<strong>Scenario</strong>: Extension A and B both call <code>registerTool({ name: "query" })</code>
+<strong>Impact</strong>: Last to register wins — unpredictable which handler runs
+<strong>Mitigation</strong>: Use unique namespaced tool names
+<h3>Edge Case 4: setActiveTools Removes All Tools</h3>
+<strong>Scenario</strong>: Extension calls <code>setActiveTools([])</code> accidentally
+<strong>Impact</strong>: LLM has no tools to call → agent cannot function
+<strong>Mitigation</strong>: Always include at least basic tools in set
+<h3>Edge Case 5: tool_call Handler Blocks But Doesn't Return Reason</h3>
+<strong>Scenario</strong>: <code>tool_call</code> returns <code>{ block: true }</code> without reason
+<strong>Impact</strong>: LLM sees generic block → may retry or fail silently
+<strong>Mitigation</strong>: Always provide block reason
+<h3>Edge Case 6: AbortSignal Never Fires</h3>
+<strong>Scenario</strong>: User aborts but tool doesn't check <code>signal</code>
+<strong>Impact</strong>: Tool continues running → wasted resources
+<strong>Mitigation</strong>: Check signal at checkpoints in long operations
+<h3>Edge Case 7: Tool Result Modified After LLM Already Saw Original</h3>
+<strong>Scenario</strong>: <code>tool_result</code> handler modifies result after LLM processed
+<strong>Impact</strong>: Inconsistent state — LLM and actual result differ
+<strong>Mitigation</strong>: Understand event timing, only modify before LLM processes
+<hr>
+<h2>7. CREATIVE USES</h2>
+<h3>Creative Use 1: Tool Proxy/Gateway</h3>
+<pre><code>// Create a proxy that logs all tool calls
+api.on("tool_call", async (event, ctx) => {
+  await logToolCall(event.toolName, event.args);
+  return { allow: true };
+});
+<p>api.on("tool_result", async (event, ctx) => {
+  await logToolResult(event.toolName, event.result);
+  return { allow: true };
+});
+</code></pre></p>
+<h3>Creative Use 2: Tool Mocking for Testing</h3>
+<pre><code>// In test mode, mock external tools
+if (process.env.TEST_MODE) {
+  api.registerTool({
+    name: "external_api",
+    execute: async (toolCallId, params, signal, onUpdate, ctx) => {
+      return { result: { data: "mocked_response" } };
+    }
+  });
+}
+</code></pre>
+<h3>Creative Use 3: Dynamic Tool Discovery</h3>
+<pre><code>// Discover tools based on workspace files
+api.on("session_start", async (event, ctx) => {
+  const files = await ctx.exec("find", [".", "-name", "<em>.py"], {});
+  if (files.includes("database.py")) {
+    api.registerTool(databaseTool);
+  }
+  if (files.includes("api.py")) {
+    api.registerTool(apiTool);
+  }
+});
+</code></pre>
+<h3>Creative Use 4: Rate Limiting Per Tool</h3>
+<pre><code>const toolCallCounts = new Map();
+api.on("tool_call", async (event, ctx) => {
+  const count = toolCallCounts.get(event.toolName) || 0;
+  if (count > 100) {
+    return { block: true, reason: "Rate limit exceeded" };
+  }
+  toolCallCounts.set(event.toolName, count + 1);
+  return { allow: true };
+});
+</code></pre>
+<h3>Creative Use 5: Tool Result Caching</h3>
+<pre><code>const resultCache = new Map();
+api.on("tool_call", async (event, ctx) => {
+  const cacheKey = <code>${event.toolName}:${JSON.stringify(event.args)}</code>;
+  if (resultCache.has(cacheKey)) {
+    return { result: resultCache.get(cacheKey), cached: true };
+  }
+  return { allow: true };
+});
+<p>api.on("tool_result", async (event, ctx) => {
+  const cacheKey = <code>${event.toolName}:${JSON.stringify(event.args)}</code>;
+  resultCache.set(cacheKey, event.result);
+  return { allow: true };
+});
+</code></pre></p>
+<h3>Creative Use 6: Context-Aware Tool Filtering</h3>
+<pre><code>// Enable/disable tools based on user level
+api.on("tool_call", async (event, ctx) => {
+  const userLevel = ctx.sessionManager.getUserLevel?.() || "guest";
+  const toolPermissions = {
+    guest: ["read", "ls"],
+    user: ["read", "ls", "write", "edit"],
+    admin: ["read", "ls", "write", "edit", "exec"]
+  };
+  if (!toolPermissions[userLevel].includes(event.toolName)) {
+    return { block: true, reason: <code>Tool not available for ${userLevel}</code> };
+  }
+  return { allow: true };
+});
+</code></pre>
+<hr>
+<h2>8. NEW QUESTIONS OPENED BY THIS RESEARCH</h2>
+<h3>Security Questions</h3>
+<ul><li>[ ] Can a tool handler access ctx.sessionManager and modify session data? <strong>[HIGH]</strong></li>
+<li>[ ] Can tool result interception be used for data exfiltration? <strong>[HIGH]</strong></li>
+<li>[ ] Is there a way to sandbox tool execution separately from extension? <strong>[MED]</strong></li>
+</ul>
+<h3>Integration Questions</h3>
+<ul><li>[ ] Can extensions register tools that call other extensions' tools? <strong>[MED]</strong></li>
+<li>[ ] Can tool handlers trigger subagent runs? <strong>[MED]</strong></li>
+<li>[ ] Can extensions add tools to the system prompt dynamically? <strong>[MED]</strong></li>
+</ul>
+<h3>Performance Questions</h3>
+<ul><li>[ ] What's the overhead of tool call interception? <strong>[LOW]</strong></li>
+<li>[ ] Can many tool handlers cause latency? <strong>[LOW]</strong></li>
+</ul>
+<h3>Operational Questions</h3>
+<ul><li>[ ] Can tool registration be hot-reloaded without restart? <strong>[MED]</strong></li>
+<li>[ ] Are tool execution times logged? <strong>[LOW]</strong></li>
+<li>[ ] Can extensions see which tool called another tool? <strong>[MED]</strong></li>
+</ul>
+<hr>
+<h2>9. SOURCES</h2>
+<h3>Primary Sources (OpenClaw + Pi-Coding-Agent)</h3>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/types.d.ts</code> — ExtensionAPI type definitions (registerTool, tool_call, tool_result)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/pi.md</code> — Pi Integration Architecture</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/architecture.md</code> — Plugin architecture (security model)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/plugin-sdk/src/agents/pi-hooks/</em>.d.ts</code> — Type definitions</li>
+</ul>
+<h3>Key Findings Summary</h3>
+| Aspect | Finding |
+|--------|---------|
+| Tool registration | <code>api.registerTool(toolDefinition)</code> |
+| Tool interception | <code>tool_call</code> and <code>tool_result</code> events |
+| Active tool control | <code>getActiveTools()</code>, <code>setActiveTools()</code> |
+| Security | No sandbox — runs in-process |
+| Schema | TypeBox with <code>defineTool()</code> helper |
+| Error handling | No built-in — must wrap manually |
+<hr>
+<h2>APPENDIX: Complete Tool Events Reference</h2>
+<pre><code>// Tool execution lifecycle events
+api.on("tool_execution_start", handler);  // When tool starts
+api.on("tool_execution_update", handler); // During streaming tool
+api.on("tool_execution_end", handler);    // When tool ends
+<p>// Tool call interception (before LLM sees result)
+api.on("tool_call", handler);             // Block or modify args
+api.on("tool_result", handler);           // Block or modify result</p>
+<p>// Specific tool events
+api.on("bash_tool_call", handler);        // bash tool specifically
+api.on("read_tool_call", handler);        // read tool specifically
+// ... etc for each built-in tool
+</code></pre></p>
+<hr>
+<em>Research by: Investigador Scout</em>
+<em>Date: 2026-04-23 02:35 CET</em>
+<em>Status: COMPLETE — L23 RESOLVED</em>
+<hr>
+<h2>FOLLOW-UP ACTIONS</h2>
+<ul><li>[x] Save findings to <code>Research/OpenClaw/findings/extension-tool-integration.md</code></li>
+<li>[ ] Update <code>Research/OpenClaw/questions.md</code> to mark L23 as RESOLVED</li>
+<li>[ ] Update <code>Research/OpenClaw/index.md</code> with L23 completed</li>
+<li>[ ] Update <code>Research/OpenClaw/sources.md</code> with new sources</li>
+</ul><li>[ ] Notify BRAIN for curation into <code>OPENCLAW_EXPERT.md</code></li>
+</body>
+</html>

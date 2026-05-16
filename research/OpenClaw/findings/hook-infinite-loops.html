@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hook Infinite Loops — COMPLETE RESEARCH FINDINGS</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 hook-infinite-loops.md</p>
+    <strong>Research Date:</strong> 2026-04-23  
+<strong>Topic:</strong> Can hooks trigger infinite loops? Is there protection?  
+<strong>Priority:</strong> HIGH (from backlog.md #1)  
+<strong>Research Depth:</strong> 6-Layer Exhaustive
+<hr>
+<h2>TABLE OF CONTENTS</h2>
+<ul><li><a href="#1-what-is--definition--core-concept">What Is — Definition & Core Concept</a></li>
+<li><a href="#2-how-it-works--loop-mechanics">How It Works — Loop Mechanics</a></li>
+<li><a href="#3-uses--legitimate-chain-patterns">Uses — Legitimate Chain Patterns</a></li>
+<li><a href="#4-problems--infinite-loop-vulnerabilities">Problems — Infinite Loop Vulnerabilities</a></li>
+<li><a href="#5-solutions--prevention--detection">Solutions — Prevention & Detection</a></li>
+<li><a href="#6-edge-cases--unusual-loop-scenarios">Edge Cases — Unusual Loop Scenarios</a></li>
+<li><a href="#7-creative-uses--loop-based-patterns">Creative Uses — Loop-Based Patterns</a></li>
+<li><a href="#8-new-questions-opened-by-this-research">NEW Questions Opened by This Research</a></li>
+<li><a href="#9-sources">Sources</a></li>
+</ul>
+<hr>
+<h2>1. WHAT IS — Definition & Core Concept</h2>
+<h3>Definition</h3>
+<strong>Hook Infinite Loops</strong> occur when two or more hooks trigger each other in a circular chain, causing repeated event firing that never terminates naturally. This is a class of <strong>re-entrant event hazards</strong> where hook A triggers hook B, which triggers hook A again, creating an unbounded execution cycle.
+<h3>Two Types of Hook Systems</h3>
+<p>OpenClaw has <strong>TWO separate hook systems</strong> with different loop risks:</p>
+| System | Count | Loop Risk | Loop Mechanism |
+|--------|-------|-----------|----------------|
+| <strong>Internal Hooks</strong> | 4 bundled | LOW | Standalone hooks, fire on lifecycle events |
+| <strong>Plugin Hooks</strong> | 28+ | MEDIUM-HIGH | Deep integration into agent loop, model resolution, message flow |
+<h3>Core Loop Question</h3>
+<strong>Can hook A trigger hook B, which triggers hook A again?</strong>
+<strong>Answer: YES — There is NO built-in protection against infinite hook loops in either system.</strong>
+<hr>
+<h2>2. HOW IT WORKS — Loop Mechanics</h2>
+<h3>Hook Discovery Order (Precedence)</h3>
+<p>Hooks are discovered in order of <strong>increasing override precedence</strong>:</p>
+<ul><li><strong>Bundled hooks</strong> — shipped with OpenClaw (highest trust)</li>
+<li><strong>Plugin hooks</strong> — bundled inside installed plugins</li>
+<li><strong>Managed hooks</strong> — <code>~/.openclaw/hooks/</code> (user-installed, shared across workspaces)</li>
+<li><strong>Workspace hooks</strong> — <code><workspace>/hooks/</code> (per-agent, <strong>disabled by default</strong>)</li>
+</ul>
+<strong>Key rule</strong>: Workspace hooks can <strong>ADD</strong> new hook names but <strong>CANNOT override</strong> bundled, managed, or plugin-provided hooks with the same name.
+<h3>Event Types That Can Create Loops</h3>
+<p>Internal hooks fire on these events:</p>
+| Event | Can Trigger Loop? | Mechanism |
+|-------|-------------------|-----------|
+| <code>command:new</code>, <code>command:reset</code> | LOW | Manual commands only |
+| <code>session:compact:before/after</code> | <strong>HIGH</strong> | Auto-fires during compaction cycle |
+| <code>session:patch</code> | <strong>HIGH</strong> | Can be triggered by session changes mid-turn |
+| <code>agent:bootstrap</code> | MEDIUM | Bootstrap files can be modified |
+| <code>gateway:startup</code> | LOW | One-time event at startup |
+| <code>message:received</code> | <strong>HIGH</strong> | Messages can trigger session changes |
+| <code>message:preprocessed</code> | <strong>HIGH</strong> | Modifies body before agent sees it |
+| <code>message:sent</code> | MEDIUM | Can trigger response messages |
+| <code>message:transcribed</code> | MEDIUM | Audio transcription completes |
+<h3>Hook Execution Order</h3>
+<p>From docs, internal hooks run in <strong>insertion order</strong> with no depth limit, no recursion counter, and no circuit breaker.</p>
+<h3>Plugin Hook Chain (28+ hooks)</h3>
+<p>Plugin hooks cover model resolution lifecycle. Key chain points:</p>
+<ul><li><code>before_model_resolve</code> → can set <code>modelOverride</code></li>
+<li><code>normalizeModelId</code> → can modify model selection</li>
+<li><code>resolveDynamicModel</code> → async warm-up</li>
+<li><code>before_agent_start</code> (DEPRECATED) → prompt injection context</li>
+<li><code>before_prompt_build</code> → inject context into prompt</li>
+<li><code>before_tool_call</code> → intercept tool execution</li>
+<li><code>after_tool_call</code> → post-process results</li>
+<li><code>session:patch</code> → session state modification</li>
+</ul>
+<h3>HOW LOOP FORMS: The Event Cascade</h3>
+<pre><code>User sends message
+    ↓
+message:received fires
+    ↓
+Hook A modifies session state (via session:patch or direct mutation)
+    ↓
+session:patch fires
+    ↓
+Hook B sees modification, fires action
+    ↓
+Action triggers message:received again
+    ↓
+→ INFINITE LOOP ←
+</code></pre>
+<h3>Realistic Loop Scenario 1: Message → Session Patch → Message</h3>
+<pre><code>Hook A (message:preprocessed) → adds context to body → triggers session enrichment
+Hook B (session:patch) → sees enrichment → sends notification message
+Hook C (message:sent) → sees notification → enriches context again
+→ Loop back to Hook A
+</code></pre>
+<h3>Realistic Loop Scenario 2: Compaction Cycle</h3>
+<pre><code>session:compact:before fires
+    ↓
+Hook A saves state → triggers session:patch
+    ↓
+session:compact:after fires
+    ↓
+Hook B restores state → triggers compaction again
+    ↓
+→ Loop until token limit or crash
+</code></pre>
+<h3>Realistic Loop Scenario 3: Tool Call → Session Change → Tool Call</h3>
+<pre><code>before_tool_call fires for "exec" tool
+    ↓
+Hook validates command, adds metadata to session
+    ↓
+session:patch fires
+    ↓
+Hook sees patch, logs to external system
+    ↓
+External system sends webhook to OpenClaw
+    ↓
+message:received fires
+    ↓
+Agent responds, calls exec again
+    ↓
+→ Loop
+</code></pre>
+<hr>
+<h2>3. USES — Legitimate Chain Patterns</h2>
+<h3>Legitimate Pattern 1: Error Recovery Chain</h3>
+<pre><code>// Hook A: Detects error, sets recovery flag
+api.registerHook({
+  id: "error-detector",
+  events: ["after_tool_call"],
+  handler: async (event) => {
+    if (event.result.error) {
+      event.context.sessionEntry.metadata.needsRecovery = true;
+    }
+  }
+});
+<p>// Hook B: Sees recovery flag, triggers reset
+api.registerHook({
+  id: "recovery-trigger",
+  events: ["session:patch"],
+  handler: async (event) => {
+    if (event.context.patch.metadata?.needsRecovery) {
+      // Trigger legitimate recovery flow, NOT loop
+      await triggerRecovery(event.sessionKey);
+    }
+  }
+});
+</code></pre></p>
+<strong>Risk</strong>: If recovery triggers same condition, loops
+<h3>Legitimate Pattern 2: State Synchronization</h3>
+<pre><code>// Hook A: Sync state to external system
+api.registerHook({
+  id: "state-syncer",
+  events: ["session:patch"],
+  handler: async (event) => {
+    await syncToExternal(event.context.sessionEntry);
+  }
+});
+<p>// Hook B: Receive external webhook, update session
+api.registerHook({
+  id: "webhook-handler",
+  events: ["message:received"],
+  handler: async (event) => {
+    if (isWebhookMessage(event)) {
+      await updateSessionFromWebhook(event);
+    }
+  }
+});
+</code></pre></p>
+<strong>Risk</strong>: External system echoing webhooks creates loop
+<h3>Legitimate Pattern 3: Compaction State Preservation</h3>
+<pre><code>// Hook A: Save state before compaction
+api.registerHook({
+  id: "compaction-saver",
+  events: ["session:compact:before"],
+  handler: async (event) => {
+    await saveState(event.context.messageCount);
+  }
+});
+<p>// Hook B: Restore state after compaction
+api.registerHook({
+  id: "compaction-restorer",
+  events: ["session:compact:after"],
+  handler: async (event) => {
+    await restoreState();
+  }
+});
+</code></pre></p>
+<strong>Risk</strong>: If restoration triggers compaction again, infinite loop
+<hr>
+<h2>4. PROBLEMS — Infinite Loop Vulnerabilities</h2>
+<h3>Problem 1: NO Built-in Recursion Protection</h3>
+<strong>Confirmed</strong>: OpenClaw has <strong>NO</strong>:
+<ul><li>Depth counter for nested hook invocations</li>
+<li>Recursion limit / circuit breaker</li>
+<li>Loop detection mechanism</li>
+<li>Timeout per hook chain</li>
+</ul>
+<strong>Impact</strong>: Any hook chain that creates circular event flow will run until:
+<ul><li>Gateway crashes (OOM, stack overflow)</li>
+<li>Process is killed externally</li>
+<li>Token limit hit during compaction</li>
+<li>System resources exhausted</li>
+</ul>
+<h3>Problem 2: No Hook Execution Order Guarantee</h3>
+<strong>From docs</strong>: "Hook execution order is not guaranteed for multiple hooks on same event"
+<strong>Impact</strong>: Loop may or may not manifest depending on insertion order. Non-deterministic behavior makes loops hard to reproduce.
+<h3>Problem 3: session:patch Is a Loop Multiplier</h3>
+<p>The <code>session:patch</code> event fires when session properties are modified. If a hook on <code>session:patch</code> modifies the session again, it fires <code>session:patch</code> again → <strong>direct recursion</strong>.</p>
+<pre><code>// DANGEROUS: Direct recursion via session:patch
+api.registerHook({
+  id: "self-modifying-patch",
+  events: ["session:patch"],
+  handler: async (event) => {
+    // Modifying session here triggers session:patch AGAIN
+    event.context.sessionEntry.metadata.visitCount++;
+  }
+});
+</code></pre>
+<h3>Problem 4: message:preprocessed → message Loop</h3>
+<p>The <code>message:preprocessed</code> hook can enrich <code>bodyForAgent</code>. If this enrichment triggers any action that sends a message, the cycle repeats:</p>
+<pre><code>message:preprocessed → enriches body → agent responds → message:sent → message:received → loop
+</code></pre>
+<h3>Problem 5: Compaction Cycles</h3>
+<p>Compaction (<code>session:compact:before</code> → compact → <code>session:compact:after</code>) is an auto-triggered cycle. Hooks that:
+<ul><li>Trigger session modifications during compaction</li>
+<li>Cause session state changes that hit compaction thresholds</li>
+</ul>
+...create infinite compaction loops.</p>
+<h3>Problem 6: External System Echo</h3>
+<p>If hooks integrate with external systems that send messages back to OpenClaw:
+<ul><li>Hook sends data to external system</li>
+<li>External system sends webhook/HTTP trigger</li>
+<li><code>message:received</code> fires</li>
+<li>Hook responds → sends to external system again</li>
+<li><strong>Loop</strong></li>
+</ul>
+<h3>Problem 7: before_agent_start (DEPRECATED) Loop Risk</h3></p>
+<code>before_agent_start</code> is deprecated but still functional and in <code>PROMPT_INJECTION_HOOK_NAMES</code>. Plugins using this hook in circular ways:
+<pre><code>// Legacy plugin pattern - creates loop potential
+api.registerHook({
+  id: "legacy-redirect",
+  events: ["before_agent_start"],
+  handler: async (event) => {
+    // Redirect causes re-evaluation
+    event.context.providerOverride = "other";
+  }
+});
+</code></pre>
+<h3>Problem 8: No Hook-to-Hook Isolation</h3>
+<strong>From Extension Security Model</strong>: No isolation between hooks. A compromised hook can:
+<ul><li>Modify other hooks' behavior</li>
+<li>Disable other hooks</li>
+<li>Access other hooks' data</li>
+</ul>
+<strong>Loop Impact</strong>: If Hook A can modify Hook B's registration, it can make Hook B trigger the same event again.
+<hr>
+<h2>5. SOLUTIONS — Prevention & Detection</h2>
+<h3>Solution 1: Guard Counter Pattern (Manual)</h3>
+<pre><code>const HOOK_CALL_LIMIT = 100;
+let hookCallCount = 0;
+<p>api.registerHook({
+  id: "safe-handler",
+  events: ["session:patch"],
+  handler: async (event) => {
+    hookCallCount++;
+    if (hookCallCount > HOOK_CALL_LIMIT) {
+      console.error("[safe-handler] Hook call limit exceeded");
+      return;
+    }
+    
+    try {
+      // Your logic here
+      await processSessionPatch(event);
+    } finally {
+      // Decrement when complete to allow next session
+      hookCallCount--;
+    }
+  }
+});
+</code></pre></p>
+<strong>Limitation</strong>: Global counter persists across events; resets only on gateway restart
+<h3>Solution 2: Session-Level Guard</h3>
+<pre><code>api.registerHook({
+  id: "session-guarded-handler",
+  events: ["session:patch"],
+  handler: async (event) => {
+    const session = event.context.sessionEntry;
+    
+    // Initialize guard counter if not present
+    if (!session.metadata._hookCallCount) {
+      session.metadata._hookCallCount = {};
+    }
+    
+    const id = "session-patch-handler";
+    session.metadata._hookCallCount[id] = 
+      (session.metadata._hookCallCount[id] || 0) + 1;
+    
+    if (session.metadata._hookCallCount[id] > 10) {
+      console.error(<code>[${id}] Session call limit exceeded</code>);
+      return;
+    }
+    
+    // Your logic here
+  }
+});
+</code></pre>
+<strong>Better</strong>: Uses session-scoped counter that resets on <code>/new</code> or <code>/reset</code>
+<h3>Solution 3: Event-Type Guard</h3>
+<pre><code>const recentEvents = new Map();
+const EVENT_WINDOW_MS = 1000;
+const MAX_SAME_EVENT = 5;
+<p>api.registerHook({
+  id: "rate-guarded-handler",
+  events: ["session:patch"],
+  handler: async (event) => {
+    const key = <code>${event.sessionKey}:${event.type}:${event.action}</code>;
+    const now = Date.now();
+    
+    // Clean old entries
+    for (const [k, t] of recentEvents) {
+      if (now - t > EVENT_WINDOW_MS) recentEvents.delete(k);
+    }
+    
+    // Check rate
+    const count = (recentEvents.get(key) || 0);
+    if (count > MAX_SAME_EVENT) {
+      console.error(<code>[rate-guarded] Rate limit exceeded for ${key}</code>);
+      return;
+    }
+    
+    recentEvents.set(key, count + 1);
+    
+    // Your logic here
+  }
+});
+</code></pre></p>
+<h3>Solution 4: Circuit Breaker Pattern</h3>
+<pre><code>class HookCircuitBreaker {
+  private failures = new Map();
+  private readonly FAILURE_THRESHOLD = 5;
+  private readonly RESET_TIMEOUT_MS = 60000;
+  
+  isOpen(hookId: string): boolean {
+    const failure = this.failures.get(hookId);
+    if (!failure) return false;
+    
+    if (Date.now() - failure.timestamp > this.RESET_TIMEOUT_MS) {
+      this.failures.delete(hookId);
+      return false;
+    }
+    
+    return failure.count >= this.FAILURE_THRESHOLD;
+  }
+  
+  recordFailure(hookId: string) {
+    const existing = this.failures.get(hookId) || { count: 0, timestamp: Date.now() };
+    this.failures.set(hookId, { count: existing.count + 1, timestamp: Date.now() });
+  }
+  
+  recordSuccess(hookId: string) {
+    this.failures.delete(hookId);
+  }
+}
+<p>const breaker = new HookCircuitBreaker();</p>
+<p>api.registerHook({
+  id: "circuit-broken-handler",
+  events: ["session:patch"],
+  handler: async (event) => {
+    if (breaker.isOpen("session-patch-handler")) {
+      console.warn("[circuit-broken] Circuit open, skipping");
+      return;
+    }
+    
+    try {
+      await processSessionPatch(event);
+      breaker.recordSuccess("session-patch-handler");
+    } catch (err) {
+      breaker.recordFailure("session-patch-handler");
+      throw err;
+    }
+  }
+});
+</code></pre></p>
+<h3>Solution 5: Disable Loop-Prone Events</h3>
+<pre><code>{
+  "hooks": {
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "session-memory": { "enabled": true },
+        "command-logger": { "enabled": false },
+        "boot-md": { "enabled": false },
+        "bootstrap-extra-files": { "enabled": false }
+      }
+    }
+  }
+}
+</code></pre>
+<strong>Limitation</strong>: Doesn't apply to plugin hooks
+<h3>Solution 6: External System Loop Prevention</h3>
+<pre><code>api.registerHook({
+  id: "webhook-handler",
+  events: ["message:received"],
+  handler: async (event) => {
+    // Verify webhook signature
+    if (!verifyWebhookSignature(event)) {
+      return; // Reject unknown webhooks
+    }
+    
+    // Tag message to prevent echo
+    event.context.metadata.loopPrevention = {
+      originHook: "webhook-handler",
+      timestamp: Date.now()
+    };
+    
+    await processWebhook(event);
+  }
+});
+<p>api.registerHook({
+  id: "notification-sender",
+  events: ["session:patch"],
+  handler: async (event) => {
+    // Don't send if message came from webhook (prevent echo)
+    if (event.context.sessionEntry.metadata.loopPrevention?.originHook === "webhook-handler") {
+      return;
+    }
+    
+    await sendExternalNotification(event);
+  }
+});
+</code></pre></p>
+<h3>Solution 7: Monitor with Alerting</h3>
+<pre><code>let hookExecutionLog = [];
+<p>api.registerHook({
+  id: "loop-monitor",
+  events: ["<em>"],  // Monitor all events
+  handler: async (event) => {
+    const entry = {
+      type: event.type,
+      action: event.action,
+      sessionKey: event.sessionKey,
+      timestamp: Date.now()
+    };
+    
+    hookExecutionLog.push(entry);
+    
+    // Keep only recent entries
+    if (hookExecutionLog.length > 1000) {
+      hookExecutionLog.shift();
+    }
+    
+    // Detect rapid succession of same event type
+    const recent = hookExecutionLog.filter(e => 
+      e.type === event.type && 
+      e.action === event.action &&
+      e.sessionKey === event.sessionKey &&
+      Date.now() - e.timestamp < 1000
+    );
+    
+    if (recent.length > 20) {
+      await alertSecurityTeam({
+        type: "potential-hook-loop",
+        eventType: event.type,
+        sessionKey: event.sessionKey,
+        count: recent.length
+      });
+    }
+  }
+});
+</code></pre></p>
+<hr>
+<h2>6. EDGE CASES — Unusual Loop Scenarios</h2>
+<h3>Edge Case 1: Compaction Loop (Session OOM)</h3>
+<pre><code>// Hook triggers compaction
+api.registerHook({
+  id: "aggressive-compaction",
+  events: ["session:patch"],
+  handler: async (event) => {
+    if (event.context.sessionEntry.messages.length > 50) {
+      // This triggers compaction which fires session:compact:before/after
+      // Which might trigger another session:patch
+      await forceCompact(event.sessionKey);
+    }
+  }
+});
+<p>// Compaction hook also modifies session
+api.registerHook({
+  id: "compaction-modifier",
+  events: ["session:compact:after"],
+  handler: async (event) => {
+    event.context.sessionEntry.metadata.lastCompact = Date.now();
+  }
+});</p>
+<p>// session:patch fires again from compaction-modifier
+// → Loop: session:patch → forceCompact → session:compact:before/after → session:patch
+</code></pre></p>
+<h3>Edge Case 2: Cross-Plugin Loop</h3>
+<pre><code>// Plugin A
+api.registerHook({
+  id: "plugin-a-handler",
+  events: ["session:patch"],
+  handler: async (event) => {
+    // Calls into Plugin B's registered tool
+    await callPluginBTool(event);
+  }
+});
+<p>// Plugin B's tool triggers session modification
+async function callPluginBTool(event) {
+  event.context.sessionEntry.metadata.calledBy = "plugin-a";
+  // This triggers session:patch again → Plugin A handler → Plugin B tool → Loop
+}
+</code></pre></p>
+<h3>Edge Case 3: Before Agent Start Loop (Deprecated)</h3>
+<pre><code>// DEPRECATED but still functional
+api.registerHook({
+  id: "legacy-loop",
+  events: ["before_agent_start"],
+  handler: async (event) => {
+    // This triggers re-evaluation of agent start
+    event.context.providerOverride = "alternate";
+  }
+});
+<p>// Another hook on before_agent_start
+api.registerHook({
+  id: "other-legacy",
+  events: ["before_agent_start"],
+  handler: async (event) => {
+    // Sees override, sets another override
+    if (event.context.providerOverride === "alternate") {
+      event.context.providerOverride = "original";
+    }
+  }
+});
+// → Loop: alternate → original → alternate → original
+</code></pre></p>
+<h3>Edge Case 4: Message Echo with Delay</h3>
+<pre><code>// Webhook causes message with delay
+api.registerHook({
+  id: "delayed-echo",
+  events: ["message:sent"],
+  handler: async (event) => {
+    // Schedule delayed response (setTimeout)
+    setTimeout(() => {
+      // This sends a message that fires message:received
+      sendDelayedMessage(event);
+    }, 100);
+  }
+});
+<p>// message:received fires again
+// Loop with delay makes it harder to detect
+</code></pre></p>
+<h3>Edge Case 5: Compaction-Safeguard Bypass</h3>
+<p>From docs: <code>src/agents/pi-hooks/compaction-safeguard.ts</code> adds guardrails to compaction. <strong>But</strong> if a malicious hook disables or bypasses the safeguard:</p>
+<pre><code>api.registerHook({
+  id: "safeguard-disabler",
+  events: ["session:compact:before"],
+  handler: async (event) => {
+    // Attempt to disable safeguard
+    event.context.metadata.disableCompactionGuard = true;
+  }
+});
+<p>// Safeguard checks for this flag but if hook runs after safeguard...
+</code></pre></p>
+<h3>Edge Case 6: Gateway Restart Loop</h3>
+<pre><code>api.registerHook({
+  id: "restart-trigger",
+  events: ["gateway:startup"],
+  handler: async (event) => {
+    // If something goes wrong during startup, trigger restart
+    if (isUnhealthy()) {
+      exec("openclaw gateway restart");
+    }
+  }
+});
+<p>// Restart triggers gateway:startup again → Loop until max restart count or crash
+</code></pre></p>
+<h3>Edge Case 7: Cross-Channel Loop</h3>
+<pre><code>// Telegram channel hook
+api.registerHook({
+  id: "telegram-relay",
+  events: ["message:received"],
+  handler: async (event) => {
+    if (event.context.channelId === "telegram") {
+      // Relay to Discord
+      await sendToDiscord(event.context.content);
+    }
+  }
+});
+<p>// Discord channel hook
+api.registerHook({
+  id: "discord-relay",
+  events: ["message:received"],
+  handler: async (event) => {
+    if (event.context.channelId === "discord") {
+      // Relay to Telegram
+      await sendToTelegram(event.context.content);
+    }
+  }
+});</p>
+<p>// If Discord bot sees Telegram's relay message and relays back → Loop
+</code></pre></p>
+<h3>Edge Case 8: Skills Snapshot Refresh Loop</h3>
+<pre><code>api.registerHook({
+  id: "skill-snapshotter",
+  events: ["session:compact:after"],
+  handler: async (event) => {
+    // Saving session might modify skills snapshot
+    await saveSkillSnapshot(event.context.sessionEntry);
+  }
+});
+<p>// Skills watcher sees SKILL.md change, triggers snapshot refresh
+// Snapshot refresh modifies session
+// → session:patch fires → skill-snapshotter → Loop
+</code></pre></p>
+<hr>
+<h2>7. CREATIVE USES — Loop-Based Patterns</h2>
+<h3>Creative Use 1: Self-Healing Session</h3>
+<pre><code>// Session automatically recovers from corruption
+api.registerHook({
+  id: "self-healer",
+  events: ["session:patch"],
+  handler: async (event) => {
+    const session = event.context.sessionEntry;
+    
+    if (session.metadata.corrupted) {
+      // Reset corruption flag and restore from backup
+      session.metadata.corrupted = false;
+      await restoreFromBackup(event.sessionKey);
+    }
+  }
+});
+<p>// Another hook detects corruption
+api.registerHook({
+  id: "corruption-detector",
+  events: ["before_tool_call"],
+  handler: async (event) => {
+    if (event.toolName === "read") {
+      const content = await readFile(event.params.path);
+      if (content.includes("CORRUPTED")) {
+        event.context.sessionEntry.metadata.corrupted = true;
+      }
+    }
+  }
+});
+</code></pre></p>
+<strong>Limitation</strong>: Must have corruption detection before self-healing can run
+<h3>Creative Use 2: Adaptive Rate Limiter</h3>
+<pre><code>// Adapts rate limit based on actual usage
+api.registerHook({
+  id: "adaptive-rater",
+  events: ["before_tool_call"],
+  handler: async (event) => {
+    if (event.toolName === "exec") {
+      const session = event.context.sessionEntry;
+      const currentRate = session.metadata.apiRateLimit || 100;
+      
+      // If we're hitting rate limit, decrease
+      if (event.result?.rateLimited) {
+        session.metadata.apiRateLimit = Math.max(10, currentRate </em> 0.8);
+      } else {
+        // Slowly increase if we're under limit
+        session.metadata.apiRateLimit = Math.min(500, currentRate <em> 1.1);
+      }
+    }
+  }
+});
+</code></pre>
+<h3>Creative Use 3: Cascading Backup</h3>
+<pre><code>// Cascading backup system
+api.registerHook({
+  id: "cascading-backup",
+  events: ["session:compact:after"],
+  handler: async (event) => {
+    const session = event.context.sessionEntry;
+    
+    // Primary backup
+    await backupToPrimary(event.sessionKey);
+    
+    // If primary succeeds, trigger secondary
+    session.metadata.primaryBackupComplete = true;
+  }
+});
+<p>api.registerHook({
+  id: "secondary-backup",
+  events: ["session:patch"],
+  handler: async (event) => {
+    if (event.context.patch.metadata?.primaryBackupComplete) {
+      await backupToSecondary(event.sessionKey);
+    }
+  }
+});
+</code></pre></p>
+<h3>Creative Use 4: Progressive Enhancement</h3>
+<pre><code>// Each session patch adds more capability
+api.registerHook({
+  id: "progressive-enhancer",
+  events: ["session:patch"],
+  handler: async (event) => {
+    const session = event.context.sessionEntry;
+    const level = session.metadata.enhancementLevel || 0;
+    
+    if (level < 3) {
+      session.metadata.enhancementLevel = level + 1;
+      await applyEnhancement(event.sessionKey, level + 1);
+    }
+  }
+});
+</code></pre>
+<h3>Creative Use 5: Chaos Engineering Monitor</h3>
+<pre><code>// Deliberately inject failures to test resilience
+api.registerHook({
+  id: "chaos-monitor",
+  events: ["after_tool_call"],
+  handler: async (event) => {
+    // Check if chaos mode is enabled
+    if (!event.context.sessionEntry.metadata.chaosMode) {
+      return;
+    }
+    
+    const chaosLevel = event.context.sessionEntry.metadata.chaosLevel || 1;
+    if (Math.random() < chaosLevel </em> 0.1) {
+      // Inject random failure
+      throw new Error("Chaos injection: random failure");
+    }
+  }
+});
+</code></pre>
+<hr>
+<h2>8. NEW QUESTIONS OPENED BY THIS RESEARCH</h2>
+<h3>a) Definition & Scope</h3>
+<ul><li>[ ] Is there a maximum hook call depth before stack overflow? <strong>[HIGH]</strong></li>
+<li>[ ] Can hooks trigger themselves recursively (same hook on same event)? <strong>[MED]</strong></li>
+<li>[ ] What's the difference between internal hooks loop risk vs plugin hooks loop risk? <strong>[MED]</strong></li>
+</ul>
+<h3>b) Internal Mechanics</h3>
+<ul><li>[ ] What is exact hook execution order when multiple hooks fire on same event? <strong>[MED]</strong></li>
+<li>[ ] Can session:patch be triggered without actual session modification? <strong>[MED]</strong></li>
+<li>[ ] Does compaction have built-in safeguards against infinite compaction loops? <strong>[HIGH]</strong></li>
+</ul>
+<h3>c) Use Cases</h3>
+<ul><li>[ ] Can hooks implement their own circuit breaker that survives gateway restart? <strong>[MED]</strong></li>
+<li>[ ] What's the recommended approach for hook-to-hook communication to avoid loops? <strong>[LOW]</strong></li>
+<li>[ ] Can hooks safely use setTimeout/setInterval without memory leaks? <strong>[MED]</strong></li>
+</ul>
+<h3>d) Best Practices</h3>
+<ul><li>[ ] Should ALL hooks implement guard counters? What is the recommended pattern? <strong>[HIGH]</strong></li>
+<li>[ ] Is there a "read-only" hook mode that prevents session modification? <strong>[MED]</strong></li>
+<li>[ ] Can hooks be marked as "idempotent" for loop safety? <strong>[MED]</strong></li>
+</ul>
+<h3>e) Problems & Limitations</h3>
+<ul><li>[ ] Is there a known issue with compaction loops causing OOM? <strong>[HIGH]</strong></li>
+<li>[ ] Does gateway restart reset all in-flight hook state? <strong>[MED]</strong></li>
+<li>[ ] Are there memory leaks from hook handlers not cleaning up timers? <strong>[MED]</strong></li>
+</ul>
+<h3>f) Solutions & Workarounds</h3>
+<ul><li>[ ] Can OpenClaw add built-in loop protection (depth limit, circuit breaker)? <strong>[HIGH — feature request]</strong></li>
+<li>[ ] What's the best way to detect loops in production? <strong>[MED]</strong></li>
+<li>[ ] Can hooks be dynamically disabled when loop is detected? <strong>[MED]</strong></li>
+</ul>
+<h3>g) Edge Cases</h3>
+<ul><li>[ ] What happens when compaction safeguard is bypassed by malicious hook? <strong>[CRITICAL]</strong></li>
+<li>[ ] Can cross-channel relay create loops across multiple channels? <strong>[HIGH]</strong></li>
+<li>[ ] What happens when workspace hook has same name as bundled hook? <strong>[MED]</strong></li>
+</ul>
+<h3>h) Security</h3>
+<ul><li>[ ] Can malicious hook use infinite loop as DoS attack against Gateway? <strong>[CRITICAL]</strong></li>
+<li>[ ] Can infinite loop in hooks crash the host system? <strong>[HIGH]</strong></li>
+<li>[ ] Is there a way to disable hooks entirely for high-security deployments? <strong>[MED]</strong></li>
+</ul>
+<hr>
+<h2>9. SOURCES</h2>
+<h3>Primary Sources (OpenClaw Docs)</h3>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Main hooks documentation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/architecture.md</code> — Plugin hook system (28+ hooks), execution model, security notes</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/sdk-provider-plugins.md</code> — Provider plugin hooks</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/concepts/agent-loop.md</code> — Agent loop + hook integration</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/gateway/configuration-reference.md</code> — Hook configuration reference</li>
+</ul>
+<h3>Internal Sources</h3>
+<ul><li><code>/data/.openclaw/agents/investigador/workspace/Research/OpenClaw/findings/openclaw-hooks-system.md</code> — Hook system research</li>
+<li><code>/data/.openclaw/agents/investigador/workspace/Research/OpenClaw/findings/hook-security-audit.md</code> — Hook security audit</li>
+</ul>
+<h3>Key Findings Summary</h3>
+| Aspect | Finding | Risk Level |
+|--------|---------|------------|
+| Loop protection | <strong>NONE</strong> — no depth counter, no circuit breaker, no recursion limit | <strong>CRITICAL</strong> |
+| Direct recursion | <code>session:patch</code> → modifies session → <code>session:patch</code> → <strong>direct recursion</strong> | <strong>HIGH</strong> |
+| Event cascade | <code>message:received</code> → session change → <code>session:patch</code> → message → <strong>loop</strong> | <strong>HIGH</strong> |
+| Compaction cycles | <code>compact:before</code> → save state → <code>compact:after</code> → restore → <strong>loop</strong> | <strong>HIGH</strong> |
+| before_agent_start | Deprecated but still functional + in PROMPT_INJECTION_HOOK_NAMES | MEDIUM |
+| External system echo | Hook → external → webhook → <code>message:received</code> → <strong>loop</strong> | <strong>HIGH</strong> |
+| Insertion order | No guaranteed execution order — non-deterministic loop behavior | MEDIUM |
+| Cross-plugin | Plugin A → calls Plugin B tool → modifies session → Plugin A handler → <strong>loop</strong> | MEDIUM |
+| DoS potential | Malicious hook can create infinite loop causing Gateway crash | <strong>CRITICAL</strong> |
+<hr>
+<h2>RECOMMENDATIONS</h2>
+<ul><li><strong>ALWAYS implement guard counters</strong> in hooks that modify session state</li>
+<li><strong>Avoid hooks that directly modify session</strong> they're registered on (<code>session:patch</code> handler modifying session)</li>
+<li><strong>Use session-scoped counters</strong> that reset on <code>/new</code> or <code>/reset</code></li>
+<li><strong>Implement circuit breakers</strong> for hooks that call external systems</li>
+<li><strong>NEVER enable workspace hooks</strong> in production (untrusted code + loop risk)</li>
+<li><strong>Monitor hook execution rate</strong> and alert on anomalies</li>
+<li><strong>Request feature</strong>: Built-in loop protection from OpenClaw team</li>
+<li><strong>Document loops</strong> in hook interaction diagrams to prevent accidental cycles</li>
+</ul>
+<hr>
+<em>Research by: Investigador Scout</em>  
+<em>Date: 2026-04-23 04:53 CET</em>  
+<em>Status: COMPLETE — L28 RESOLVED (backlog #1)</em>
+<hr>
+<h2>FOLLOW-UP ACTIONS</h2>
+<ul><li>[x] Mark backlog #1 "Hook infinite loops" as RESOLVED</li>
+<li>[x] Add findings to <code>findings/hook-infinite-loops.md</code></li>
+<li>[x] Add new questions to <code>questions.md</code></li>
+<li>[x] Add sources to <code>sources.md</code></li>
+<li>[ ] Notify BRAIN for curation into <code>OPENCLAW_EXPERT.md</code></li>
+</ul>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Per-Agent Skill Allowlists & Dynamic Hook Modification — RESEARCH FINDINGS</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 per-agent-skill-allowlists-dynamic-hook.md</p>
+    <strong>Research Date:</strong> 2026-04-23
+<strong>Topic:</strong> Can per-agent skill allowlists be changed dynamically via hook?
+<strong>Priority:</strong> MED (#24)
+<strong>Status:</strong> ✅ COMPLETE
+<hr>
+<h2>1. WHAT IS</h2>
+<strong>Question:</strong> Can hooks dynamically modify the per-agent skill allowlists at runtime without config changes?
+<p>This asks whether there's a mechanism for hooks to programmatically add, remove, or swap skills during an active session based on conditions like user identity, channel, time, or other runtime context.</p>
+<hr>
+<h2>2. HOW IT WORKS</h2>
+<h3>Skills Snapshot Timing</h3>
+<p>The skills snapshot is built in <code>agent-command-BRtqb5oD.js</code> during session preparation:</p>
+<pre><code>// Line 1097-1102
+const skillsSnapshotVersion = getSkillsSnapshotVersion(workspaceDir);
+const currentSkillsSnapshot = sessionEntry?.skillsSnapshot;
+const shouldRefreshSkillsSnapshot = !currentSkillsSnapshot || 
+  shouldRefreshSnapshotForVersion(currentSkillsSnapshot.version, skillsSnapshotVersion) || 
+  !matchesSkillFilter(currentSkillsSnapshot.skillFilter, skillFilter);
+<p>const skillsSnapshot = needsSkillsSnapshot ? buildWorkspaceSkillSnapshot(workspaceDir, {...}) : currentSkillsSnapshot;
+</code></pre></p>
+<h3>Hook Execution Order</h3>
+<p>The <code>before_prompt_build</code> hook runs in <code>pi-embedded-runner-CefZK1Pt.js</code> AFTER the skills snapshot is passed to the attempt:</p>
+<pre><code>// Line 3573-3588
+const promptBuildResult = params.hookRunner?.runBeforePromptBuild({
+  prompt: params.prompt, 
+  messages: params.messages
+}, params.hookCtx);
+<p>// Hook returns only:
+return {
+  systemPrompt: promptBuildResult?.systemPrompt ?? legacyResult?.systemPrompt,
+  prependContext: joinPresentTextSegments([...]),
+  prependSystemContext: joinPresentTextSegments([...]),
+  appendSystemContext: joinPresentTextSegments([...])
+};
+</code></pre></p>
+<h3>Per-Agent Skill Filter Resolution</h3>
+<p>The per-agent skill filter is resolved from config in <code>agent-scope-D7mk_f98.js</code>:</p>
+<pre><code>// Line 101-103
+function resolveAgentSkillsFilter(cfg, agentId) {
+  return resolveEffectiveAgentSkillFilter(cfg, agentId);
+}
+</code></pre>
+<p>This reads from:
+<ul><li><code>cfg.agents.defaults.skills</code> — default skill list for all agents</li>
+<li><code>cfg.agents.list[].skills</code> — per-agent overrides</li>
+</ul>
+<hr></p>
+<h2>3. USES</h2>
+<p>If this were possible, use cases would include:
+<ul><li><strong>Context-aware skill activation</strong>: Enable/disable skills based on user, channel, time</li>
+<li><strong>A/B testing skills</strong>: Dynamically swap skills for experimentation</li>
+<li><strong>Emergency disable</strong>: Disable misbehaving skills when error rate exceeds threshold</li>
+<li><strong>Progressive rollout</strong>: Gradually enable new skills for expanding user groups</li>
+</ul>
+<hr></p>
+<h2>4. PROBLEMS</h2>
+| Problem | Description |
+|---------|-------------|
+| <strong>No direct API</strong> | No hook or API can modify skills list at runtime |
+| <strong>Snapshot already built</strong> | <code>before_prompt_build</code> fires AFTER skills snapshot decision |
+| <strong>Hook return values are limited</strong> | Only <code>systemPrompt</code>, <code>prependContext</code>, <code>prependSystemContext</code>, <code>appendSystemContext</code> can be returned |
+| <strong>Config changes take next turn</strong> | Modifying <code>context.cfg.skills</code> in hook affects FUTURE turns, not current |
+| <strong>No pre-preparation hook</strong> | No hook runs BEFORE skills snapshot is computed |
+<hr>
+<h2>5. SOLUTIONS</h2>
+<h3>Solution 1: Pre-planned Skill Sets (Static)</h3>
+<p>Design skills to cover all anticipated scenarios, with SKILL.md instructions to activate/deactivate based on context detection.</p>
+<h3>Solution 2: Config Hot-Reload (Next Turn)</h3>
+<p>Modify <code>skills.entries.<skill>.enabled</code> in config file, then trigger hot-reload. Changes take effect on NEXT turn (current turn already has snapshot).</p>
+<pre><code>// After modifying config file:
+await gateway.reloadConfig(); // Triggers skills snapshot rebuild
+</code></pre>
+<h3>Solution 3: Workspace Skill Renaming (Watcher-Based)</h3>
+<p>Rename skill directories to enable/disable them. The watcher detects changes and bumps the snapshot version for the next turn.</p>
+<pre><code>// Hook renames skill directory
+await rename(skillPath, disabledPath); // e.g., "skill-name" → ".disabled-skill-name"
+// Next turn: watcher picks up change, snapshot refreshes
+</code></pre>
+<h3>Solution 4: Prompt Injection via Hook</h3>
+<p>While you cannot modify the skills list, you can inject skill-like behavior via <code>appendSystemContext</code>:</p>
+<pre><code>api.registerHook({
+  events: ["before_prompt_build"],
+  handler: async (event) => {
+    if (shouldUseSpecialSkill(event)) {
+      return {
+        appendSystemContext: <code>\n\n# ADDITIONAL CAPABILITIES\nWhen user asks about X, use the following approach...\n</code>
+      };
+    }
+  }
+});
+</code></pre>
+<hr>
+<h2>6. EDGE CASES</h2>
+<h3>Edge Case 1: Modifying cfg.skills in before_prompt_build</h3>
+<strong>Scenario:</strong> Hook modifies <code>event.context.cfg.skills</code> expecting immediate effect.
+<strong>Reality:</strong> The snapshot was already built before this hook runs. The modification only affects FUTURE turns.
+<h3>Edge Case 2: Session Resume with Modified Skills</h3>
+<strong>Scenario:</strong> Session resumes after skills were modified in config.
+<strong>Behavior:</strong> On resume, <code>shouldRefreshSnapshotForVersion</code> checks if version changed. If version didn't change but filter did, old snapshot may be stale.
+<h3>Edge Case 3: Concurrent Session Access</h3>
+<strong>Scenario:</strong> Multiple sessions of same agent running concurrently, one modifies skill enablement.
+<strong>Reality:</strong> Each session has its own skills snapshot. Changes to config affect all NEW sessions or sessions that trigger snapshot refresh.
+<h3>Edge Case 4: Hook Returns Skills-Like Content</h3>
+<strong>Scenario:</strong> Hook tries to simulate skill behavior via system prompt.
+<strong>Limitation:</strong> This works for prompt injection but doesn't give the skill actual metadata/invocation mechanics (skill isn't in the skills list shown to model).
+<hr>
+<h2>7. CREATIVE USES</h2>
+<h3>Creative Use 1: Conditional System Prompt</h3>
+<p>Use <code>appendSystemContext</code> to inject scenario-specific instructions without modifying skill list:</p>
+<pre><code>// In before_prompt_build hook:
+if (event.context.channelId === "alerts") {
+  return {
+    appendSystemContext: "# ALERT MODE\nYou are in alerts channel. Keep responses brief and actionable."
+  };
+}
+</code></pre>
+<h3>Creative Use 2: Skill Usage Detection</h3>
+<p>Use <code>before_prompt_build</code> to log which skills WOULD be used, for analytics:</p>
+<pre><code>// Log skill access pattern (read-only, doesn't modify)
+const skills = params.skillsSnapshot?.entries || [];
+console.log(<code>Session ${sessionKey} using ${skills.length} skills</code>);
+</code></pre>
+<h3>Creative Use 3: Emergency Skill Purge</h3>
+<p>In <code>agent:bootstrap</code> hook, check for emergency conditions and remove bootstrap files:</p>
+<pre><code>api.registerHook({
+  events: ["agent:bootstrap"],
+  handler: async (event) => {
+    const isSecurityIncident = await checkSecurityStatus();
+    if (isSecurityIncident) {
+      // Remove all skills from bootstrap
+      event.context.bootstrapFiles = event.context.bootstrapFiles.filter(
+        f => !f.includes("skills")
+      );
+    }
+  }
+});
+</code></pre>
+<hr>
+<h2>8. NEW QUESTIONS</h2>
+<ul><li>[ ] Is there a hook that runs BEFORE skills snapshot is computed (preparation hook)?</li>
+<li>[ ] Can workspace skill directory changes be detected and applied within same turn?</li>
+<li>[ ] What's the performance impact of frequent skills snapshot refreshes?</li>
+<li>[ ] Can skills be enabled/disabled per-session via session:patch?</li>
+</ul>
+<hr>
+<h2>Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/agent-command-BRtqb5oD.js</code> — Skills snapshot building logic</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/pi-embedded-runner-CefZK1Pt.js</code> — <code>before_prompt_build</code> hook execution</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/agent-scope-D7mk_f98.js</code> — <code>resolveAgentSkillsFilter</code> function</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/hook-runner-global-D9t7KsGJ.js</code> — Hook merge function (mergeBeforePromptBuild)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Hook documentation</li>
+</ul>
+<hr>
+<em>Research by: Investigador Scout | 2026-04-23 09:18 CET</em>
+<em>Status: COMPLETE ✅</em>
+</body>
+</html>

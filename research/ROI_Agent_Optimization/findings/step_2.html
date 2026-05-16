@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 2: Best Practices AI Agent — Cost Efficiency & Productivity</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_2.md</p>
+    <h2>Query</h2>
+"best practices AI agent cost efficiency productivity"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://www.techtarget.com/searchenterpriseai/tip/Practical-tips-for-agentic-AI-cost-optimization</li>
+<li>https://www.codiste.com/strategies-to-cut-business-costs-with-ai-agents</li>
+<li>https://datagrid.com/blog/8-strategies-cut-ai-agent-costs</li>
+<li>https://www.azilen.com/blog/ai-cost-optimization/</li>
+<li>https://www.informationweek.com/machine-learning-ai/a-practical-guide-to-controlling-ai-agent-costs-before-they-spiral</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>El problema: Costos de AI agent son impredecibles</h3>
+<strong>Dato crítico:</strong> 92% de businesses implementando agentic AI experimentan cost overruns. 71% carece de control y visibilidad en cost drivers.
+<strong>Por quéfallan los costos:</strong>
+<ul><li>AI agent no sigue prompts — persigue objetivos</li>
+<li>Puede invocar modelos múltiples veces por task</li>
+<li>Puede retry failures, call external tools, spawn subagents</li>
+<li>Costos no lineales: pequeñas ineficiencias se multiplican</li>
+<li>Agents corren persistentemente, consumiendo recursos aunque idle</li>
+</ul>
+<h3>7 tips prácticos para cost optimization</h3>
+<strong>1. Model inference = solo 20% del TCO</strong>
+<ul><li>La mayoría de costos está después del deployment</li>
+<li>Orchestration, data, human oversight, governance = 80%</li>
+</ul>
+<strong>2. orquestación y integración</strong>
+<ul><li>Agents requieren capas de orquestación para planning, retries, tool use</li>
+<li>Poor orchestration = agent sprawl (agentes redundantes inflando costos)</li>
+<li>Integración con ERP, CRM, legacy systems añade middleware costs</li>
+</ul>
+<strong>3. Data, memory y context infrastructure</strong>
+<ul><li>Agentic AI depende heavily de RAG</li>
+<li>Embeddings, vector databases, storage, search operations escalan rápido</li>
+<li>Persistent agent memory añade storage y compute costs</li>
+</ul>
+<strong>4. Token-efficient prompting</strong>
+<ul><li>Controlled retrieval directly lowers latency y spend</li>
+<li>Over-retrieval de context multiplica token spend sin valor agregado</li>
+</ul>
+<strong>5. Splitting jobs across specialist agents puede ser costoso</strong>
+<ul><li>Cada agent recibe context = coordinación costs</li>
+<li>No siempre es más barato dividir</li>
+</ul>
+<strong>6. Human oversight nunca desaparece</strong>
+<ul><li>Monitoreo, exception handling, retraining, governance requieren skilled staff</li>
+<li>Asunción de "reducir headcount" en pilots = inexacta</li>
+</ul>
+<strong>7. Governance y compliance</strong>
+<ul><li>Hallucinations, unintended actions, security threats, regulatory risk</li>
+<li>Costos de compliance often ignored</li>
+</ul>
+<h3>Impacto real de AI agents en costos</h3>
+| Sector | Savings |
+|--------|---------|
+| Customer service | 30-40% cost reduction |
+| Inventory management | 20-30% warehousing cost reduction |
+| Overtime | 15-25% decrease |
+| Procurement | 10-15% cost reduction |
+| Ad targeting | Up to 50% cost reduction |
+| Fraud detection | Nearly 50% reduction in losses |
+<h3>ROI típico</h3>
+<ul><li><strong>15-25%</strong> reducción en operational costs</li>
+<li><strong>10-15%</strong> aumento en overall efficiency</li>
+<li><strong>ROI achieved within 12-18 months</strong></li>
+</ul>
+<hr>
+<h2>Resumen para Dani</h2>
+<strong>El costo de BRAIN:</strong>
+<ul><li>M2.7 Plan: €30/mes</li>
+<li>VPS: €20-50/mes</li>
+<li>Total: €80/mes (vs $15-25 por ticket humano en enterprise)</li>
+</ul>
+<strong>Para maximizar ROI:</strong>
+<ul><li>No dejar BRAIN corriendo idle — usar para tasks de alto valor</li>
+<li>Evitar over-retrieval de context — prompts eficientes</li>
+<li>No spawn subagents innecesarios — costs se multiplican</li>
+<li>Medir outputs, no solo tiempoSaved</li>
+</ul>
+<strong>El verdadero ROI no es solo "ahorrar tiempo" — es generar revenuecon ese tiempo freed up.</strong>
+</body>
+</html>

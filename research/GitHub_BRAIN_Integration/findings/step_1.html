@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub + BRAIN Integration — Query 1: GitHub API Automation Scripts Backup System</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_1.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<strong>Query:</strong> "GitHub API automation scripts backup system"
+<strong>Resultados:</strong> 20 found
+<hr>
+<h2>Fuentes</h2>
+<ul><li><strong>How to Automate OpenClaw Backup and Optimization with GitHub</strong> — dev.to (Tutorial específico para OpenClaw + GitHub)</li>
+<li><strong>The Ultimate Developer's Guide to GitHub Backups</strong> — simplebackups.com</li>
+<li><strong>GitHub Backup Scripts (Topics)</strong> — github.com/topics/backup-scripts</li>
+<li><strong>GitHub Automated Backup</strong> — github.com/topics/automated-backup</li>
+</ul>
+<hr>
+<h2>OpenClaw + GitHub Backup (Tutorial Completo)</h2>
+<strong>Fuente:</strong> dev.to — "How to Automate OpenClaw Backup and Optimization with GitHub"
+<h3>Por qué GitHub para backup:</h3>
+| Opción | Problema |
+|--------|----------|
+| Dropbox/Google Drive | No versiona automáticamente, sin diff visual |
+| Manual tar | Requiere intervención humana, no escala |
+| <strong>GitHub (private)</strong> | ✅ Versioning automático, diff visual, rollback fácil, gratis, accesible |
+<h3>Qué hacer backup:</h3>
+<strong>1. Core Files (críticos):</strong>
+<ul><li><code>AGENTS.md</code> — Operational instructions</li>
+<li><code>SOUL.md</code> — Personality</li>
+<li><code>USER.md</code> — Info about Dani</li>
+<li><code>TOOLS.md</code> — Local notes</li>
+<li><code>MEMORY.md</code> — Long-term memory</li>
+</ul>
+<strong>2. Custom Skills:</strong>
+<ul><li><code>skills/</code> directory</li>
+</ul>
+<strong>3. Automation Scripts:</strong>
+<ul><li><code>scripts/</code> directory</li>
+</ul>
+<hr>
+<h2>Script de Sync para BRAIN</h2>
+<pre><code>#!/bin/bash
+<h1>sync-core-to-github.sh</h1>
+<h1>Syncs core files and skills to GitHub repo</h1>
+<p>set -e  # Exit on error</p>
+<p>echo "🔄 Starting sync..."</p>
+<h1>Detect repo name automatically</h1>
+REPO_DIR=$(find ~/clawd/repos -maxdepth 1 -type d -name "core-<em>" | head -n 1)
+<p>if [ -z "$REPO_DIR" ]; then
+    echo "❌ Error: No core-</em> repo found"
+    exit 1
+fi</p>
+<p>cd "$REPO_DIR"</p>
+<h1>Pull first</h1>
+echo "📥 Pulling remote changes..."
+git pull origin main
+<h1>Copy CORE files</h1>
+echo "📋 Copying core files..."
+cp ~/clawd/<em>.md .
+<h1>Copy SKILLS</h1>
+echo "🛠️ Copying skills..."
+cp -r ~/clawd/skills .
+<h1>Copy SCRIPTS</h1>
+echo "📜 Copying scripts..."
+cp -r ~/clawd/scripts .
+<h1>Git add</h1>
+echo "📦 Staging changes..."
+git add .
+<h1>Check if there are changes</h1>
+if git diff --staged --quiet; then
+    echo "✅ No new changes"
+    exit 0
+fi
+<h1>Commit with timestamp</h1>
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+git commit -m "Auto-sync: $TIMESTAMP"
+<h1>Push</h1>
+echo "⬆️ Pushing to GitHub..."
+git push origin main
+<p>echo "✅ Sync complete"
+</code></pre></p>
+<hr>
+<h2>.gitignore Estratégico</h2>
+<pre><code><h1>Secrets</h1>
+<strong>/.config/credentials.json
+</strong>/.env
+</em><em>/api_key
+secrets/
+<h1>Temporary</h1>
+</em>.log
+<em>.tmp
+temp-</em>
+<strong>/node_modules/
+</strong>/__pycache__/
+<h1>OS</h1>
+.DS_Store
+</code></pre>
+<hr>
+<h2>Automatización con Cron</h2>
+<pre><code><h1>crontab -e</h1>
+<h1>Cada día a las 3 AM: optimizar y sync</h1>
+0 3 <em> </em> <em> /home/user/clawd/scripts/optimize-core.sh >> /home/user/clawd/logs/optimize.log 2>&1
+5 3 </em> <em> </em> /home/user/clawd/scripts/sync-core.sh >> /home/user/clawd/logs/sync-core.log 2>&1
+</code></pre>
+<hr>
+<h2>Python Script — Backup vía GitHub API</h2>
+<pre><code>import os
+import requests
+<p>GITHUB_TOKEN = 'your_github_token'
+REPO_OWNER = 'username'
+REPO_NAME = 'repository'</p>
+<p>headers = {
+    'Authorization': f'token {GITHUB_TOKEN}',
+    'Accept': 'application/vnd.github.v3+json',
+}</p>
+<p>def backup_repo():
+    repo_url = f'https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}'
+    response = requests.get(repo_url, headers=headers)
+    with open(f'{REPO_NAME}_repo.json', 'w') as f:
+        f.write(response.text)
+    print(f'Repository metadata backed up')</p>
+<p>def backup_issues():
+    issues_url = f'https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/issues'
+    response = requests.get(issues_url, headers=headers)
+    with open(f'{REPO_NAME}_issues.json', 'w') as f:
+        f.write(response.text)
+    print(f'Issues backed up')</p>
+<p>def backup_pull_requests():
+    pulls_url = f'https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/pulls'
+    response = requests.get(pulls_url, headers=headers)
+    with open(f'{REPO_NAME}_pulls.json', 'w') as f:
+        f.write(response.text)
+    print(f'Pull requests backed up')</p>
+<p>backup_repo()
+backup_issues()
+backup_pull_requests()
+</code></pre></p>
+<hr>
+<h2>Git Clone para Backup Completo</h2>
+<pre><code><h1>Clone con mirror (todas las ramas, todos los tags)</h1>
+git clone --mirror https://github.com/username/repository.git
+<h1>Luego agregar remote de backup y push</h1>
+git remote add backup https://backupserver.com/username/repository.git
+git push --mirror backup
+</code></pre>
+<h3>Múltiples remotes para push automático:</h3>
+<pre><code><h1>Configurar origin para push a dos URLs</h1>
+git remote set-url --add --push origin https://primary-repo.com/user/repo.git
+git remote set-url --add --push origin https://backup-repo.com/user/repo.git
+<h1>Ver configuración</h1>
+git remote -v
+<h1>origin  https://primary-repo.com/user/repo.git (fetch)</h1>
+<h1>origin  https://primary-repo.com/user/repo.git (push)</h1>
+<h1>origin  https://backup-repo.com/user/repo.git (push)</h1>
+</code></pre>
+<hr>
+<h2>Backup de Wiki y Project Boards</h2>
+<pre><code><h1>Wiki</h1>
+git clone https://github.com/username/repository.wiki.git
+<h1>Project boards via API (Python script del artículo)</h1>
+</code></pre>
+<hr>
+<h2>Quick Start — BRAIN puede hacerlo solo</h2>
+<strong>Dani solo necesita decirle a BRAIN:</strong>
+<blockquote>"Hey, automatically backup my core files to GitHub. My token is <code>ghp_XXXXX</code> and my username is <code>DaniBrainClaw</code>. Create a private repo and sync everything."</blockquote>
+<strong>BRAIN entiende, configura, y confirma cuando está listo.</strong>
+<hr>
+<em>Investigador — Query 1 completada.</em>
+</body>
+</html>

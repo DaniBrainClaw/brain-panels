@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Hooks System — COMPLETE RESEARCH FINDINGS</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 openclaw-hooks-system.md</p>
+    <strong>Research Date:</strong> 2026-04-23  
+<strong>Topic:</strong> OpenClaw Hook System (Internal Hooks + Plugin Hooks)  
+<strong>Priority:</strong> MEDIUM (from backlog.md)  
+<strong>Research Depth:</strong> 6-Layer Exhaustive
+<hr>
+<h2>TABLE OF CONTENTS</h2>
+<ul><li><a href="#1-what-is--definition--core-concept">What Is — Definition & Core Concept</a></li>
+<li><a href="#2-how-it-works--architecture--mechanics">How It Works — Architecture & Mechanics</a></li>
+<li><a href="#3-uses--practical-applications">Uses — Practical Applications</a></li>
+<li><a href="#4-problems--known-issues--limitations">Problems — Known Issues & Limitations</a></li>
+<li><a href="#5-solutions--best-practices--workarounds">Solutions — Best Practices & Workarounds</a></li>
+<li><a href="#6-edge-cases--unusual-scenarios">Edge Cases — Unusual Scenarios</a></li>
+<li><a href="#7-creative-uses--innovative-applications">Creative Uses — Innovative Applications</a></li>
+<li><a href="#8-new-questions-opened-by-this-research">NEW Questions Opened by This Research</a></li>
+<li><a href="#9-sources">Sources</a></li>
+</ul>
+<hr>
+<h2>1. WHAT IS — Definition & Core Concept</h2>
+<h3>Definition</h3>
+<strong>Hooks</strong> are event-driven automation triggers in OpenClaw that execute custom code when specific events occur inside the Gateway. They provide a way to intercept, modify, or react to agent lifecycle events, message flows, command executions, and system state changes.
+<h3>Two Distinct Hook Systems</h3>
+<p>OpenClaw has <strong>TWO separate hook systems</strong> that are often conflated:</p>
+| System | Count | Purpose | Discovery |
+|--------|-------|---------|-----------|
+| <strong>Internal Hooks</strong> | 4 bundled | Workspace/event automation (<code>/new</code>, <code>/reset</code>, gateway startup) | <code>~/.openclaw/hooks/</code> + workspace <code>hooks/</code> |
+| <strong>Plugin Hooks</strong> | 28+ | Deep integration into model resolution, agent lifecycle, message flow, tool execution | Bundled with plugins, registered via SDK |
+<h3>Internal Hooks (Standalone)</h3>
+<p>4 bundled hooks ship with OpenClaw:</p>
+| Hook | Events | Purpose |
+|------|--------|---------|
+| <code>session-memory</code> | <code>command:new</code>, <code>command:reset</code> | Saves session context to <code><workspace>/memory/</code> |
+| <code>bootstrap-extra-files</code> | <code>agent:bootstrap</code> | Injects additional bootstrap files from glob patterns |
+| <code>command-logger</code> | <code>command</code> | Logs all commands to <code>~/.openclaw/logs/commands.log</code> |
+| <code>boot-md</code> | <code>gateway:startup</code> | Runs <code>BOOT.md</code> when gateway starts |
+<h3>Plugin Hooks (28+ hooks)</h3>
+<p>Plugins can register hooks covering:</p>
+<ul><li><strong>Model resolution</strong>: <code>before_model_resolve</code>, <code>normalizeModelId</code>, <code>normalizeTransport</code>, <code>normalizeConfig</code>, <code>resolveDynamicModel</code>, <code>prepareDynamicModel</code>, <code>normalizeResolvedModel</code>, <code>contributeResolvedModelCompat</code></li>
+<li><strong>Agent lifecycle</strong>: <code>before_agent_start</code> (LEGACY), <code>agent:bootstrap</code></li>
+<li><strong>Prompt building</strong>: <code>before_prompt_build</code></li>
+<li><strong>Message flow</strong>: <code>message:received</code>, <code>message:transcribed</code>, <code>message:preprocessed</code>, <code>message:sent</code></li>
+<li><strong>Tool execution</strong>: <code>before_tool_call</code>, <code>after_tool_call</code>, <code>before_agent_reply</code></li>
+<li><strong>Subagent coordination</strong>: <code>subagent:start</code>, <code>subagent:complete</code></li>
+<li><strong>Compaction</strong>: <code>session:compact:before</code>, <code>session:compact:after</code></li>
+<li><strong>Session</strong>: <code>session:patch</code></li>
+<li><strong>Gateway lifecycle</strong>: <code>gateway:startup</code></li>
+</ul>
+<h3>PROMPT_INJECTION_HOOK_NAMES</h3>
+<p>A security-critical config that defines which hooks can receive <strong>prompt injection context</strong>. Currently restricted to:
+<ul><li><code>before_prompt_build</code></li>
+<li><code>before_agent_start</code></li>
+</ul>
+This prevents malicious hooks from accessing injected prompt context they shouldn't see.</p>
+<hr>
+<h2>2. HOW IT WORKS — Architecture & Mechanics</h2>
+<h3>Hook Discovery Order (Precedence)</h3>
+<p>Hooks are discovered from directories in order of <strong>increasing override precedence</strong>:</p>
+<ul><li><strong>Bundled hooks</strong> — shipped with OpenClaw</li>
+<li><strong>Plugin hooks</strong> — bundled inside installed plugins</li>
+<li><strong>Managed hooks</strong> — <code>~/.openclaw/hooks/</code> (user-installed, shared across workspaces). Extra dirs via <code>hooks.internal.load.extraDirs</code></li>
+<li><strong>Workspace hooks</strong> — <code><workspace>/hooks/</code> (per-agent, <strong>disabled by default</strong> until explicitly enabled)</li>
+</ul>
+<strong>Key rule</strong>: Workspace hooks can ADD new hook names but CANNOT override bundled, managed, or plugin-provided hooks with the same name.
+<h3>Hook Structure</h3>
+<p>Each standalone hook is a directory containing:</p>
+<pre><code>my-hook/
+├── HOOK.md          # Metadata + documentation
+└── handler.ts       # Handler implementation
+</code></pre>
+<h3>HOOK.md Format</h3>
+<pre><code>---
+name: my-hook
+description: "Short description of what this hook does"
+metadata:
+  { "openclaw": { "emoji": "🔗", "events": ["command:new"], "requires": { "bins": ["node"] } } }
+<hr>
+<h1>My Hook</h1>
+<p>Detailed documentation goes here.
+</code></pre></p>
+<h3>Handler Implementation</h3>
+<pre><code>const handler = async (event) => {
+  if (event.type !== "command" || event.action !== "new") {
+    return;
+  }
+<p>console.log(<code>[my-hook] New command triggered</code>);
+  // Your logic here</p>
+<p>// Optionally send message to user
+  event.messages.push("Hook executed!");
+};</p>
+<p>export default handler;
+</code></pre></p>
+<h3>Event Object Structure</h3>
+<p>Each event includes:
+<ul><li><code>type</code> — event category (e.g., <code>command</code>, <code>message</code>, <code>session</code>)</li>
+<li><code>action</code> — specific action within type (e.g., <code>new</code>, <code>reset</code>)</li>
+<li><code>sessionKey</code> — session identifier</li>
+<li><code>timestamp</code> — when event fired</li>
+<li><code>messages</code> — array to push messages to user</li>
+<li><code>context</code> — event-specific data</li>
+</ul>
+<h3>Event Context by Type</h3></p>
+<strong>Command events</strong> (<code>command:new</code>, <code>command:reset</code>):
+<ul><li><code>context.sessionEntry</code></li>
+<li><code>context.previousSessionEntry</code></li>
+<li><code>context.commandSource</code></li>
+<li><code>context.workspaceDir</code></li>
+<li><code>context.cfg</code></li>
+</ul>
+<strong>Message events</strong> (<code>message:received</code>):
+<ul><li><code>context.from</code></li>
+<li><code>context.content</code></li>
+<li><code>context.channelId</code></li>
+<li><code>context.metadata</code> (provider-specific including <code>senderId</code>, <code>senderName</code>, <code>guildId</code>)</li>
+</ul>
+<strong>Message events</strong> (<code>message:sent</code>):
+<ul><li><code>context.to</code></li>
+<li><code>context.content</code></li>
+<li><code>context.success</code></li>
+<li><code>context.channelId</code></li>
+</ul>
+<strong>Message events</strong> (<code>message:transcribed</code>):
+<ul><li><code>context.transcript</code></li>
+<li><code>context.from</code></li>
+<li><code>context.channelId</code></li>
+<li><code>context.mediaPath</code></li>
+</ul>
+<strong>Message events</strong> (<code>message:preprocessed</code>):
+<ul><li><code>context.bodyForAgent</code> (final enriched body)</li>
+<li><code>context.from</code></li>
+<li><code>context.channelId</code></li>
+</ul>
+<strong>Bootstrap events</strong> (<code>agent:bootstrap</code>):
+<ul><li><code>context.bootstrapFiles</code> (mutable array — CAN MODIFY what files are injected!)</li>
+<li><code>context.agentId</code></li>
+</ul>
+<strong>Session patch events</strong> (<code>session:patch</code>):
+<ul><li><code>context.sessionEntry</code></li>
+<li><code>context.patch</code> (only changed fields)</li>
+<li><code>context.cfg</code></li>
+</ul>
+<strong>Compaction events</strong>:
+<ul><li><code>session:compact:before</code>: <code>messageCount</code>, <code>tokenCount</code></li>
+<li><code>session:compact:after</code>: <code>compactedCount</code>, <code>summaryLength</code>, <code>tokensBefore</code>, <code>tokensAfter</code></li>
+</ul>
+<h3>Plugin Hook Execution Order</h3>
+<p>For model/provider plugins, OpenClaw calls hooks in this rough order:</p>
+<ul><li><code>catalog</code> — publish provider config into <code>models.providers</code></li>
+<li><code>applyConfigDefaults</code> — apply provider-owned global config defaults</li>
+<li><code>normalizeModelId</code> — normalize legacy/preview model-id aliases</li>
+<li><code>normalizeTransport</code> — normalize provider-family <code>api</code>/<code>baseUrl</code></li>
+<li><code>normalizeConfig</code> — normalize <code>models.providers.<id></code> before runtime</li>
+<li><code>applyNativeStreamingUsageCompat</code> — apply native streaming-usage compat rewrites</li>
+<li><code>resolveConfigApiKey</code> — resolve env-marker auth for config providers</li>
+<li><code>resolveSyntheticAuth</code> — surface local/self-hosted or config-backed auth</li>
+<li><code>resolveExternalAuthProfiles</code> — overlay provider-owned external auth profiles</li>
+<li><code>shouldDeferSyntheticProfileAuth</code> — defer synthetic profile auth</li>
+<li><code>resolveDynamicModel</code> — sync fallback for provider-owned model ids</li>
+<li><code>prepareDynamicModel</code> — async warm-up, then <code>resolveDynamicModel</code> runs again</li>
+<li><code>normalizeResolvedModel</code> — final rewrite before embedded runner uses model</li>
+<li><code>contributeResolvedModelCompat</code> — contribute compat flags</li>
+<li><code>capabilities</code> — provider-owned transcript/tooling metadata</li>
+<li><code>normalizeToolSchemas</code> — normalize tool schemas</li>
+<li><code>inspectToolSchemas</code> — surface provider-owned schema diagnostics</li>
+<li><code>resolveReasoningOutputMode</code> — select native vs tagged reasoning</li>
+<li><code>prepareExtraParams</code> — request-param normalization</li>
+<li><code>createStreamFn</code> — fully replace the normal stream path</li>
+<li><code>wrapStreamFn</code> — stream wrapper after generic wrappers</li>
+<li><code>resolveTransportTurnState</code> — attach native per-turn transport headers</li>
+<li><code>resolveWebSocketSessionPolicy</code> — attach native WS headers/cool-down</li>
+<li><code>formatApiKey</code> — auth-profile formatter</li>
+<li><code>refreshOAuth</code> — OAuth refresh override</li>
+<li><code>buildAuthDoctorHint</code> — repair hint appended when OAuth refresh fails</li>
+<li><code>matchesContextOverflowError</code> — provider-owned context-window overflow matcher</li>
+<li><code>classifyFailoverReason</code> — provider-owned failover reason classification</li>
+<li><code>isCacheTtlEligible</code> — prompt-cache policy for proxy/backhaul</li>
+<li><code>buildMissingAuthMessage</code> — replacement missing-auth recovery message</li>
+<li><code>suppressBuiltInModel</code> — stale upstream model suppression</li>
+<li><code>augmentModelCatalog</code> — synthetic/final catalog rows</li>
+<li><code>isBinaryThinking</code> — binary-thinking toggle</li>
+<li><code>supportsXHighThinking</code> — <code>xhigh</code> reasoning support</li>
+<li><code>resolveDefaultThinkingLevel</code> — default <code>/think</code> level for model family</li>
+<li><code>isModernModelRef</code> — modern-model matcher</li>
+<li><code>prepareRuntimeAuth</code> — exchange credential into runtime token</li>
+<li><code>resolveUsageAuth</code> — resolve usage/billing credentials</li>
+<li><code>fetchUsageSnapshot</code> — fetch and normalize usage/quota snapshots</li>
+<li><code>createEmbeddingProvider</code> — build provider-owned embedding adapter</li>
+<li><code>buildReplayPolicy</code> — return replay policy</li>
+<li><code>sanitizeReplayHistory</code> — rewrite replay history</li>
+<li><code>validateReplayTurns</code> — final replay-turn validation</li>
+<li><code>onModelSelected</code> — post-selection side effects</li>
+</ul>
+<h3>Configuration</h3>
+<pre><code>{
+  "hooks": {
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "session-memory": { "enabled": true },
+        "command-logger": { "enabled": false }
+      }
+    }
+  }
+}
+</code></pre>
+<p>Per-hook environment variables:</p>
+<pre><code>{
+  "hooks": {
+    "internal": {
+      "entries": {
+        "my-hook": {
+          "enabled": true,
+          "env": { "MY_CUSTOM_VAR": "value" }
+        }
+      }
+    }
+  }
+}
+</code></pre>
+<p>Extra hook directories:</p>
+<pre><code>{
+  "hooks": {
+    "internal": {
+      "load": {
+        "extraDirs": ["/path/to/more/hooks"]
+      }
+    }
+  }
+}
+</code></pre>
+<hr>
+<h2>3. USES — Practical Applications</h2>
+<h3>Bundled Hook Use Cases</h3>
+| Hook | Use Case |
+|------|----------|
+| <code>session-memory</code> | Auto-save conversation summaries to <code>memory/YYYY-MM-DD-slug.md</code> on <code>/new</code> or <code>/reset</code> |
+| <code>bootstrap-extra-files</code> | Inject monorepo <code>AGENTS.md</code>/<code>TOOLS.md</code> files during bootstrap |
+| <code>command-logger</code> | Audit trail of all slash commands to <code>~/.openclaw/logs/commands.log</code> |
+| <code>boot-md</code> | Run startup scripts, verify external service connectivity, warm caches |
+<h3>Plugin Hook Use Cases</h3>
+| Hook Category | Use Cases |
+|---------------|-----------|
+| <strong>before_model_resolve</strong> | Route requests to different models based on content, cost optimization, A/B testing |
+| <strong>before_prompt_build</strong> | Inject dynamic system prompts, filter sensitive content, add context |
+| <strong>before_agent_reply</strong> | Sanitize output, add disclaimers, redact PII |
+| <strong>before_tool_call</strong> | Validate tool parameters, log tool usage, enforce policies |
+| <strong>after_tool_call</strong> | Post-process tool results, enrich responses |
+| <strong>message:received</strong> | Anti-spam filtering, content moderation, routing |
+| <strong>message:preprocessed</strong> | Enrich messages with external data before agent sees them |
+| <code>agent:bootstrap</code> | Add/remove bootstrap files dynamically, conditional bootstrap |
+| <code>session:compact:before</code> | Prepare for compaction, save state |
+| <code>session:compact:after</code> | Post-compaction cleanup, notify external systems |
+<h3>Real-World Examples from Docs</h3>
+<strong>session-memory</strong>: 
+<ul><li>Extracts last 15 user/assistant messages</li>
+<li>Generates descriptive filename slug via LLM</li>
+<li>Saves to <code><workspace>/memory/YYYY-MM-DD-slug.md</code></li>
+<li>Requires <code>workspace.dir</code> configured</li>
+</ul>
+<strong>bootstrap-extra-files</strong>:
+<pre><code>{
+  "hooks": {
+    "internal": {
+      "entries": {
+        "bootstrap-extra-files": {
+          "enabled": true,
+          "paths": ["packages/<em>/AGENTS.md", "packages/</em>/TOOLS.md"]
+        }
+      }
+    }
+  }
+}
+</code></pre>
+<strong>command-logger</strong>:
+<ul><li>Logs to <code>~/.openclaw/logs/commands.log</code></li>
+<li>Format supports filtering by action: <code>grep '"action":"new"' ~/.openclaw/logs/commands.log | jq .</code></li>
+</ul>
+<h3>Advanced Plugin Hook Patterns</h3>
+<strong>before_prompt_build for RAG</strong>:
+<pre><code>api.registerHook({
+  id: "my-rag-hook",
+  events: ["before_prompt_build"],
+  handler: async (event) => {
+    if (event.type !== "before_prompt_build") return;
+    // Inject relevant documents from vector DB
+    const relevantDocs = await searchVectorDB(event.context.userQuery);
+    event.context.systemPrompt += <code>\n\nRelevant context:\n${relevantDocs}</code>;
+  }
+});
+</code></pre>
+<strong>before_tool_call for validation</strong>:
+<pre><code>api.registerHook({
+  id: "exec-validator",
+  events: ["before_tool_call"],
+  handler: async (event) => {
+    if (event.toolName === "exec") {
+      const cmd = event.params.command;
+      if (isDangerousCommand(cmd)) {
+        throw new Error("Blocked dangerous command");
+      }
+    }
+  }
+});
+</code></pre>
+<hr>
+<h2>4. PROBLEMS — Known Issues & Limitations</h2>
+<h3>Confirmed Issues</h3>
+<ul><li><strong><code>before_agent_start</code> is DEPRECATED</strong></li>
+</ul>   - Legacy hook still supported but deprecated
+   - Should migrate to <code>before_model_resolve</code> for model/provider override
+   - Should migrate to <code>before_prompt_build</code> for prompt mutation
+   - Shows "legacy warning" in <code>openclaw plugins inspect</code>
+<ul><li><strong>Hook discovery not working after config hot-reload</strong></li>
+</ul>   - Gateway restart may be needed after enabling/disabling hooks
+   - Config change requires restart to reload hook handlers
+<ul><li><strong>Workspace hooks disabled by default</strong></li>
+</ul>   - <code><workspace>/hooks/</code> are disabled until explicitly enabled
+   - Must use <code>openclaw hooks enable <hook-name></code> to activate
+<ul><li><strong>No hook-to-hook communication built-in</strong></li>
+</ul>   - Each hook runs independently
+   - Shared state requires external mechanism (files, memory store)
+<ul><li><strong>Uncaught exceptions in hooks</strong></li>
+</ul>   - If handler throws, other handlers on same event may still run
+   - But gateway stability not guaranteed
+   - Best practice: wrap in try/catch
+<ul><li><strong>Infinite hook loops possible</strong></li>
+</ul>   - Hook A → modifies session → triggers Hook B → modifies session → triggers Hook A
+   - No built-in protection against circular dependencies
+<ul><li><strong>Plugin hooks are in-process</strong></li>
+</ul>   - Native plugins run inside Gateway with same trust level as core
+   - Malicious plugin = arbitrary code execution inside Gateway
+   - No sandboxing for native plugins
+<ul><li><strong>Limited concurrency control</strong></li>
+</ul>   - No built-in mechanism to limit concurrent hook executions
+   - Heavy hooks can block message processing
+<h3>Limitations</h3>
+| Limitation | Details |
+|------------|---------|
+| Max concurrent hooks | Not explicitly limited, but heavy use impacts performance |
+| Hook execution timeout | No explicit timeout enforcement |
+| Hook execution order | Not guaranteed for multiple hooks on same event |
+| Bootstrap file removal danger | <code>agent:bootstrap</code> hook CAN remove <code>MEMORY.md</code> from <code>bootstrapFiles</code> — destructive |
+<h3>Security Considerations</h3>
+<ul><li><strong>Plugin trust</strong>: Plugins run in-process with Gateway = same privileges as core</li>
+<li><strong>Supply chain risk</strong>: npm installs can run arbitrary lifecycle scripts</li>
+<li><strong>Prompt injection</strong>: <code>PROMPT_INJECTION_HOOK_NAMES</code> restricts which hooks get prompt context</li>
+<li><strong>Workspace hooks</strong>: Disabled by default to prevent accidental activation</li>
+</ul>
+<hr>
+<h2>5. SOLUTIONS — Best Practices & Workarounds</h2>
+<h3>Best Practices</h3>
+<ul><li><strong>Keep handlers fast</strong></li>
+</ul>   - Fire-and-forget heavy work: <code>void processInBackground(event)</code>
+   - Hooks run during command processing — slow hooks = slow responses
+<ul><li><strong>Handle errors gracefully</strong></li>
+</ul>   <pre><code>   const handler = async (event) => {
+     try {
+       // risky operation
+     } catch (err) {
+       console.error(<code>[my-hook] Error:</code>, err);
+       // don't throw so other handlers can run
+     }
+   };
+   </code></pre>
+<ul><li><strong>Filter events early</strong></li>
+</ul>   <pre><code>   const handler = async (event) => {
+     if (event.type !== "command" || event.action !== "new") {
+       return; // exit fast
+     }
+     // rest of logic
+   };
+   </code></pre>
+<ul><li><strong>Use specific event keys</strong></li>
+</ul>   - Prefer <code>"events": ["command:new"]</code> over <code>"events": ["command"]</code>
+   - Reduces overhead from unnecessary invocations
+<ul><li><strong>Enable only what you need</strong></li>
+</ul>   <pre><code>   openclaw hooks enable session-memory
+   # don't enable everything
+   </code></pre>
+<ul><li><strong>Use PROMPT_INJECTION_HOOK_NAMES correctly</strong></li>
+</ul>   - Only <code>before_prompt_build</code> and <code>before_agent_start</code> receive prompt injection context
+   - Don't try to access injected prompts from other hooks
+<h3>Configuration Recommendations</h3>
+<strong>Minimal hooks config for security</strong>:
+<pre><code>{
+  "hooks": {
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "session-memory": { "enabled": true },
+        "command-logger": { "enabled": false },
+        "boot-md": { "enabled": false },
+        "bootstrap-extra-files": { "enabled": false }
+      }
+    }
+  }
+}
+</code></pre>
+<strong>For workspace hooks — explicit enablement</strong>:
+<pre><code><h1>After placing hook in <workspace>/hooks/my-hook/</h1>
+openclaw hooks enable my-hook
+<h1>Then restart gateway</h1>
+openclaw gateway restart
+</code></pre>
+<h3>Troubleshooting</h3>
+<strong>Hook not discovered</strong>:
+<pre><code><h1>Verify directory structure</h1>
+ls -la ~/.openclaw/hooks/my-hook/
+<h1>Should show: HOOK.md, handler.ts</h1>
+<h1>List all discovered hooks</h1>
+openclaw hooks list
+</code></pre>
+<strong>Hook not eligible</strong>:
+<pre><code>openclaw hooks info my-hook
+<h1>Check for missing binaries, env vars, config values, OS compatibility</h1>
+</code></pre>
+<strong>Hook not executing</strong>:
+<ul><li>Verify hook enabled: <code>openclaw hooks list</code></li>
+<li>Restart gateway so hooks reload</li>
+<li>Check logs: <code>./scripts/clawlog.sh | grep hook</code></li>
+</ul>
+<hr>
+<h2>6. EDGE CASES — Unusual Scenarios</h2>
+<h3>Edge Case 1: Modifying bootstrapFiles array</h3>
+<strong>Scenario</strong>: <code>agent:bootstrap</code> hook removes <code>MEMORY.md</code> from <code>bootstrapFiles</code>
+<strong>Risk</strong>: Agent loses persistent memory context for entire session
+<strong>Impact</strong>: Extremely high — agent forgets all learned facts
+<strong>Mitigation</strong>: Be extremely careful with bootstrapFiles mutations; always verify intended files remain
+<h3>Edge Case 2: Infinite hook loops</h3>
+<strong>Scenario</strong>: 
+<pre><code>Hook A (message:received) → modifies session
+→ triggers Hook B (session:patch) → modifies session
+→ triggers Hook A again → infinite loop
+</code></pre>
+<strong>Risk</strong>: Gateway hangs or crashes
+<strong>Mitigation</strong>: Implement guard counters, avoid triggers that re-fire same event type
+<h3>Edge Case 3: Conflicting before_model_resolve overrides</h3>
+<strong>Scenario</strong>: Two plugins both try to set model override
+<strong>Behavior</strong>: Last hook to run wins; no conflict resolution
+<strong>Impact</strong>: Unpredictable model selection
+<strong>Mitigation</strong>: Use explicit priority ordering if available; document override chain
+<h3>Edge Case 4: Gateway restart during hook execution</h3>
+<strong>Scenario</strong>: Hook is mid-execution when gateway restarts
+<strong>Behavior</strong>: In-flight work lost; no cleanup guarantee
+<strong>Impact</strong>: Partial state changes possible; orphaned resources
+<strong>Mitigation</strong>: Design hooks to be idempotent; use transactional patterns
+<h3>Edge Case 5: Multiple hooks on same event with different purposes</h3>
+<strong>Scenario</strong>: 
+<ul><li>Hook A: adds system prompt context</li>
+<li>Hook B: removes sensitive data from context</li>
+<li>Execution order matters</li>
+</ul>
+<strong>Behavior</strong>: No guaranteed order
+<strong>Impact</strong>: If B runs before A, sensitive data may still be present when A adds more context
+<strong>Mitigation</strong>: Combine related logic into single hook; don't rely on execution order
+<h3>Edge Case 6: Hook removes itself from bootstrapFiles</h3>
+<strong>Scenario</strong>: <code>agent:bootstrap</code> removes the hook's own bootstrap helper file
+<strong>Behavior</strong>: Hook continues to work for current session; broken on next session
+<strong>Impact</strong>: Subtle, hard to debug
+<h3>Edge Case 7: before_agent_start deprecation</h3>
+<strong>Scenario</strong>: Legacy plugin uses <code>before_agent_start</code>, which is deprecated
+<strong>Behavior</strong>: Works but shows "legacy warning" in diagnostics
+<strong>Impact</strong>: May break in future versions
+<strong>Mitigation</strong>: Migrate to <code>before_model_resolve</code> or <code>before_prompt_build</code>
+<h3>Edge Case 8: Workspace hook shadows bundled hook</h3>
+<strong>Scenario</strong>: User creates <code>session-memory</code> in <code><workspace>/hooks/</code>
+<strong>Behavior</strong>: Workspace version doesn't actually shadow bundled — workspace hooks can ONLY add new names, not override existing
+<strong>Impact</strong>: Confusion about which version is running
+<hr>
+<h2>7. CREATIVE USES — Innovative Applications</h2>
+<h3>Creative Use 1: Dynamic Context Injection</h3>
+<p>Build a hook that fetches real-time data (weather, stocks, news) and injects into system prompt based on keywords in user message.</p>
+<pre><code>const handler = async (event) => {
+  if (event.type !== "before_prompt_build") return;
+  
+  const query = event.context.userMessage;
+  if (query.match(/weather in \w+/i)) {
+    const location = extractLocation(query);
+    const weather = await fetchWeather(location);
+    event.context.systemPrompt += <code>\n\nCurrent weather in ${location}: ${weather}</code>;
+  }
+};
+</code></pre>
+<h3>Creative Use 2: Conditional Model Routing</h3>
+<p>Route to different models based on conversation topic or user tier.</p>
+<pre><code>api.registerHook({
+  events: ["before_model_resolve"],
+  handler: async (event) => {
+    const topic = classifyTopic(event.context.userMessage);
+    if (topic === "code") {
+      event.context.modelOverride = "anthropic/claude-opus-4-6";
+    } else if (topic === "creative") {
+      event.context.modelOverride = "openai/gpt-5.4";
+    }
+  }
+});
+</code></pre>
+<h3>Creative Use 3: Real-time Content Moderation</h3>
+<p>Scan outgoing messages for policy violations before delivery.</p>
+<pre><code>api.registerHook({
+  events: ["before_agent_reply"],
+  handler: async (event) => {
+    const content = event.context.replyContent;
+    const violations = await checkPolicy(content);
+    if (violations.length > 0) {
+      event.context.replyContent = sanitizeContent(content, violations);
+      event.messages.push(<code>⚠️ Response modified due to policy: ${violations.join(", ")}</code>);
+    }
+  }
+});
+</code></pre>
+<h3>Creative Use 4: Cross-Channel Message Relay</h3>
+<p>Mirror messages between channels without subagents.</p>
+<pre><code>api.registerHook({
+  events: ["message:received"],
+  handler: async (event) => {
+    if (event.context.channelId === "telegram" && event.context.content.match(/^!mirror/)) {
+      const message = event.context.content.replace(/^!mirror\s<em>/, "");
+      await sendMessage({ channel: "discord", target: "alerts-channel", message });
+    }
+  }
+});
+</code></pre>
+<h3>Creative Use 5: Custom Plugin System</h3>
+<p>Build a meta-plugin system where hooks load plugin configurations dynamically.</p>
+<pre><code>api.registerHook({
+  events: ["gateway:startup"],
+  handler: async (event) => {
+    const pluginConfigs = await loadPluginRegistry();
+    for (const config of pluginConfigs) {
+      await registerDynamicPlugin(config);
+    }
+  }
+});
+</code></pre>
+<h3>Creative Use 6: Session State Snapshots</h3>
+<p>Create periodic state snapshots for debugging or replay.</p>
+<pre><code>api.registerHook({
+  events: ["session:compact:after"],
+  handler: async (event) => {
+    const snapshot = {
+      sessionKey: event.sessionKey,
+      tokensBefore: event.context.tokensBefore,
+      tokensAfter: event.context.tokensAfter,
+      compactedCount: event.context.compactedCount,
+      timestamp: Date.now()
+    };
+    await appendToSnapshotLog(snapshot);
+  }
+});
+</code></pre>
+<h3>Creative Use 7: Usage-based Cost Tracking</h3>
+<p>Track per-user or per-session API costs.</p>
+<pre><code>api.registerHook({
+  events: ["after_tool_call"],
+  handler: async (event) => {
+    if (event.toolName === "infer") {
+      const cost = calculateCost(event.params);
+      await recordUsage({ 
+        user: event.context.senderId, 
+        cost,
+        model: event.params.model 
+      });
+    }
+  }
+});
+</code></pre>
+<h3>Creative Use 8: Shared Session Collaboration</h3>
+<p>Implement real-time collaboration by broadcasting session state changes.</p>
+<pre><code>api.registerHook({
+  events: ["session:patch"],
+  handler: async (event) => {
+    if (event.context.patch.thinkingLevel !== undefined) {
+      await broadcastToCollaborators({
+        type: "thinking-change",
+        sessionKey: event.sessionKey,
+        newLevel: event.context.patch.thinkingLevel
+      });
+    }
+  }
+});
+</code></pre>
+<hr>
+<h2>8. NEW QUESTIONS OPENED BY THIS RESEARCH</h2>
+<h3>a) Definition & Scope</h3>
+<ul><li>[ ] What is exact difference between internal hooks (5) vs plugin hooks (28+)? <strong>[MED]</strong></li>
+<li>[ ] How do workspace hooks (<code><workspace>/hooks/</code>) differ from managed hooks (<code>~/.openclaw/hooks/</code>) in discovery precedence? <strong>[LOW]</strong></li>
+<li>[ ] What is <code>PROMPT_INJECTION_HOOK_NAMES</code> and which 2 hooks are in it? <strong>[HIGH]</strong></li>
+<li>[ ] Can plugin hooks be dynamically registered/unregistered at runtime? <strong>[MED]</strong></li>
+</ul>
+<h3>b) Internal Mechanics</h3>
+<ul><li>[ ] What is exact hook execution order when multiple hooks fire on same event? <strong>[MED]</strong></li>
+<li>[ ] How does PROMPT_INJECTION_HOOK_NAMES provide security guarantees? <strong>[HIGH]</strong></li>
+<li>[ ] Can hooks modify the <code>bootstrapFiles</code> array in agent:bootstrap event (dangerous)? <strong>[MED]</strong></li>
+<li>[ ] What happens when hook removes MEMORY.md from bootstrapFiles array? <strong>[HIGH]</strong></li>
+<li>[ ] Are hook execution times logged anywhere? Can performance be tracked? <strong>[LOW]</strong></li>
+</ul>
+<h3>c) Use Cases</h3>
+<ul><li>[ ] Can hooks implement custom authentication/authorization flows? <strong>[MED]</strong></li>
+<li>[ ] Maximum hooks per event before performance degrades? <strong>[LOW]</strong></li>
+<li>[ ] Can hooks read/write to session store directly? What are risks? <strong>[MED]</strong></li>
+<li>[ ] Can hooks trigger subagent runs? What are limitations? <strong>[MED]</strong></li>
+<li>[ ] Can hooks implement rate limiting or throttling? <strong>[MED]</strong></li>
+</ul>
+<h3>d) Best Practices</h3>
+<ul><li>[ ] What happens if hook handler throws uncaught exception - does it crash gateway? <strong>[MED]</strong></li>
+<li>[ ] Can hooks access gateway internal state (session store, config)? <strong>[MED]</strong></li>
+<li>[ ] Should llm_input/llm_output always use fire-and-forget? <strong>[HIGH]</strong></li>
+<li>[ ] Is there a recommended pattern for hook error handling and logging? <strong>[MED]</strong></li>
+<li>[ ] Can hooks safely use async/await or should they be synchronous? <strong>[LOW]</strong></li>
+</ul>
+<h3>e) Problems & Limitations</h3>
+<ul><li>[ ] Is there a known issue with hook discovery not working after config hot-reload? <strong>[MED]</strong></li>
+<li>[ ] before_agent_start deprecation status - does it still work or is it broken? <strong>[HIGH]</strong></li>
+<li>[ ] Does gateway restart kill in-flight hooks? Is there cleanup guarantee? <strong>[MED]</strong></li>
+<li>[ ] What happens when workspace hook has same name as bundled hook? <strong>[MED]</strong></li>
+<li>[ ] Are there memory leaks from hook handlers not properly cleaning up? <strong>[MED]</strong></li>
+</ul>
+<h3>f) Solutions & Workarounds</h3>
+<ul><li>[ ] What's recommended approach for hook-to-hook communication? <strong>[LOW]</strong></li>
+<li>[ ] Can hooks be dynamically enabled/disabled without gateway restart? <strong>[MED]</strong></li>
+<li>[ ] How to chain hooks to ensure execution order? <strong>[MED]</strong></li>
+<li>[ ] What's the best way to debug hook execution? <strong>[MED]</strong></li>
+</ul>
+<h3>g) Edge Cases</h3>
+<ul><li>[ ] What happens when hook removes MEMORY.md from bootstrapFiles array? <strong>[HIGH]</strong></li>
+<li>[ ] Can hooks trigger infinite loops (hook A → hook B → A)? Is there protection? <strong>[HIGH]</strong></li>
+<li>[ ] What happens when before_model_resolve returns conflicting overrides? <strong>[MED]</strong></li>
+<li>[ ] Can two plugins register hooks for same event — what happens? <strong>[MED]</strong></li>
+<li>[ ] What happens when hook is enabled/disabled while gateway is running? <strong>[MED]</strong></li>
+</ul>
+<h3>h) Creative Uses</h3>
+<ul><li>[ ] Could hooks implement custom plugin system on top of existing hooks? <strong>[LOW]</strong></li>
+<li>[ ] Could hooks implement real-time collaboration (shared sessions)? <strong>[LOW]</strong></li>
+<li>[ ] Can hooks implement cross-channel message relay without subagents? <strong>[MED]</strong></li>
+<li>[ ] Can hooks implement dynamic model fallback chains? <strong>[MED]</strong></li>
+<li>[ ] Could hooks implement a webhook-to-agent bridge for external systems? <strong>[MED]</strong></li>
+</ul>
+<h3>i) Security (NEW from this research)</h3>
+<ul><li>[ ] What is the security model for workspace hooks vs managed hooks? <strong>[HIGH]</strong></li>
+<li>[ ] Can malicious workspace hook access managed hook code? <strong>[HIGH]</strong></li>
+<li>[ ] What audit logging exists for hook execution? <strong>[MED]</strong></li>
+<li>[ ] Can hooks access environment variables with secrets? <strong>[HIGH]</strong></li>
+<li>[ ] Is there a hook that can be used for privilege escalation? <strong>[HIGH]</strong></li>
+</ul>
+<h3>j) Integration (NEW from this research)</h3>
+<ul><li>[ ] Can hooks integrate with external APIs (webhooks out)? <strong>[MED]</strong></li>
+<li>[ ] Can hooks process audio/video before agent sees it (message:transcribed)? <strong>[MED]</strong></li>
+<li>[ ] Can hooks add/remove tools from the tool registry dynamically? <strong>[MED]</strong></li>
+<li>[ ] How do hooks interact with the skill system? <strong>[MED]</strong></li>
+<li>[ ] Can hooks modify channel-specific message metadata? <strong>[MED]</strong></li>
+</ul>
+<hr>
+<h2>9. SOURCES</h2>
+<h3>Primary Sources (OpenClaw Docs)</h3>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Main hooks documentation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/cli/hooks.md</code> — CLI reference for hooks</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/architecture.md</code> — Plugin hook system (28+ hooks)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/webhook.md</code> — Webhooks (external, HTTP-based)</li>
+</ul>
+<h3>Web Sources</h3>
+<ul><li>Google Search: "OpenClaw hooks before_model_resolve before_agent_start before_prompt_build plugin hooks security"</li>
+</ul>
+<h3>Internal Sources</h3>
+<ul><li><code>/data/.openclaw/agents/investigador/workspace/backlog.md</code> — Hook system marked as NEW FULL RESEARCH needed</li>
+<li><code>/data/.openclaw/workspace/OPENCLAW_EXPERT.md</code> — Contains hook system notes</li>
+</ul>
+<h3>Key Findings Summary</h3>
+| Aspect | Finding |
+|--------|---------|
+| Internal hooks | 4 bundled: session-memory, bootstrap-extra-files, command-logger, boot-md |
+| Plugin hooks | 28+ covering model resolution, agent lifecycle, message flow, tools |
+| Discovery | Bundled → Plugin → Managed (~/.openclaw/hooks/) → Workspace (disabled by default) |
+| Security | PROMPT_INJECTION_HOOK_NAMES restricts prompt context to 2 hooks |
+| Deprecation | before_agent_start is legacy, prefer before_model_resolve / before_prompt_build |
+| Bootstrap danger | agent:bootstrap can modify bootstrapFiles array — can remove MEMORY.md |
+| Best practice | Keep handlers fast, fire-and-forget heavy work, try/catch, filter early |
+<hr>
+</em>Research by: Investigador Scout<em>  
+</em>Date: 2026-04-23 01:30 CET<em>  
+</em>Status: COMPLETE*
+</body>
+</html>

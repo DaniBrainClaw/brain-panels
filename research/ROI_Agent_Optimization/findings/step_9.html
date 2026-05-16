@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 9: Automate Client Work with AI Agent — Billing Models</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_9.md</p>
+    <h2>Query</h2>
+"automate client work with AI agent billing models"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://www.mindstudio.ai/blog/professional-services</li>
+<li>https://www.chargebee.com/blog/usage-based-billing-reimagined-for-the-age-of-ai/</li>
+<li>https://dev.to/tejakummarikuntla/i-built-a-token-billing-system-for-my-ai-agent-heres-how-it-works-dl2</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>El problema: Traditional billing no funciona para AI</h3>
+<strong>El insight de Chargebee:</strong>
+<blockquote>"Traditional pricing models are increasingly strained as the gap widens between value delivery and monetization methods. Seat-based pricing worked when headcount reliably indicated company size or usage. But when AI tools handle end-to-end workflows, automate complex processes, and multiply productivity, this correlation falters."</blockquote>
+<strong>El problema real:</strong>
+<ul><li>AI features ya no son zero-cost</li>
+<li>Cada capability lleva compute o model cost</li>
+<li>No puedes cobrar "per seat" cuando el agent hace el trabajo de 10 personas</li>
+</ul>
+<h3>Los modelos de billing para AI agents</h3>
+<strong>Modelo 1: Per-Output (RECOMENDADO para Dani)</strong>
+<ul><li>Cobrar por output entregado</li>
+<li>Ejemplo: $25 por blog post, $200 por market research report</li>
+<li>Bueno para: servicios específicos y medibles</li>
+<li><strong>El cliente paga por resultado, no por acceso</strong></li>
+</ul>
+<strong>Modelo 2: Usage-Based</strong>
+<ul><li>Cobrar por tokens o API calls consumidas</li>
+<li>Transparente pero impredecible</li>
+<li>Para clientes con uso variable</li>
+</ul>
+<strong>Modelo 3: Subscription (Flat Fee)</strong>
+<ul><li>Fee mensual fijo</li>
+<li>Bueno para: predictable revenue</li>
+<li>Ejemplo: $500-$3,000/mes todo incluido</li>
+</ul>
+<strong>Modelo 4: Hybrid (EL MEJOR)</strong>
+<ul><li>Base fee + usage overage</li>
+<li>Combina predictability + protection contra overuse</li>
+<li>Ejemplo: $500/mes base + €10/workflow adicional</li>
+</ul>
+<strong>Modelo 5: Outcome-Based (EL MÁS RENTABLE)</strong>
+<ul><li>Cobrar por resultado específico logrado</li>
+<li>Ejemplo: €500 si lead se convierte, €1,000 si ventas aumentan 20%</li>
+<li><strong>Alinea incentivos: solo ganas más si cliente gana más</strong></li>
+</ul>
+<h3>Cómo professional services están usando AI agents</h3>
+<strong>Document Analysis:</strong>
+<ul><li>Contract review: horas → minutos</li>
+<li>Due diligence: análisis de documentos</li>
+<li>Report generation: data → polished outputs</li>
+</ul>
+<strong>Los números:</strong>
+<ul><li>88% de organizaciones ya embedding AI agents (KPMG 2026)</li>
+<li>Accounting market: $10.87B en 2026</li>
+<li>80%+ de individual tax preparation puede automatizarse</li>
+<li>Audit teams: 50%+ reduction en document analysis time</li>
+</ul>
+<strong>El gap de oportunidad:</strong>
+<ul><li>Solo 34% están usando AI en accounting y finance</li>
+<li>79% de executives adoptando AI agents</li>
+<li><strong>= oportunidad para Dani</strong></li>
+</ul>
+<h3>El math del token billing</h3>
+<strong>Sistema de token billing (DEV Community):</strong>
+<ul><li>Crear sistema donde cada task cuesta X tokens</li>
+<li>Track consumo por cliente</li>
+<li>Cobrar por uso real</li>
+<li>Más preciso que flat fee</li>
+</ul>
+<strong>Ejemplo práctico:</strong>
+<ul><li>Research task: 10,000 tokens × €0.30/M = €0.003</li>
+<li>Si cobras €50 por research = margin enorme</li>
+<li>Pero el mercado paga €200-500 por research de calidad</li>
+</ul>
+<hr>
+<h2>Resumen para Dani</h2>
+<strong>Cómo facturar servicios de BRAIN:</strong>
+| Modelo | Precio sugerido | Cuándo usarlo |
+|--------|-----------------|---------------|
+| Per-Output | €50-200/task | Research, reports, content |
+| Subscription | €500-1,500/mes | Servicios continuos |
+| Hybrid | €500 base + €10/task | Melhor para la mayoría |
+| Outcome-Based | €500-1,000 por resultado | Solo si puedes medirlo |
+<strong>Ejemplo de pricing:</strong>
+<ul><li>Starter: €500/mes (30 tasks)</li>
+<li>Professional: €1,500/mes (100 tasks + setup)</li>
+<li>Elite: €3,000/mes (unlimited + priority)</li>
+</ul>
+<strong>Lo que NO hacer:</strong>
+<ul><li>❌ Unlimited sin límites → te destruyen margins</li>
+<li>❌ Per-hour → te limita</li>
+</ul><li>❌ Gratis para "probar" → pierde tiempo y dinero</li>
+</body>
+</html>

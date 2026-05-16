@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 6: AI Agent Business Optimization — Reducing Costs</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_6.md</p>
+    <h2>Query</h2>
+"AI agent business optimization reducing costs"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://www.teneo.ai/blog/ai-vs-live-agent-cost-the-complete-2025-analysis-and-comparison-2</li>
+<li>https://paxrel.com/blog-ai-agent-cost-optimization</li>
+<li>https://www.nice.com/agentic-ai/cost-reduction-with-autonomous-ai-agents</li>
+<li>https://www.techtarget.com/searchenterpriseai/tip/Practical-tips-for-agentic-AI-cost-optimization</li>
+<li>https://www.ai-agentsplus.com/blog/ai-agent-cost-optimization-strategies-2026</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>AI vs Human Agent Cost Comparison</h3>
+<strong>Los números reales:</strong>
+| Metric | Human Agent | AI Agent |
+|--------|-------------|----------|
+| Cost per interaction | $3.00-$6.00 | $0.25-$0.50 |
+| Availability | 8-12 horas/día | 24/7 |
+| Response time | Variable | Instant |
+| Cost reduction | — | 85-90% |
+<strong>Caso enterprise (Teneo):</strong>
+<ul><li>1M calls/month con 22% containment → 780K llegan a agent a $6</li>
+<li>Con 60% containment (AI híbrido) → 400K llegan a agent</li>
+<li>Ahorro: <strong>millones annually</strong></li>
+</ul>
+<strong>Break-even point:</strong> 50,000-55,000 interacciones anuales
+<strong>Payback period:</strong> 4-6 meses
+<h3>3 Estrategias para cortar costs 80%</h3>
+<strong>Strategy 1: Model Routing (HIGH IMPACT)</strong>
+<ul><li>Usar modelos caros solo cuando necesario</li>
+<li>Tareas simples → GPT-4o-mini ($0.60/MTok output)</li>
+<li>Tareas complejas → Claude Sonnet ($15/MTok output)</li>
+<li><strong>La diferencia es 16x en precio</strong></li>
+</ul>
+<strong>Model pricing 2026:</strong>
+| Model | Input $/MTok | Output $/MTok |
+|-------|--------------|---------------|
+| GPT-4o | $2.50 | $10.00 |
+| Claude Sonnet 4 | $3.00 | $15.00 |
+| GPT-4o-mini | $0.15 | $0.60 |
+| DeepSeek V3 | $0.27 | $1.10 |
+| Gemini 2.5 Flash | $0.15 | $0.60 |
+<strong>Real example:</strong>
+<ul><li>Newsletter pipeline: 120 articles/run</li>
+<li>Scoring con GPT-4o: ~$0.50/run</li>
+<li>Scoring con DeepSeek V3: ~$0.06/run</li>
+<li><strong>88% reduction sin quality loss</strong></li>
+</ul>
+<strong>Strategy 2: Prompt Compression</strong>
+<ul><li>Reducir tokens en prompts = reducir costos</li>
+<li>Antes: 847 tokens</li>
+<li>Después: 127 tokens</li>
+<li><strong>85% token reduction</strong></li>
+</ul>
+<strong>Técnicas:</strong>
+<ul><li>Quitar filler words: "Please", "Your task is to"</li>
+<li>Usar structured output specs</li>
+<li>Comprimir context (summarize docs en lugar de full text)</li>
+<li>1 few-shot example en lugar de 3</li>
+</ul>
+<strong>Strategy 3: Caching</strong>
+<ul><li>Si el agent pregunta lo mismo dos veces → pagar dos veces</li>
+<li>Cache = answer once, reuse</li>
+<li><strong>Highest ROI optimization</strong></li>
+</ul>
+<h3>Costos ocultos que la mayoría ignora</h3>
+<blockquote>"Most cost analyses compare sticker prices. They miss the hidden costs of inaccurate AI: escalation surges, repeat contacts, compliance risk and agent burnout from cleaning up automation failures."</blockquote>
+<strong>Lo que nadie cuenta:</strong>
+<ul><li>Model inference = solo 20% del TCO</li>
+<li>Orchestration = 40%</li>
+<li>Data/memory = 20%</li>
+<li>Human oversight = 20%</li>
+</ul>
+<h3>La regla del 80/20</h3>
+<blockquote>"80% of your bill comes from 20% of your tasks. Find those expensive tasks and optimize them first."</blockquote>
+<strong>Los дорогие tareas son típicamente:</strong>
+<ul><li>Long reasoning chains</li>
+<li>Large context injections</li>
+<li>Retries from errors</li>
+</ul>
+<hr>
+<h2>Resumen para Dani</h2>
+<strong>BRAIN costo-efectividad:</strong>
+<ul><li>Dani paga ~€80/mes</li>
+<li>Un human VA cuesta $3,000-$5,000/mes</li>
+<li><strong>BRAIN = 97-98% más barato que VA</strong></li>
+</ul>
+<strong>Cómo optimizar costos de BRAIN:</strong>
+<ul><li><strong>Usar M2.7 para tareas complejas</strong> (planning, analysis)</li>
+<li><strong>Para tareas simples</strong> (classification, formatting) → cheaper model si disponible</li>
+<li><strong>Comprimir prompts</strong> — menos tokens = menos dinero</li>
+<li><strong>Cache resultados</strong> — no recalcular lo mismo</li>
+</ul>
+<strong>El verdadero ROI:</strong>
+<ul><li>BRAIN a €80/mes vs VA a €4,000/mes</li>
+</ul><li>Diferencia: €3,920/mes que puedes reinvertir en negocio</li>
+</body>
+</html>

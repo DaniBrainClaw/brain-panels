@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RESUMEN PARA DANI — Hermes vs BRAIN</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 SUMMARY_DANI.md</p>
+    <strong>Fecha:</strong> 2026-05-16  
+<strong>TU SISTEMA:</strong> BRAIN (OpenClaw + MiniMax M2.7)  
+<strong>ALTERNATIVA:</strong> Hermes Agent (Nous Research, 153K stars)
+<hr>
+<h2>TL;DR — ¿Migrar o No?</h2>
+<strong>NO migrar a Hermes.</strong>
+<p>Tu BRAIN ya está configurado y funcionando. Ir a Hermes significa:
+<ul><li>Perder todo tu contexto actual</li>
+<li>Recrear skills desde cero</li>
+<li>Reconfigurar todo</li>
+</ul>
+<strong>SÍ puedes INTEGRAR ideas de Hermes en BRAIN.</strong></p>
+<hr>
+<h2>¿QUÉ ES HERMES?</h2>
+<p>Hermes es un agente AI <strong>self-improving</strong> de Nous Research.</p>
+<p>A diferencia de otros agentes que solo recuerdan conversaciones, Hermes:</p>
+<ul><li><strong>Revisa periódicamente</strong> qué aprendió</li>
+<li><strong>Crea skills automáticamente</strong> después de tareas complejas</li>
+<li><strong>Mejora esos skills</strong> mientras los usa</li>
+<li><strong>Busca en sesiones pasadas</strong> con full-text search</li>
+</ul>
+BRAIN hace algunas de estas cosas, pero <strong>manual</strong>. Hermes las hace <strong>automático</strong>.
+<hr>
+<h2>LO QUE HERMES TIENE QUE BRAIN NO (todavía)</h2>
+<h3>🔴 PRIORITY ALTA — Implementar en BRAIN</h3>
+| Feature | Qué hace | Cómo implementarlo en BRAIN |
+|---------|----------|----------------------------|
+| <strong>Periodic nudge</strong> | Cada ciertos intervalos revisa si hay que guardar algo a memory | Crear un "nudge" periódico en heartbeats |
+| <strong>Skill creation automático</strong> | Después de 5+ tool calls, crea skill automáticamente | Después de 5+ exec, sugerir crear skill |
+| <strong>4-layer memory</strong> | Prompt memory, session, skills, project separados | Ya tienes algo similar, pero sin límites activos |
+| <strong>FTS5 session search</strong> | Buscar en sesiones pasadas con full-text | Investigar SQLite FTS5 para BRAIN |
+<h3>🟡 PRIORITY MEDIA</h3>
+| Feature | Qué hace | Viabilidad |
+|---------|----------|------------|
+| <strong>Skill self-patching</strong> | Mejora skills durante uso, no reescribir completo | Implementable — usar edit parcial |
+| <strong>Adaptive reasoning</strong> | gasta menos tokens en tareas simples | Requiere investigación |
+| <strong>Built-in cron natural language</strong> | <code>hermes cron "reporte diario a las 9"</code> | Ya tienes cron del sistema, solo wrappear |
+| <strong>Fallback skills</strong> | Muestra skill alternativa si tool no está disponible | Implementable |
+<h3>🟢 NO NECESARIO PARA DANI</h3>
+| Feature | Por qué no |
+|---------|------------|
+| <strong>20+ platforms</strong> | Tienes Telegram + webchat — suficiente |
+| <strong>200+ models</strong> | MiniMax M2.7 es suficiente |
+| <strong>Serverless persistence</strong> | Ya tienes VPS |
+| <strong>RL training pipeline</strong> | Overkill para tu uso |
+<hr>
+<h2>EL LOOP DE MEJORA DE HERMES (cómo funciona)</h2>
+<pre><code>1. Entiende la tarea + inspecciona entorno
+<ul><li>Actúa con tools (no adivinar)</li>
+<li>Verifica resultado (tests, checks)</li>
+<li>Guarda hechos duraderos → MEMORY.md</li>
+<li>Convierte procedimientos → Skills</li>
+<li>La próxima vez carga skills automáticamente</li>
+</ul>      ↑
+   + NUDGE PERIÓDICO que pregunta
+   "¿Hay algo nuevo que guardar?"
+</code></pre>
+<strong>BRAIN no tiene el paso del nudge periódico.</strong> Eso es lo más fácil de implementar.
+<hr>
+<h2>QUÉ PUEDES HACER AHORA MISMO</h2>
+<h3>1. Memory con límites activos</h3>
+En BRAIN, tu MEMORY.md puede crecer infinitamente. Hermes lo limita a 3,575 chars para forzar <strong>curación activa</strong>.
+<strong>Acción:</strong> Revisar MEMORY.md y poner límite práctico.
+<h3>2. Nudge periódico en heartbeat</h3>
+Implementar una revisión automática cada ciertos heartbeats:
+<ul><li>"¿Guardé algo nuevo que deba persistir?"</li>
+<li>"¿Hay alguna corrección de Dani que deba grabar?"</li>
+</ul>
+<h3>3. Trigger para crear skills</h3>
+Después de 5+ exec tool calls en una tarea:
+<ul><li>Sugerir: "¿Quieres crear un skill para esto?"</li>
+<li>Guardar procedimiento en <code>skills/</code></li>
+</ul>
+<h3>4. Session search</h3>
+Hermes busca en SQLite con FTS5. BRAIN podría usar lo mismo para buscar en sesiones pasadas.
+<hr>
+<h2>LO QUE TIENES MEJOR QUE HERMES</h2>
+<ul><li><strong>Agente Investigador dedicado</strong> — Esto es único en BRAIN. Hermes no lo tiene.</li>
+<li><strong>Tu contexto actual</strong> — todo lo que sabes sobre Dani, sus proyectos, sus preferencias</li>
+<li><strong>Setup funcional</strong> — funcionando ahora, no configurar de cero</li>
+</ul>
+<hr>
+<h2>VEREDICTO</h2>
+| Opción | Recomendación |
+|--------|---------------|
+| Migrar a Hermes | ❌ No |
+| Implementar Hermes features en BRAIN | ✅ Sí, gradualmente |
+| Copiar el nudge periódico | ✅ Empezar por aquí |
+| Copiar skill auto-creation | ✅ Después del nudge |
+<hr>
+<h2>ARCHIVOS DEL ANÁLISIS</h2>
+<pre><code>Research/Hermes_Agent_Analysis/
+├── sources.md          — Links completos
+├── INDEX.md           — Resumen del análisis
+├── SUMMARY_DANI.md    — Este archivo
+└── findings/
+    ├── step_1.md      — Qué es Hermes
+    ├── step_2.md      — Funcionalidades principales
+    ├── step_3.md      — Self-improvement mechanism
+    └── step_4.md      — Comparison con BRAIN
+</code></pre>
+<hr>
+<em>Investigador — Análisis completado.</em>  
+<em>Cuando quieras, puedo implementar el "nudge periódico" en BRAIN.</em>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiniMax M2.7 Analysis — Executive Index</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 index.md</p>
+    <h2>Research completed: 10 queries, 20+ sources</h2>
+<hr>
+<h2>1. ¿Dónde es EXCELENTE MiniMax M2.7?</h2>
+<h3>Coding / Software Engineering</h3>
+<ul><li><strong>SWE-Pro</strong>: 56.22% — igual que GPT-5.3-Codex, cerca de Claude Opus 4.6 (57%)</li>
+<li><strong>SWE-bench Verified</strong>: 78% — <strong>MEJOR que Opus 4.6 (55%)</strong> — 23 puntos de ventaja</li>
+<li><strong>SWE Multilingual</strong>: 76.5 — genuino cross-language engineering</li>
+<li><strong>VIBE-Pro</strong>: 55.6% — end-to-end project delivery, no solo isolated patches</li>
+<li><strong>Terminal Bench 2</strong>: 57.0% — ahead of GPT-5.2 (54%)</li>
+<li><strong>Kilo Bench</strong>: 47% pass rate — 2nd among 89 tasks, solved problems others couldn't</li>
+</ul>
+<h3>Agentic Workflows</h3>
+<ul><li><strong>GDPval-AA</strong>: ELO 1495 — <strong>HIGHEST among open-source models</strong></li>
+<li><strong>MMClaw</strong>: 62.7% — close to Sonnet 4.6</li>
+<li><strong>Skill adherence</strong>: 97% on 40 complex tasks (>2000 tokens each)</li>
+<li><strong>Agent Teams</strong>: native multi-agent collaboration with stable role identity</li>
+</ul>
+<h3>Professional Office</h3>
+<ul><li>Excel/PowerPoint/Word con high-fidelity multi-turn editing</li>
+<li>Complex document processing</li>
+<li>97% skill adherence en tareas profesionales</li>
+</ul>
+<h3>Cost Efficiency</h3>
+<ul><li><strong>$175</strong> para Intelligence Index vs $547 (GLM-5) y $371 (Kimi K2.5) — <strong>más barato a inteligencia equivalente</strong></li>
+<li>$0.30/M input, $1.20/M output — 8-17x más barato que Claude/GPT</li>
+<li><strong>Pareto frontier</strong> en Intelligence vs Cost chart</li>
+</ul>
+<h3>Hallucination Rate</h3>
+<ul><li><strong>34%</strong> — mejor que Sonnet 4.6 (46%) y Gemini 3.1 (50%)</li>
+<li>Improved from M2.5 (-40) to +1 on AA-Omniscience</li>
+</ul>
+<h3>ML Research</h3>
+<ul><li><strong>MLE-Bench Lite</strong>: 66.6% medal rate — <strong>tied with Gemini 3.1</strong></li>
+</ul>
+<hr>
+<h2>2. ¿Dónde necesita apoyo de otro modelo?</h2>
+<h3>Creative Writing</h3>
+<ul><li><strong>Regressed vs M2.5</strong>: LMSys rank 79 → 108 (peor)</li>
+<li>No es general purpose — es "test maxer" en STEM</li>
+<li>Problemas con simple prompts outside coding domains</li>
+<li><strong>→ Usar Claude Sonnet o GPT-5.4 para writing</strong></li>
+</ul>
+<h3>General Knowledge</h3>
+<ul><li>Lower que modelos más pequeños (Gemma 4 26B, Qwen3.5 34B)</li>
+<li>Muy focalizado en coding/STEM</li>
+<li><strong>→ Para knowledge general, usar otro modelo</strong></li>
+</ul>
+<h3>Long Context (>200K tokens)</h3>
+<ul><li><strong>200K max</strong> vs Gemini 3.1 Pro 1M</li>
+<li>Full attention = slow on long ctx</li>
+<li><strong>→ Usar Gemini 3.1 Flash para contexts enormes</strong></li>
+</ul>
+<h3>Speed-Critical Tasks</h3>
+<ul><li><strong>44 TPS real</strong> vs claimado 100 TPS</li>
+<li>2.4x más lento que el promedio de su tier</li>
+<li>Timeouts en time-sensitive workflows</li>
+<li><strong>→ Usar Gemini 2.5 Flash o GPT-5.4 Mini para velocidad</strong></li>
+</ul>
+<h3>Multimodal Tasks</h3>
+<ul><li>Text only — no images, audio, video</li>
+<li><strong>→ Usar Gemini 3.1 Pro para multimodal</strong></li>
+</ul>
+<h3>Simple Tasks (overkill)</h3>
+<ul><li>Reasoning always on — no hay "fast mode"</li>
+<li>4x más verbose que el promedio</li>
+<li>Costo innecesario para tasks triviales</li>
+<li><strong>→ Usar modelo más pequeño para tasks simples</strong></li>
+</ul>
+<hr>
+<h2>3. ¿Cuándo cambiar a fallback?</h2>
+| Situación | Fallback sugerido |
+|-----------|-----------------|
+| Creative writing, storytelling | Claude Sonnet 4.6 o GPT-5.4 |
+| Context >200K tokens | Gemini 3.1 Flash |
+| Speed crítico | Gemini 2.5 Flash |
+| Multimodal (imágenes, audio) | Gemini 3.1 Pro |
+| General knowledge fuera de STEM | GPT-5.4 o Claude |
+| Tasks muy simples (<100 tokens) | Gemini 3.1 Flash-Lite |
+| Voice/video input | Gemini 3.1 Pro |
+<hr>
+<h2>4. Puntos Fuertes vs Competencia</h2>
+<h3>M2.7 vs Claude Opus 4.6</h3>
+| Aspect | M2.7 | Opus | Winner |
+|--------|------|------|--------|
+| SWE-Pro | 56.22% | ~57% | Tie |
+| SWE-bench Verified | <strong>78%</strong> | 55% | <strong>M2.7</strong> |
+| Cost | $0.30/$1.20 | $5/$25 | <strong>M2.7</strong> (17x) |
+| Test coverage | 20 tests | 41 tests | Opus |
+| Architecture | flat | modular | Opus |
+| Speed | slow | faster | Opus |
+<strong>Verdict</strong>: M2.7 para coding tasks donde importan resultados; Opus para arquitectura y thoroughness.
+<h3>M2.7 vs GPT-5.4</h3>
+| Aspect | M2.7 | GPT-5.4 | Winner |
+|--------|------|---------|--------|
+| SWE-Pro | 56.22% | similar | Tie |
+| Intelligence Index | <strong>#1</strong> | below | <strong>M2.7</strong> |
+| Cost | <strong>$0.30</strong> | higher | <strong>M2.7</strong> |
+| Context | 200K | 128K | <strong>M2.7</strong> |
+| Multimodal | ❌ | ✅ | GPT-5.4 |
+<strong>Verdict</strong>: M2.7 es mejor en cost-efficiency y context para coding.
+<h3>M2.7 vs Gemini 3.1 Pro</h3>
+| Aspect | M2.7 | Gemini 3.1 Pro | Winner |
+|--------|------|----------------|--------|
+| Coding | <strong>mucho mejor</strong> | worse | <strong>M2.7</strong> |
+| Cost | <strong>$0.30</strong> | $2.50 | <strong>M2.7</strong> |
+| Context | 200K | <strong>1M</strong> | Gemini |
+| Multimodal | ❌ | ✅ | Gemini |
+| Speed | slow | faster | Gemini |
+<strong>Verdict</strong>: M2.7 para coding, Gemini para context largo y multimodal.
+<hr>
+<h2>5. Recomendaciones para BRAIN</h2>
+<h3>Mantener M2.7 como primario para:</h3>
+<ul><li>Coding tasks (bug fixing, feature development, code review)</li>
+<li>Agentic workflows (loops, tool use, multi-step tasks)</li>
+<li>Office productivity (Excel, Word, PPT manipulation)</li>
+<li>Tareas de costo-sensibles con contexto <=200K tokens</li>
+<li>Spanish conversations (soportado)</li>
+</ul>
+<h3>Cambiar a Gemini 3.1 Flash cuando:</h3>
+<ul><li>Contexto >200K tokens</li>
+<li>Speed crítico (TTFT bajo)</li>
+<li>Tasks multimodales</li>
+<li>Tasks simples donde M2.7 es overkill</li>
+</ul>
+<h3>Cambiar a Claude cuando:</h3>
+<ul><li>Creative writing o storytelling</li>
+<li>Arquitectura de software (módulo complejo)</li>
+<li>Tasks que requieren máxima thoroughness</li>
+<li>General knowledge fuera de STEM</li>
+</ul>
+<hr>
+<h2>Archivos del estudio</h2>
+<pre><code>Research/MiniMax_M2.7_analysis/
+├── sources.md          — todas las URLs consultadas
+├── index.md            — este resumen ejecutivo
+├── SUMMARY_DANI.md     — versión en español para Dani
+└── findings/
+    ├── step_1.md   — Benchmark capabilities
+    ├── step_2.md   — vs GPT-4/Claude comparison
+    ├── step_3.md   — Language understanding strengths
+    ├── step_4.md   — Code generation performance
+    ├── step_5.md   — Context window limitations
+    ├── step_6.md   — Pricing efficiency
+    ├── step_7.md   — Creative writing (ALERTA)
+    ├── step_8.md   — Reasoning chain capabilities
+    ├── step_9.md   — vs Gemini comparison
+    └── step_10.md  — Multilingual support
+</code></pre>
+</body>
+</html>

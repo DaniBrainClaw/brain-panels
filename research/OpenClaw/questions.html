@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Questions — OpenClaw Research</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 questions.md</p>
+    <h2>OpenClaw Hooks System (NEW RESEARCH COMPLETED 2026-04-23)</h2>
+<h3>a) Definition & Scope</h3>
+<ul><li>[x] What is exact difference between internal hooks (5) vs plugin hooks (28+)? → TWO SYSTEMS: Internal=standalone dirs (4 bundled, registration order, NO prompt injection); Plugin=SDK registered (44+ provider runtime hooks, priority-based, controlled via PROMPT_INJECTION_HOOK_NAMES) <strong>[RESOLVED ✅ 2026-04-23]</strong></li>
+<li>[x] How do workspace hooks (<code><workspace>/hooks/</code>) differ from managed hooks (<code>~/.openclaw/hooks/</code>) in discovery precedence? → TWO-PHASE: sort by precedence (bundled<plugin<managed<workspace) then merge by override rules; managed (30) ALWAYS wins over workspace (40); workspace.canOverride=workspace only <strong>[MED — RESOLVED 2026-04-23]</strong></li>
+<li>[x] What's the practical difference between <code>openclaw-managed</code> (extraDirs) and <code>openclaw-managed</code> (managedHooksDir)? → Both have same source identifier but different loading mechanisms; extraDirs from config, managedHooksDir from ~/.openclaw/hooks/ <strong>[LOW — NEW]</strong></li>
+<li>[ ] Can a workspace hook be promoted to managed status? → No automatic migration path <strong>[LOW]</strong></li>
+<li>[ ] Is there a hook naming collision detection tool? → <code>openclaw hooks status</code> shows conflicts but doesn't prevent them <strong>[MED]</strong></li>
+<li>[ ] What happens when a plugin ships a hook with same name as a bundled hook? → Plugin (20) can override bundled (10) <strong>[MED]</strong></li>
+<li>[x] What is <code>PROMPT_INJECTION_HOOK_NAMES</code> and which 2 hooks are in it? → <code>before_prompt_build</code> + <code>before_agent_start</code> only <strong>[HIGH]</strong></li>
+<li>[ ] Can plugin hooks be dynamically registered/unregistered at runtime? <strong>[MED]</strong></li>
+<li>[x] Can plugin hooks be dynamically registered/unregistered at runtime? → NO - plugin hooks tied to plugin lifecycle; no public API; internal hooks have register/unregister but only used during plugin load/unload; no dynamic runtime changes <strong>[MED — RESOLVED 2026-04-23]</strong></li>
+<li>[ ] What is the exact difference between <code>before_install</code> and <code>after_install</code> hooks? <strong>[LOW]</strong></li>
+<li>[ ] Can internal hooks use priority values like plugin hooks? <strong>[LOW]</strong></li>
+<li>[ ] What happens when multiple plugins register for same claiming hook? <strong>[MED]</strong></li>
+</ul>
+<h3>b) Internal Mechanics</h3>
+<ul><li>[x] What is exact hook execution order when multiple hooks fire on same event? → Two-level sort: source precedence (bundled<plugin<managed<workspace) then priority+index; three execution modes: void (parallel), modifying (sequential+merge), claiming (first-wins) <strong>[RESOLVED ✅ 2026-04-23]</strong></li>
+<li>[x] How does PROMPT_INJECTION_HOOK_NAMES provide security guarantees? → Only 2 hooks get prompt injection context <strong>[HIGH]</strong></li>
+<li>[ ] Can hooks modify the <code>bootstrapFiles</code> array in agent:bootstrap event (dangerous)? → YES, documented <strong>[MED]</strong></li>
+<li>[x] What happens when hook removes MEMORY.md from bootstrapFiles array? → Agent loses all persistent memory <strong>[HIGH]</strong></li>
+<li>[ ] Are hook execution times logged anywhere? Can performance be tracked? <strong>[LOW]</strong></li>
+<li>[ ] What is max recommended handlers per hook before performance degrades? <strong>[LOW]</strong></li>
+<li>[ ] Can hook execution order be traced at runtime without debug mode? <strong>[LOW]</strong></li>
+<li>[ ] Can plugins from different sources enforce ordering constraints? <strong>[MED]</strong></li>
+<li>[ ] What happens to in-flight hook executions when gateway restarts? <strong>[LOW]</strong></li>
+<li>[ ] Is there a performance benchmark for hook overhead? <strong>[LOW]</strong></li>
+<li>[ ] Does claim-first-wins pattern support priority among claiming hooks? <strong>[MED]</strong></li>
+</ul>
+<h3>c) Use Cases</h3>
+<ul><li>[ ] Can hooks implement custom authentication/authorization flows? <strong>[MED]</strong></li>
+<li>[ ] Maximum hooks per event before performance degrades? <strong>[LOW]</strong></li>
+<li>[ ] Can hooks read/write to session store directly? What are risks? <strong>[MED]</strong></li>
+<li>[ ] Can hooks trigger subagent runs? What are limitations? <strong>[MED]</strong></li>
+<li>[ ] Can hooks implement rate limiting or throttling? <strong>[MED]</strong></li>
+</ul>
+<h3>d) Best Practices</h3>
+<ul><li>[ ] What happens if hook handler throws uncaught exception - does it crash gateway? <strong>[MED]</strong></li>
+<li>[x] Can hooks access gateway internal state (session store, config)? → YES - via context.cfg (full gateway config including all secrets) and context.sessionEntry (session metadata); no direct file system access to session store <strong>[MED — RESOLVED 2026-04-23]</strong></li>
+<li>[ ] Should llm_input/llm_output always use fire-and-forget? <strong>[HIGH]</strong></li>
+<li>[ ] Is there a recommended pattern for hook error handling and logging? <strong>[MED]</strong></li>
+<li>[ ] Can hooks safely use async/await or should they be synchronous? <strong>[LOW]</strong></li>
+</ul>
+<h3>e) Problems & Limitations</h3>
+<ul><li>[ ] Is there a known issue with hook discovery not working after config hot-reload? <strong>[MED]</strong></li>
+<li>[x] before_agent_start deprecation status - does it still work or is it broken? → Still works, legacy warning only <strong>[HIGH]</strong></li>
+<li>[ ] Does gateway restart kill in-flight hooks? Is there cleanup guarantee? <strong>[MED]</strong></li>
+<li>[ ] What happens when workspace hook has same name as bundled hook? <strong>[MED]</strong></li>
+<li>[ ] Are there memory leaks from hook handlers not properly cleaning up? <strong>[MED]</strong></li>
+</ul>
+<h3>f) Solutions & Workarounds</h3>
+<ul><li>[ ] What's recommended approach for hook-to-hook communication? <strong>[LOW]</strong></li>
+<li>[ ] Can hooks be dynamically enabled/disabled without gateway restart? <strong>[MED]</strong></li>
+<li>[ ] How to chain hooks to ensure execution order? <strong>[MED]</strong></li>
+<li>[ ] What's the best way to debug hook execution? <strong>[MED]</strong></li>
+</ul>
+<h3>g) Edge Cases</h3>
+<ul><li>[x] What happens when hook removes MEMORY.md from bootstrapFiles array? → Agent loses memory for entire session <strong>[HIGH]</strong></li>
+<li>[x] Can hooks trigger infinite loops (hook A → hook B → A)? Is there protection? → <strong>NO protection exists</strong>; session:patch direct recursion, message cascade loops, compaction cycles; guard counter patterns needed <strong>[HIGH]</strong></li>
+<li>[ ] What happens when before_model_resolve returns conflicting overrides? <strong>[MED]</strong></li>
+<li>[ ] Can two plugins register hooks for same event — what happens? <strong>[MED]</strong></li>
+<li>[ ] What happens when hook is enabled/disabled while gateway is running? <strong>[MED]</strong></li>
+</ul>
+<h3>h) Creative Uses</h3>
+<ul><li>[ ] Could hooks implement custom plugin system on top of existing hooks? <strong>[LOW]</strong></li>
+<li>[ ] Could hooks implement real-time collaboration (shared sessions)? <strong>[LOW]</strong></li>
+<li>[ ] Can hooks implement cross-channel message relay without subagents? <strong>[MED]</strong></li>
+<li>[ ] Can hooks implement dynamic model fallback chains? <strong>[MED]</strong></li>
+<li>[ ] Could hooks implement a webhook-to-agent bridge for external systems? <strong>[MED]</strong></li>
+</ul>
+<h3>i) Security (NEW from this research)</h3>
+<ul><li>[ ] What is the security model for workspace hooks vs managed hooks? <strong>[HIGH]</strong></li>
+<li>[ ] Can malicious workspace hook access managed hook code? <strong>[HIGH]</strong></li>
+<li>[ ] What audit logging exists for hook execution? <strong>[MED]</strong></li>
+<li>[ ] Can hooks access environment variables with secrets? <strong>[HIGH]</strong></li>
+<li>[ ] Is there a hook that can be used for privilege escalation? <strong>[HIGH]</strong></li>
+</ul>
+<h3>j) Integration (NEW from this research)</h3>
+<ul><li>[ ] Can hooks integrate with external APIs (webhooks out)? <strong>[MED]</strong></li>
+<li>[ ] Can hooks process audio/video before agent sees it (message:transcribed)? <strong>[MED]</strong></li>
+<li>[ ] Can hooks add/remove tools from the tool registry dynamically? <strong>[MED]</strong></li>
+<li>[ ] How do hooks interact with the skill system? <strong>[MED]</strong></li>
+<li>[ ] Can hooks modify channel-specific message metadata? <strong>[MED]</strong></li>
+</ul>
+<hr>
+<h2>PRIOR TOPICS (RESOLVED)</h2>
+<h3>Watchdog Timeout Root Cause</h3>
+<ul><li>[RESOLVED] Cron spin loop bug (PR #66019/#66083) + session route pollution (PR #66073) — Fixed in v2026.4.12</li>
+</ul>
+<h3>Sessions OOM Prevention</h3>
+<ul><li>[RESOLVED] PR #69404 enforces load-time maintenance + prune by default — Fixed in v2026.4.12</li>
+</ul>
+<h3>MCP STDIO RCE</h3>
+<ul><li>[RESOLVED] Only notebooklm stdio server active; LOW risk; STDIO exec is intentional design</li>
+</ul>
+<h3>Hook System</h3>
+<ul><li>[RESOLVED] 4 bundled internal hooks + 28+ plugin hooks; PROMPT_INJECTION_HOOK_NAMES restricts prompt context; before_agent_start deprecated</li>
+<li>Full findings: <code>Research/OpenClaw/findings/openclaw-hooks-system.md</code></li>
+</ul>
+<h3>Vault Memory</h3>
+<ul><li>[RESOLVED] Not configured in current setup</li>
+</ul>
+<hr>
+<em>Last updated: 2026-04-23 01:30 CET</em>
+<em>Research by: Investigador Scout</em>
+<hr>
+<h2>NEW: Custom Pi Extensions (L19-L21) — Research Complete 2026-04-23</h2>
+<h3>L19 — Custom Pi Extensions ✅</h3>
+<ul><li>[x] What are pi-hooks vs gateway hooks — pi-hooks operate INSIDE Pi agent runtime (not gateway layer) <strong>[HIGH]</strong></li>
+<li>[x] Two built-in extensions: compaction-safeguard (compaction quality) + context-pruning (cache-ttl microcompact) <strong>[HIGH]</strong></li>
+<li>[x] Loaded via additionalExtensionPaths → ResourceLoader.reload() → ExtensionAPI callbacks <strong>[HIGH]</strong></li>
+<li>[x] Extension API from @mariozechner/pi-coding-agent (internal package, not public) <strong>[MED]</strong></li>
+<li>[x] session-manager-runtime-registry allows per-session state sharing <strong>[MED]</strong></li>
+<li>[x] How to create: compile to JS, export default function(api), add to additionalExtensionPaths <strong>[MED]</strong></li>
+<li>[x] Extensions affect in-memory context only (not session JSONL file) <strong>[MED]</strong></li>
+<li>✅ COMPLETADO (2026-04-23 01:55)</li>
+</ul>
+<h3>L20 — Hook Security Audit ✅</h3>
+<ul><li>[x] ¿Pueden los hooks acceder a datos sensibles de otros plugins? → SÍ, via context.cfg <strong>[HIGH]</strong></li>
+<li>[x] ¿Hay auditoría de acceso a credenciales via hooks? → NO, no existe <strong>[MED]</strong></li>
+<li>[x] ¿Cuál es el security model para workspace hooks vs managed hooks? → Ambos tienen el mismo privilegio que core <strong>[HIGH]</strong></li>
+<li>[x] ¿Pueden plugins maliciosos usar hooks para exfiltración? → SÍ, acceso completo a context.cfg <strong>[HIGH]</strong></li>
+<li>[x] Mitigaciones existentes en el código → Minimal: solo PROMPT_INJECTION_HOOK_NAMES <strong>[MED]</strong></li>
+<li>[x] Hooks ejecutan IN-PROCESS, NO sandboxed → Riesgo crítico <strong>[CRITICAL]</strong></li>
+<li>[x] Can hooks access environment variables with secrets? → SÍ, via config env injection <strong>[HIGH]</strong></li>
+<li>[x] Audit logging for hook execution? → NO, none <strong>[CRITICAL]</strong></li>
+<li>✅ COMPLETADO (2026-04-23 02:00) — Full findings: <code>Research/OpenClaw/findings/hook-security-audit.md</code></li>
+</ul>
+<h3>L21 — ExtensionAPI Callback Reference</h3>
+<ul><li>[ ] ¿Cuáles son los métodos exactos de ExtensionAPI (onCompactionStart, etc)? <strong>[HIGH]</strong></li>
+<li>[ ] ¿Se puede hacer hot-reload de extensiones sin reiniciar? <strong>[MED]</strong></li>
+<li>[ ] ¿Hay memory leaks en session-runtime-registry? <strong>[MED]</strong></li>
+<li>[ ] ¿Pueden extensiones comunicar entre sí via shared state? <strong>[LOW]</strong></li>
+<li>[ ] ¿Qué pasa cuando una extensión lanza excepción? <strong>[MED]</strong></li>
+<li>[ ] ¿Pueden extensiones modificar la tool list dinámicamente? <strong>[MED]</strong></li>
+<li>Pendiente de investigación</li>
+</ul>
+<h3>L22 — Skill Dynamic Activation from Hooks</h3>
+<ul><li>[ ] ¿Pueden los hooks activar skills dinámicamente en tiempo de ejecución? <strong>[MED]</strong></li>
+<li>[ ] Integración hook-skill para compliance en tiempo real <strong>[MED]</strong></li>
+<li>[ ] ¿Se puede hacer skill activation basada en contexto de sesión? <strong>[LOW]</strong></li>
+<li>Pendiente de investigación</li>
+</ul>
+<h3>L21 — ExtensionAPI Callback Reference ✅</h3>
+<ul><li>[x] ExtensionAPI source: @mariozechner/pi-coding-agent (internal v0.64.0) <strong>[HIGH]</strong></li>
+<li>[x] 30+ events: session/agent/turn/message/tool/model <strong>[HIGH]</strong></li>
+<li>[x] Tool registration via api.registerTool() <strong>[HIGH]</strong></li>
+<li>[x] Provider registration via api.registerProvider() <strong>[HIGH]</strong></li>
+<li>[x] Extensions affect in-memory context ONLY (NOT JSONL on disk) <strong>[CRITICAL]</strong></li>
+<li>[x] No hot reload — requires Gateway restart <strong>[MED]</strong></li>
+<li>[x] Memory leak risk in session-manager-runtime-registry <strong>[MED]</strong></li>
+<li>[x] Full ExtensionAPI reference documented (30+ page types, 15+ API methods) <strong>[HIGH]</strong></li>
+<li>✅ <strong>COMPLETADO</strong> (2026-04-23 02:15) — Full findings: <code>findings/extension-api-callback-reference.md</code></li>
+</ul>
+<h3>L22 — Extension to Extension Communication ✅</h3>
+<ul><li>[x] Can extensions communicate via EventBus? → SÍ, all extensions share same EventBus instance <strong>[HIGH]</strong></li>
+<li>[x] Can extensions share session state via registry? → SÍ, via runtime.appendEntry() to session store <strong>[MED]</strong></li>
+<li>[x] Is there priority ordering for handlers? → NO, insertion order only <strong>[MED]</strong></li>
+<li>[x] Handler chaining: handler returning non-undefined replaces payload for next handler <strong>[HIGH]</strong></li>
+<li>[x] Error isolation: each handler wrapped in try/catch individually <strong>[HIGH]</strong></li>
+<li>[x] 20+ event types: session/agent/turn/message/tool/model lifecycle events <strong>[MED]</strong></li>
+<li>[x] No pub/sub acknowledgment: publishing extension has no way to know if handled <strong>[MED]</strong></li>
+<li>[x] Session-scoped: events don't persist across sessions <strong>[LOW]</strong></li>
+<li>✅ <strong>COMPLETADO</strong> (2026-04-23 03:30) — Full findings: <code>findings/extension-to-extension-communication.md</code></li>
+</ul>
+<h3>L25 — Extension Security Model ✅</h3>
+<ul><li>[x] Are extensions sandboxed from each other? → NO, no sandboxing, in-process with full Gateway privileges <strong>[HIGH]</strong></li>
+<li>[x] Can extensions access process.env directly? → SÍ, inherit Gateway process env including secrets <strong>[HIGH]</strong></li>
+<li>[x] Can malicious extension crash Gateway? → SÍ, unhandled exceptions can crash Gateway <strong>[HIGH]</strong></li>
+<li>[x] Is there a permission system for extensions? → NO, no permission model <strong>[MED]</strong></li>
+<li>[x] Extensions can read context.cfg with ALL secrets/credentials via ExtensionContext <strong>[CRITICAL]</strong></li>
+<li>[x] Extensions inherit OS-level permissions of Gateway process <strong>[HIGH]</strong></li>
+<li>[x] No memory isolation between extensions <strong>[CRITICAL]</strong></li>
+<li>[x] No audit logging for extension execution or credential access <strong>[CRITICAL]</strong></li>
+<li>✅ <strong>COMPLETADO</strong> (2026-04-23 03:30) — Full findings: <code>findings/extension-security-model.md</code></li>
+</ul>
+<hr>
+<h2>L26 — OpenClaw Config System ✅</h2>
+<ul><li>[x] What is JSON5 config format + strict schema validation? → JSON5 with STRICT validation, unknown keys fail startup <strong>[HIGH]</strong></li>
+<li>[x] What is <code>$include</code> directive for config splitting? → Deep-merge up to 10 levels, must stay in config directory <strong>[HIGH]</strong></li>
+<li>[x] What is SecretRef system? → 3 sources (env/file/exec), resolved at activation, active-surface filtering <strong>[HIGH]</strong></li>
+<li>[x] What are config editing methods? → CLI (<code>config get/set/unset</code>), Control UI, direct edit; hot reload most changes <strong>[HIGH]</strong></li>
+<li>[x] What is skills load precedence (6 locations)? → workspace > .agents > ~/.agents > ~/.openclaw > bundled > extraDirs <strong>[HIGH]</strong></li>
+<li>[x] What is auth profile storage? → Per-agent at <code><agentDir>/auth-profiles.json</code>; OAuth + SecretRef NOT supported <strong>[HIGH]</strong></li>
+<li>[x] What is logging file default + max size? → <code>/tmp/openclaw/openclaw-YYYY-MM-DD.log</code>; 500MB max then silent failure <strong>[HIGH]</strong></li>
+<li>[x] What is schema tooling? → <code>openclaw config schema</code>, <code>config.schema.lookup</code>, <code>pnpm config:docs:check</code> <strong>[MED]</strong></li>
+<li>[x] What config changes require restart? → Hooks, plugins, sandbox mode; most other changes hot reload <strong>[MED]</strong></li>
+<li>[x] Is there config audit log? → NO, no built-in audit logging for config changes <strong>[HIGH]</strong></li>
+<li>[x] Can workspace skills override bundled skill binary requirements? → YES, workspace wins precedence <strong>[MED]</strong></li>
+<li>[x] What happens when per-agent skills list is explicit? → REPLACES defaults (does not merge) <strong>[HIGH]</strong></li>
+<li>[x] Can <code>$include</code> escape config directory via <code>../</code>? → Only if still inside <code>~/.openclaw/</code> boundary <strong>[HIGH]</strong></li>
+<li>[x] Does <code>logging.redactPatterns</code> regex have limits? → Standard JS regex; redactSensitive only affects tools <strong>[MED]</strong></li>
+<li>[x] Are auth profiles encrypted at rest? → NO, stored as plaintext JSON <strong>[MED]</strong></li>
+<li>✅ <strong>COMPLETADO</strong> (2026-04-23 03:45) — Full findings: <code>findings/openclaw-config-system.md</code></li>
+</ul>
+<h2>L27 — OpenClaw Skill System ✅</h2>
+<ul><li>[x] What is a skill in OpenClaw? → Versioned bundle of files teaching agent how/when to use tools; SKILL.md with YAML frontmatter + markdown instructions <strong>[HIGH]</strong></li>
+<li>[x] What is skills load precedence (6 locations)? → workspace > .agents > ~/.agents > ~/.openclaw > bundled > extraDirs <strong>[HIGH]</strong></li>
+<li>[x] How does skills snapshot mechanism work? → Per-session at load time; watcher can refresh mid-session on SKILL.md change <strong>[HIGH]</strong></li>
+<li>[x] What is environment injection for skills? → <code>skills.entries.<key>.env</code> injected to host process for agent run; sandbox does NOT inherit host process.env <strong>[HIGH]</strong></li>
+<li>[x] What is skill allowlist per-agent? → <code>agents.defaults.skills</code> baseline; <code>agents.list[].skills: []</code> = no skills; explicit list REPLACES defaults <strong>[HIGH]</strong></li>
+<li>[x] What is skills token overhead? → 195 base chars + 97 chars/skill + XML-escaped field lengths; ~4 chars/token estimate <strong>[MED]</strong></li>
+<li>[x] Can plugins ship skills? → YES via <code>openclaw.plugin.json</code> skills array; lowest precedence (overridden by all) <strong>[MED]</strong></li>
+<li>[x] What is ClawHub skill lifecycle? → <code>clawhub install</code> → workspace; <code>clawhub sync --all</code> → backup/publish; <code>--version</code> for pinning <strong>[MED]</strong></li>
+<li>[x] What are skill security risks? → Skills run in-process (like hooks/plugins); third-party skills = untrusted code; <code>apiKey</code>/<code>env</code> goes to HOST process <strong>[CRITICAL]</strong></li>
+<li>[x] Can sandboxed sessions use skill env injection? → Only via <code>agents.defaults.sandbox.docker.env</code> or custom image; NOT from host process.env <strong>[HIGH]</strong></li>
+<li>[x] What are skill metadata gating filters? → <code>requires.bins</code>, <code>requires.anyBins</code>, <code>requires.env</code>, <code>requires.config</code>, <code>os</code>, <code>always</code> <strong>[MED]</strong></li>
+<li>[x] What is skill watcher debounce? → Default 250ms via <code>skills.load.watchDebounceMs</code>; applies to all skill folders <strong>[MED]</strong></li>
+<li>[x] What happens on skill name conflict? → Highest precedence wins (workspace overrides all) <strong>[MED]</strong></li>
+<li>[x] What is <code>command-dispatch: tool</code> in skills? → Slash command bypasses model, dispatches directly to tool with <code>{command, commandName, skillName}</code> <strong>[MED]</strong></li>
+<li>[x] Can skills declare custom skillKey for config? → YES via <code>metadata.openclaw.skillKey</code> override <strong>[LOW]</strong></li>
+<li>[x] What is <code>disable-model-invocation: true</code>? → Skill excluded from model prompt but still available via user invocation <strong>[MED]</strong></li>
+<li>[x] What is skills watcher behavior on nested dirs? → Watches skill folders; triggers snapshot refresh when SKILL.md changes <strong>[MED]</strong></li>
+<li>[x] Can skills implement persistent state? → Only via file-based mechanism; no native state persistence <strong>[MED]</strong></li>
+<li>[x] What is <code>skills.install.nodeManager</code> scope? → Affects skill installs only; Gateway still Node (bun not recommended for WhatsApp/Telegram) <strong>[LOW]</strong></li>
+<li>✅ <strong>COMPLETADO</strong> (2026-04-23 04:25) — Full findings: <code>findings/openclaw-skill-system.md</code></li>
+</ul>
+<hr>
+<h2>NEW RESEARCH QUESTIONS (from Skill System research 2026-04-23)</h2>
+<h3>a) Definition & Scope</h3>
+<ul><li>[ ] Can skills declare dependencies on other skills (skill chaining)? <strong>[MED]</strong></li>
+<li>[x] What is maximum recommended number of skills per agent before context overhead becomes problematic? → ~50-100 (conservative), ~200 (aggressive) for MiniMax M2.7; 24-45 tokens/skill <strong>[MED — RESOLVED 2026-04-23]</strong></li>
+<li>[x] Can skills be dynamically enabled/disabled mid-session without gateway restart? → <strong>YES</strong> with watcher + SKILL.md changes (picked up next turn), or config hot-reload; watcher only monitors SKILL.md files; <code>disableModelInvocation</code> for soft-disable; no per-session toggle <strong>[MED — RESOLVED 2026-04-23]</strong></li>
+<li>[ ] What is recommended skill description length to minimize overhead? <strong>[MED]</strong></li>
+<li>[x] Can per-agent skill allowlists be changed dynamically via hook? → <strong>NO</strong> — hook fires AFTER skills snapshot is built; can only modify system prompt fields; config changes affect NEXT turn only <strong>[MED — RESOLVED 2026-04-23]</li>
+<li>[ ] Can skills overhead be profiled in production? </strong>[MED]<strong></li>
+</ul>
+<h3>b) Internal Mechanics</h3>
+<ul><li>[ ] How does skills watcher handle nested directory changes (subdirectories)? </strong>[LOW]<strong></li>
+<li>[ ] What triggers skills snapshot refresh — only SKILL.md changes or any file in skill directory? </strong>[LOW]<strong></li>
+<li>[x] Can skills declare dependencies on other skills (skill chaining)? → </strong>NO native dependency system exists<strong>; no <code>dependencies</code> field; skills are TEXT only; model executes via slash commands; no automatic resolution </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>[x] Can skills call other skills recursively? → </strong>NO technical blocking<strong>; skills are TEXT instructions to model; model may invoke via slash commands; no recursion counter or stack limit; potential infinite loops if model follows recursive instructions </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>[ ] Can two skills with same name be loaded from different locations simultaneously? </strong>[LOW]<strong></li>
+</ul>
+<h3>c) Use Cases</h3>
+<ul><li>[ ] Can skills implement persistent state across sessions (file-based)? </strong>[MED]<strong></li>
+<li>[ ] Can skills call other skills recursively? </strong>[MED]<strong></li>
+<li>[ ] What is recommended pattern for skill that generates other skills? </strong>[MED]<strong></li>
+</ul>
+<h3>d) Best Practices</h3>
+<ul><li>[ ] What happens if skill's <code>requires.bins</code> binary exists on host but not in sandbox? </strong>[MED]<strong></li>
+<li>[ ] Can skills use <code>skills.entries.<skill>.env</code> for secrets already in <code>process.env</code>? </strong>[MED]<strong></li>
+<li>[ ] Should skills that need API keys prefer <code>apiKey</code> or <code>env</code> injection? </strong>[LOW]<strong></li>
+</ul>
+<h3>e) Problems & Limitations</h3>
+<ul><li>[ ] Is there known issue with skills watcher consuming excessive CPU on large directories? </strong>[MED]<strong></li>
+<li>[ ] Does skills snapshot refresh trigger compaction or memory flush? </strong>[MED]<strong></li>
+<li>[x] Can malicious skill bypass dangerous-code scanner for skill installs? → Scanner blocks Gateway-backed installs; CLI path bypasses scanner but also bypasses installer execution; real risk is post-install skill running with agent privileges </strong>[HIGH - RESOLVED 2026-04-23]<strong></li>
+</ul>
+<h3>NEW RESEARCH QUESTIONS (from Skills Dynamic Enable/Disable research 2026-04-23)</h3>
+<ul><li>[x] Can hooks dynamically modify the skills list at runtime (without config change)? → </strong>NO direct API<strong>; <code>before_prompt_build</code> fires AFTER snapshot decision; changes affect NEXT turn only </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>[x] Is there a tool command to reload skills without file changes? → </strong>NO<strong> — workarounds: <code>touch SKILL.md</code>, rename folder, config hot-reload for enable/disable </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>[x] What happens to in-flight skill executions when SKILL.md is deleted? → In-flight turn completes; next turn excludes skill; model cannot re-read deleted SKILL.md </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>[x] Can skills be enabled/disabled per-session (not just global to workspace)? → </strong>NO per-session toggle<strong>; changes are global to workspace </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>[x] Does config hot-reload apply to <code>skills.entries</code> changes? → </strong>YES<strong> for enable/disable/env/apiKey; NO for extraDirs/watch (require restart) </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+</ul>
+<h3>f) Solutions & Workarounds</h3>
+<ul><li>[x] Are skills sandboxed post-install or do they run with full agent privileges? → NO sandboxing — skills are TEXT that influences model; sandbox applies only to TOOL EXECUTION; skill sandboxing is R-002 in threat model (not implemented) </strong>[HIGH — RESOLVED 2026-04-23]<strong></li>
+<li>[x] What sandboxing options exist for skills? → Tool-level sandbox (docker/ssh/openshell) exists; skill-level sandbox does NOT; skills instruct model which uses tools within sandbox constraints </strong>[HIGH — RESOLVED]<strong></li>
+<li>[x] Does dangerous-code scanner re-run on skill updates or only on fresh installs? → ONLY on fresh Gateway-backed installs (openclaw skills install, Skills UI); CLI installs (clawhub, update --all) bypass scanner </strong>[MED-HIGH — RESOLVED]<strong></li>
+</ul>
+<h3>f) Solutions & Workarounds</h3>
+<ul><li>[ ] Can skills implement their own sandboxing via skill-level Docker execution? </strong>[MED]<strong></li>
+<li>[ ] What's best way to debug skill loading issues? </strong>[MED]<strong></li>
+<li>[ ] Can skills be loaded from remote URLs (not local files)? </strong>[MED]<strong></li>
+</ul>
+<h3>g) Edge Cases</h3>
+<ul><li>[ ] What happens when skill name conflicts with built-in tool name? </strong>[MED]<strong></li>
+<li>[ ] Can skills declare <code>metadata.openclaw.requires.config</code> for config paths that don't exist? </strong>[LOW]<strong></li>
+<li>[ ] What happens to in-flight agent runs when skills snapshot refreshes mid-session? </strong>[MED]<strong></li>
+<li>[ ] Can a skill with no installer metadata still execute malicious code via SKILL.md content at load/invoke time? </strong>[MED]<strong></li>
+<li>[ ] What is the complete list of patterns the dangerous-code scanner detects? </strong>[MED — useful for red-teaming]<strong></li>
+</ul>
+<h3>h) Creative Uses</h3>
+<ul><li>[ ] Could skills implement real-time collaboration protocol (shared skills across users)? </strong>[LOW]<strong></li>
+<li>[ ] Can skills be used as plugin system (skills that register new tools/hooks)? </strong>[MED]<strong></li>
+<li>[ ] Could TERRACOTTA business procedures be encoded as skills for consistent execution? </strong>[HIGH — business relevance]<strong></li>
+<li>[ ] Can organizations implement custom scanner integration via <code>before_install</code> hooks with different pattern sets? </strong>[MED]<strong></li>
+</ul>
+<hr>
+<h2>L30 — Skills Sandbox & Post-Install Privilege Model ✅ (2026-04-23)</h2>
+<ul><li>[x] Are skills sandboxed post-install or do they run with full agent privileges? → NO sandboxing exists; skills are text that influence model; real sandboxing applies to TOOLS only; R-002 in threat model; apiKey/env injection goes to HOST not sandbox </strong>[HIGH]<strong></li>
+<li>[x] What sandboxing options exist for skills? → Tool-level sandbox exists; skill-level sandbox does NOT; skills can instruct model which then uses tools within sandbox constraints </strong>[HIGH]<strong></li>
+<li>[x] What happens to skills.entries.<skill>.apiKey in sandboxed sessions? → Injected to HOST process.env, NOT to Docker container; sandbox does NOT inherit host env </strong>[HIGH]<strong></li>
+<li>[x] Does scanner re-run on skill updates or only on fresh installs? → ONLY on fresh Gateway-backed installs; CLI installs (clawhub, update --all) bypass scanner </strong>[HIGH]<strong></li>
+<li>[x] Can skill instruct model to bypass sandbox? → Skill text doesn't "run" — it instructs model; model calls tools; sandbox applies to tool execution; skill influence itself is not sandboxed </strong>[HIGH]<strong></li>
+<li>[x] Is there audit trail linking tool calls to skills that instructed them? → NO; skill content is in system prompt; no correlation mechanism exists </strong>[MED]<strong></li>
+<li>[x] Could sandbox + tool policy + exec approvals approximate skill sandboxing? → YES as defense-in-depth; treat untrusted skills as untrusted code equivalent </strong>[HIGH]<strong></li>
+<li>[x] Does scanner analyze SKILL.md content or only installer metadata? → Unknown — needs further research (L31) </strong>[HIGH]<strong></li>
+<li>[x] Can a skill with no installer metadata still execute malicious code via SKILL.md content? → SKILL.md content enters system prompt; skill instructs model; model calls tools; sandbox/policy/approvals apply to tools; no direct code execution </strong>[MED]<strong></li>
+<li>✅ </strong>COMPLETADO<strong> (2026-04-23 05:25) — Full findings: <code>findings/skills-sandbox-post-install.md</code></li>
+</ul>
+<hr>
+<h2>L31 — Scanner Scope: SKILL.md vs Installer Metadata ✅ (2026-04-23)</h2>
+<ul><li>[x] Does the dangerous-code scanner analyze SKILL.md content itself or only installer metadata (install.sh, etc.)? → </strong>NO - SKILL.md NEVER scanned<strong>; scanner only looks at code files (.js/.ts/.jsx/.tsx/.mjs/.cjs/.mts/.cts); this is a CRITICAL security gap </strong>[HIGH — RESOLVED]<strong></li>
+<li>[x] Can a malicious SKILL.md evade scanner patterns? → </strong>YES - trivially<strong>; SKILL.md is not scanned at all; any malicious instructions embedded in SKILL.md bypass scanner completely </strong>[HIGH — RESOLVED]<strong></li>
+<li>[x] What is the complete list of patterns the dangerous-code scanner detects? → </strong>8 patterns<strong>: LINE_RULES (dangerous-exec, dynamic-code-execution, crypto-mining, suspicious-network) + SOURCE_RULES (potential-exfiltration, obfuscated-code x2, env-harvesting); SKILL.md NEVER scanned </strong>[MED — RESOLVED]<strong></li>
+<li>[x] Could SKILL.md scanning be added to the dangerous-code scanner? → YES - extend SCANNABLE_EXTENSIONS to include .md, add MARKDOWN_PATTERNS array with prompt-injection/shell-instruction/credential-request patterns, implement before_install hook for custom scanning </strong>[MED — RESOLVED]<strong></li>
+<li>✅ </strong>COMPLETADO<strong> (2026-04-23 05:45) — Full findings: <code>findings/scanner-skillmd-content-analysis.md</code></li>
+</ul>
+<h2>L34 — Dangerous-Code Scanner Patterns (Red-Teaming) ✅ (2026-04-23)</h2>
+<ul><li>[x] What is the complete list of patterns the dangerous-code scanner detects? → </strong>8 patterns<strong>: LINE_RULES (dangerous-exec, dynamic-code-execution, crypto-mining, suspicious-network) + SOURCE_RULES (potential-exfiltration, obfuscated-code[hex], obfuscated-code[base64], env-harvesting); detailed regex patterns documented </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>[x] Could SKILL.md scanning be added to the dangerous-code scanner? → YES - proposed implementation: extend SCANNABLE_EXTENSIONS, add MARKDOWN_PATTERNS, use before_install hooks for custom scanning, consider behavioral sandboxing </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>[x] What bypass techniques exist against current scanner patterns? → YES - dynamic function references (const c="exec"; c()), string concatenation, multi-stage attacks, unicode obfuscation, cross-file context separation </strong>[HIGH — RESOLVED 2026-04-23]<strong></li>
+<li>✅ </strong>COMPLETADO<strong> (2026-04-23 07:41) — Full findings: <code>findings/dangerous-code-scanner-patterns.md</code></li>
+</ul>
+<h2>L35 — Skills Context Overhead ✅ (2026-04-23)</h2>
+<ul><li>[x] What is the maximum recommended number of skills per agent before context overhead becomes problematic? → ~50-100 skills (conservative), ~200 skills (aggressive) for MiniMax M2.7 with 200K context; overhead is ~24-45 tokens/skill depending on description length; formula: 195 base chars + 97 + field lengths per skill </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>[x] What is the token overhead formula for skills? → total_chars = 195 + Σ(97 + len(name) + len(description) + len(location)); ~4 chars/token → 24-45 tokens/skill </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>[x] How does per-agent skill allowlists affect overhead? → Only eligible skills appear in list; use <code>agents.defaults.skills</code> and <code>agents.list[].skills</code> to control </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>[x] What is recommended skill description length? → Keep under 100 characters to minimize overhead </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>✅ </strong>COMPLETADO<strong> (2026-04-23 08:02) — Full findings: <code>findings/skills-context-overhead.md</code></li>
+</ul>
+<h2>L36 — Skills Persistent State & Hook Dynamic Modification ✅ (2026-04-23)</h2>
+<ul><li>[x] Can skills implement persistent state across sessions (file-based)? → </strong>NO native mechanism<strong>; skills are TEXT only; file-based state via workspace files + skill instructions; race conditions with concurrent sessions; session store stores skillsSnapshot not arbitrary state </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>[x] Can hooks dynamically modify the skills list at runtime (without config change)? → </strong>NO direct API<strong>; <code>before_prompt_build</code> fires AFTER snapshot decision; changes affect NEXT turn only; <code>session:patch</code> is read-react only; watcher-based SKILL.md renaming workaround </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>[x] Is there race condition risk when multiple sessions write same workspace skill state file? → YES — concurrent sessions can corrupt shared state files; per-session state files (state-{sessionKey}.json) mitigate </strong>[MED — RESOLVED 2026-04-23]<strong></li>
+<li>✅ </strong>COMPLETADO<strong> (2026-04-23 09:20) — Full findings: <code>findings/skills-persistent-state-and-hook-dynamic-modification.md</code></li>
+</ul>
+<h2>NEW RESEARCH QUESTIONS (from Skills Overhead Profiling & Reload research 2026-04-23)</h2>
+<ul><li>[ ] Can snapshot version be inspected at runtime without debug mode? </strong>[LOW]<strong></li>
+<li>[ ] Is there a way to export skills overhead data to external monitoring systems? </strong>[MED]<strong></li>
+<li>[ ] Can skills overhead be included in <code>/status</code> output automatically? </strong>[MED]<strong></li>
+<li>[ ] Does watcher consume significant CPU on large skill directories? </strong>[LOW]<strong></li>
+<li>[ ] Is there a known issue where snapshot doesn't refresh after config hot-reload? </strong>[MED]<strong></li>
+<li>[ ] Can a custom hook simulate <code>openclaw skills reload</code> functionality? </strong>[MED]<strong></li>
+<li>[ ] What's the best way to test skills overhead changes before deploying? </strong>[MED]<strong></li>
+<li>[ ] Could a skill self-report its overhead via a hook at load time? </strong>[LOW]<strong></li>
+<li>[ ] Can skills overhead drive automatic skill pruning (remove lowest-use skills)? </strong>[MED]**</li>
+</ul>
+</body>
+</html>

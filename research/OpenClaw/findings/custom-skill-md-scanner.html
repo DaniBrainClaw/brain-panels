@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom SKILL.md Scanning via before_install Hooks — RESEARCH FINDINGS</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 custom-skill-md-scanner.md</p>
+    <strong>Research Date:</strong> 2026-04-23
+<strong>Topic:</strong> Can organizations implement custom scanner integration via before_install hooks that scans SKILL.md?
+<strong>Priority:</strong> MED (#13)
+<strong>Status:</strong> ✅ COMPLETE
+<hr>
+<h2>1. WHAT IS</h2>
+A custom scanner integration using the <code>before_install</code> hook in an OpenClaw plugin. This allows organizations to add a security gate that inspects <code>SKILL.md</code> content—which the built-in scanner ignores—before a skill is installed.
+<h2>2. HOW IT WORKS</h2>
+<ul><li><strong>Plugin Registration</strong>: The plugin registers the <code>before_install</code> hook: <code>api.registerHook("before_install", ...)</code>.</li>
+<li><strong>Event Payload</strong>: When a skill install starts, the hook receives <code>PluginHookBeforeInstallEvent</code>, which contains <code>sourcePath</code> (the directory where the skill is located).</li>
+<li><strong>Inspection</strong>: The handler reads <code>SKILL.md</code> from <code>sourcePath/SKILL.md</code> and runs custom regex/logic to find malicious instructions.</li>
+<li><strong>Enforcement</strong>: If malicious content is found, the hook returns <code>{ block: true, blockReason: "Malicious SKILL.md patterns detected" }</code>, effectively blocking the installation.</li>
+</ul>
+<h2>3. USES</h2>
+<ul><li><strong>Enterprise Security Gate</strong>: Ensure all skills installed in an organization conform to security standards.</li>
+<li><strong>Prompt Injection Defense</strong>: Detect instructions in <code>SKILL.md</code> that attempt system prompt overrides.</li>
+<li><strong>Content Filtering</strong>: Ensure skills don't request sensitive credentials or external network exfiltration.</li>
+</ul>
+<h2>4. PROBLEMS</h2>
+<ul><li><strong>CLI Bypass</strong>: The <code>before_install</code> hook only runs for Gateway-backed installs. CLI-based installs (e.g., <code>clawhub install</code>, <code>openclaw update</code>) bypass this hook entirely.</li>
+<li><strong>Not a replacement</strong>: It does not replace the built-in scanner; it only augments it.</li>
+<li><strong>Resource access</strong>: Requires reading files from the system, which must be secured.</li>
+</ul>
+<h2>5. SOLUTIONS</h2>
+<ul><li><strong>Mandatory Policy Plugin</strong>: Force-install a "Security Policy" plugin on all org nodes that includes this scanner.</li>
+<li><strong>Hash/Fingerprint Database</strong>: Implement a known-good SKILL.md database to verify skills by fingerprint.</li>
+<li><strong>Multi-layering</strong>: Pair this with sandbox tool policies to enforce security at the tool execution level.</li>
+</ul>
+<h2>6. EDGE CASES</h2>
+<ul><li><strong>Symlink attacks</strong>: <code>sourcePath</code> might be a symlink to outside the intended directory.</li>
+<li><strong>Multi-file payloads</strong>: Malicious instructions split across <code>SKILL.md</code> and other files.</li>
+<li><strong>Dynamic Updates</strong>: Plugin-based scanning is install-time; it does not block post-install modifications.</li>
+</ul>
+<h2>7. CREATIVE USES</h2>
+<ul><li><strong>Marketplace Scores</strong>: Compute a "Security Integrity Score" for skills based on how they pass custom scanning.</li>
+<li><strong>Adaptive Blocking</strong>: Dynamically download and update pattern lists via the plugin hook to defend against zero-day injection attacks.</li>
+</ul>
+<hr>
+<h2>NEW QUESTIONS</h2>
+<ul><li>[ ] Can we harden the <code>sourcePath</code> check to prevent directory traversal?</li>
+<li>[ ] How to efficiently maintain the pattern database for organizations?</li>
+<li>[ ] Can we integrate LLM-based SKILL.md analysis into this hook for higher intelligence?</li>
+</ul>
+<hr>
+<em>Research by: Investigador Scout</em>
+</body>
+</html>

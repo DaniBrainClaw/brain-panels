@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extra Step 2: MiniMax M2.7 Auto-Improvement / Self-Learning</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_extra_2.md</p>
+    <h2>Query</h2>
+"MiniMax M2.7 auto-improvement self-learning updates"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://venturebeat.com/technology/new-minimax-m2-7-proprietary-ai-model-is-self-evolving-and-can-perform-30-50</li>
+<li>https://blog.dailydoseofds.com/p/minimax-m27-the-self-refactoring</li>
+<li>https://hackernoon.com/minimax-m27-pushes-ai-agents-into-self-improvement</li>
+<li>https://www.mindstudio.ai/blog/what-is-minimax-m27-self-evolving-model</li>
+<li>https://www.minimax.io/news/minimax-m27-en</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>El concepto: Self-Evolution</h3>
+<p>M2.7 no es solo un modelo — es un sistema donde el modelo participa en su propio desarrollo.</p>
+<strong>Flujo de self-evolution:</strong>
+<ul><li>Human sets goal</li>
+<li>Model runs experiments</li>
+<li>Model evaluates itself</li>
+<li>Model improves and repeats</li>
+</ul>
+Esto es diferente a: "human designs → model runs → human fixes"
+<h3>Self-optimization loop (100+ rounds)</h3>
+<p>M2.7 ejecutó 100+ rondas de:
+<ul><li>analyze failure trajectories</li>
+<li>plan changes</li>
+<li>modify scaffold code</li>
+<li>run evaluations</li>
+<li>keep or revert changes</li>
+</ul>
+<strong>Resultado</strong>: 30% performance improvement sin reentrenamiento.</p>
+<h3>Qué optimizó M2.7 en su propio scaffold</h3>
+<ul><li><strong>Sampling parameters</strong>: Buscó sistemáticamente la mejor combinación de temperature, frequency penalty, presence penalty</li>
+</ul>
+<ul><li><strong>Workflow guidelines</strong>: Escribió guidelines como "después de arreglar un bug, buscar automáticamente el mismo patrón en otros archivos"</li>
+</ul>
+<ul><li><strong>Loop detection</strong>: Añadió detección para evitar quedar atrapado en ciclos repetitivos de failure</li>
+</ul>
+<h3>El agent harness concept</h3>
+<p>Cada AI agent opera dentro de un "scaffold" que define:
+<ul><li>Tools que puede llamar</li>
+<li>Skills que puede invocar</li>
+<li>Memory que retiene</li>
+<li>Workflow rules que sigue</li>
+</ul>
+M2.7 puede reescribir su propio scaffold — esto cierra el "human-in-the-loop bottleneck".</p>
+<h3>MLE Bench Lite results</h3>
+<p>MiniMax corrió M2.7 en 22 ML competitions (MLE Bench Lite), cada una en un solo A30 GPU.</p>
+<strong>Configuración del harness:</strong>
+<ul><li>Short-term memory</li>
+<li>Self-feedback</li>
+<li>Self-optimization</li>
+</ul>
+<strong>Resultados:</strong>
+<ul><li>Best run: 9 gold medals, 5 silver, 1 bronze</li>
+<li>Average medal rate: <strong>66.6%</strong></li>
+<li>Tied con Gemini 3.1</li>
+<li>Behind only Opus 4.6 (75.7%) y GPT-5.4 (71.2%)</li>
+</ul>
+<h3>Importante: Weights nunca cambian</h3>
+<p>During the self-optimization loop, los <strong>pesos del modelo no cambian</strong>. Lo que sí cambia es el sistema alrededor:
+<ul><li>Better skills</li>
+<li>Better memory</li>
+<li>Better workflow rules</li>
+</ul>
+<strong>Implicación</strong>: El improvement loop puede correr contínuamente, en producción, <strong>sin ningún retraining cycle</strong>.</p>
+<h3>Inteligencia de M2.7 en números</h3>
+<ul><li><strong>Intelligence Index</strong>: 50 (8 puntos mejor que M2.5)</li>
+<li><strong>Ranking global</strong>: 8vo lugar overall en inteligencia</li>
+<li><strong>SWE-Pro</strong>: 56.22%</li>
+<li><strong>Terminal Bench 2</strong>: 57.0%</li>
+<li><strong>Hallucination rate</strong>: 34% (vs 46% Sonnet 4.6, 50% Gemini 3.1)</li>
+</ul>
+<h3>Auto-mejoramiento en producción</h3>
+<p>La visión de MiniMax es que el modelo maneje 30-50% de su propio workflow de desarrollo. En la práctica esto significa:</p>
+<ul><li>Log reading → debugging → metric analysis → code fixes → merge requests → smoke tests</li>
+<li>Todo esto de forma autónoma</li>
+<li>Solo requieren intervención humana para decisiones críticas</li>
+</ul>
+<h3>Para BRAIN</h3>
+<p>M2.7 como agente puede:
+<ul><li>Analizar sus propios errores</li>
+<li>Planear mejorías para su workflow</li>
+<li>Implementar cambios y evaluarlos</li>
+<li>Mantener mejoría contínua sin intervención</li>
+</ul>
+Esto es relevante si BRAIN tiene tareas recurrentes donde el modelo puede aprender de sus errores.</p>
+<hr>
+<h2>Resumen</h2>
+<p>M2.7 es el primer modelo que realmente participate en su propia evolución. No es solo marketing — hay benchmarks y casos documentados:</p>
+<p>✅ 100+ rondas de self-optimization
+✅ 30% improvement sin reentrenamiento
+✅ 66.6% en MLE Bench (tied con Gemini 3.1)
+✅ 8vo lugar global en inteligencia</p>
+<p>El self-evolution es real y tiene impacto medible.</p>
+</body>
+</html>

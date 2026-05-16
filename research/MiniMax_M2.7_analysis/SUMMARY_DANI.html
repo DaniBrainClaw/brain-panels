@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiniMax M2.7 — Resumen para Dani</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 SUMMARY_DANI.md</p>
+    <strong>Fecha</strong>: 2026-05-15
+<strong>Investigación</strong>: 10 queries, 20+ fuentes consultadas
+<hr>
+<h2>¿Qué es MiniMax M2.7?</h2>
+<p>Es nuestro modelo primario — el que usa BRAIN por defecto. Es un modelo de razonamiento lanzado en marzo 2026 por MiniMax (empresa china de IA). Su característica principal: <strong>es el modelo #1 en inteligencia al menor costo</strong> del mercado.</p>
+<strong>Costes</strong>: $0.30/M tokens input, $1.20/M output. De los más baratos para su nivel.
+<hr>
+<h2>✅ DÓNDE DESTACA (y es mejor que la competencia)</h2>
+<h3>Coding / Ingeniería de Software</h3>
+<ul><li><strong>78% en SWE-bench Verified</strong> — outperforms Claude Opus 4.6 (55%) por 23 puntos</li>
+<li><strong>56.22% en SWE-Pro</strong> — igual que GPT-5.3, cerca de Opus</li>
+<li><strong>97% skill adherence</strong> en 40 tareas complejas</li>
+<li>Encuentra bugs que otros modelos no pueden (Kilo Bench)</li>
+<li>multilingual coding (76.5% en SWE Multilingual) — funciona bien en español</li>
+</ul>
+<h3>Agente y workflows</h3>
+<ul><li><strong>GDPval-AA ELO 1495</strong> — el más alto entre modelos open-source</li>
+<li><strong>MMClaw 62.7%</strong> — casi al nivel de Sonnet 4.6</li>
+<li>Lee archivos, analiza dependencias, traza call chains antes de escribir código</li>
+<li>Excelente para tareas de múltiples pasos con tools</li>
+</ul>
+<h3>Costo-beneficio</h3>
+<ul><li><strong>$175</strong> para correr el test completo de inteligencia</li>
+<li>Competidores con inteligencia similar: GLM-5 ($547), Kimi K2.5 ($371)</li>
+<li><strong>8-17x más barato que Claude Opus o GPT-5</strong></li>
+</ul>
+<h3>Factual accuracy</h3>
+<ul><li><strong>34% hallucination rate</strong> — mejor que Sonnet 4.6 (46%) y Gemini 3.1 (50%)</li>
+<li>Mejoró mucho desde M2.5 (-40 en omniscience → +1)</li>
+</ul>
+<hr>
+<h2>⚠️ DÓNDE NECESITA RESPALDO DE OTRO MODELO</h2>
+<h3>Creative Writing / Escritura creativa</h3>
+<strong>ALERTA</strong>: M2.7 es PEOR que su predecesor M2.5 en escritura creativa.
+<ul><li>Regressed desde rank 79 → 108 en LMSys (más bajo = peor)</li>
+<li>Es un modelo "test maxer" enfocado en STEM, no general purpose</li>
+<li>Para historias, blogs, writing → usar Claude Sonnet 4.6</li>
+</ul>
+<h3>Contextos muy largos (>200K tokens)</h3>
+<ul><li>Su máximo es 204,800 tokens (input+output)</li>
+<li>Usa full attention — se vuelve lento en contexts largos</li>
+<li><strong>Para documentos enormes → Gemini 3.1 Flash</strong> (1M context)</li>
+</ul>
+<h3>Speed crítico</h3>
+<ul><li><strong>44 tokens/segundo real</strong> (no 100 como dicen)</li>
+<li>2.4x más lento que el promedio de su categoría</li>
+<li>Para tasks que necesitan respuesta inmediata → Gemini 2.5 Flash</li>
+</ul>
+<h3>Multimodal (imágenes, audio, video)</h3>
+<ul><li><strong>Solo texto</strong> — no procesa imágenes ni audio</li>
+<li><strong>Para multimodal → Gemini 3.1 Pro</strong></li>
+</ul>
+<h3>Tareas simples (overkill)</h3>
+<ul><li>Siempre tiene razonamiento activo — no hay modo "rápido"</li>
+<li>4x más verbose que el promedio — gasta tokens innecesarios</li>
+<li>Para tasks triviales → Gemini 3.1 Flash-Lite</li>
+</ul>
+<hr>
+<h2>📊 ¿CUÁNDO USAR QUÉ?</h2>
+| Situación | Modelo |
+|-----------|--------|
+| Coding (bug fixing, features, review) | <strong>M2.7</strong> ✅ |
+| Tareas de agente / tools / multi-step | <strong>M2.7</strong> ✅ |
+| Office (Excel, Word, PPT) | <strong>M2.7</strong> ✅ |
+| Conversación general en español | <strong>M2.7</strong> ✅ |
+| Writing creativo / storytelling | <strong>Claude Sonnet 4.6</strong> |
+| Documentos >200K tokens | <strong>Gemini 3.1 Flash</strong> |
+| Speed crítico | <strong>Gemini 2.5 Flash</strong> |
+| Imágenes / Audio / Video | <strong>Gemini 3.1 Pro</strong> |
+| Conocimiento general fuera de STEM | <strong>Claude o GPT-5.4</strong> |
+<hr>
+<h2>🎯 RESUMEN EJECUTIVO</h2>
+<strong>MiniMax M2.7 es excelente para:</strong>
+<ul><li>Coding profesional (mejor que Opus en SWE-bench Verified)</li>
+<li>Agentes y workflows complejos</li>
+<li>Office productivity</li>
+<li>Costo-sensibilidad (es el más barato por inteligencia)</li>
+</ul>
+<strong>No es bueno para:</strong>
+<ul><li>Escritura creativa (regressed vs M2.5)</li>
+<li>Contextos muy largos (se ralentiza)</li>
+<li>Speed (es lento)</li>
+<li>Multimodal (solo texto)</li>
+</ul>
+<strong>En BRAIN lo usamos bien</strong> — es la elección correcta para coding y agente. Para writing o contexts largos, ya tenemos fallback configurado.
+<hr>
+<em>Investigación completada. Archivos en <code>/data/.openclaw/agents/investigador/workspace/Research/MiniMax_M2.7_analysis/</code></em>
+</body>
+</html>

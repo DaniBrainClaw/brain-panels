@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tareas Largas Autonomas — Investigación</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 index.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<hr>
+<h2>Fuentes</h2>
+<ul><li><strong>Building AI Agents That Actually Complete Tasks</strong> — atticusli.com/blog/posts/building-ai-agents-that-complete-tasks/</li>
+<li><strong>Long-running Agents</strong> — addyosmani.com/blog/long-running-agents/</li>
+<li><strong>Microsoft: Agent Autonomous Batch Processing</strong> — learn.microsoft.com</li>
+</ul>
+<hr>
+<h2>El Problema</h2>
+<p>BRAIN usa exec para ejecutar scripts. Si el script es largo (3905 filas), y algo falla, se detiene y espera input de Dani.</p>
+<strong>Lo que Dani quiere:</strong> Que BRAIN ejecute sin parar, maneje errores, y reporte al final.
+<hr>
+<h2>Patrones de Ejecución Autónoma</h2>
+<h3>1. Ralph Loop (Geoffrey Huntley / Ryan Carson)</h3>
+<p>El patrón más simple para agentes autónomos:</p>
+<pre><code>1. Pick next unfinished task from list
+<ul><li>Build prompt with task + context</li>
+<li>Call agent</li>
+<li>Run tests/checks</li>
+<li>Append what happened to progress.txt</li>
+<li>Update task list (done/failed/blocked)</li>
+<li>Go back to step 1</li>
+</ul></code></pre>
+<strong>Por qué funciona:</strong> Separa el trabajo en chunks manejables con checkpointing.
+<hr>
+<h3>2. ReAct Pattern (Reason Then Act)</h3>
+<p>Después de cada acción, el agente razona sobre el resultado antes de decidir la siguiente.</p>
+<pre><code>for step in plan:
+    action_result = execute(step)
+    reasoning = analyze(action_result)
+    if not reasoning.is_ok:
+        retry_with_modified_approach(step)
+</code></pre>
+<hr>
+<h3>3. State Checkpoints</h3>
+<p>Para tareas largas, guardar estado a intervalos regulares.</p>
+<pre><code><h1>Cada N filas, guardar checkpoint</h1>
+if row_number % 100 == 0:
+    save_checkpoint({
+        'last_processed_row': row_number,
+        'errors': error_log,
+        'timestamp': datetime.now()
+    })
+</code></pre>
+<hr>
+<h3>4. Bounded Retries</h3>
+<p>Cuando una acción falla:
+<ul><li>Retry con approach modificado (no el mismo)</li>
+<li>Máximo 3 intentos</li>
+<li>Si falla, registrar en error log y continuar</li>
+</ul>
+<pre><code>MAX_RETRIES = 3
+for attempt in range(MAX_RETRIES):
+    try:
+        result = process_row(row)
+        break
+    except Exception as e:
+        if attempt == MAX_RETRIES - 1:
+            log_error(row, str(e))
+            continue  # Continue to next row
+        else:
+            row = modify_approach(row)  # Try different approach
+</code></pre></p>
+<hr>
+<h3>5. Verify After Every Action</h3>
+<pre><code>result = process_row(row)
+if not verify(result):
+    log_error(row, "Verification failed")
+    continue
+</code></pre>
+<hr>
+<h2>Errores Comunes en Agentes Largos</h2>
+| Error | Síntoma | Prevención |
+|-------|---------|-----------|
+| <strong>Infinite loops</strong> | Repite misma acción | Track action history, force different approach |
+| <strong>Goal drift</strong> | Pierde el objetivo original | Re-evaluate cada N pasos |
+| <strong>Context overflow</strong> | Se queda sin contexto | Compaction, checkpoints |
+| <strong>Over-confidence</strong> | Dice "listo" sin verificar | Success criteria definidos |
+<hr>
+<h2>Solución para BRAIN</h2>
+<h3>Script Template para 3905 Filas</h3>
+<p>El script debe:</p>
+<ul><li><strong>Batch processing</strong> — procesar en chunks de 100-500 filas</li>
+<li><strong>Checkpointing</strong> — guardar progreso cada N filas</li>
+<li><strong>Error handling</strong> — try/except por fila, continuar si falla</li>
+<li><strong>Progress logging</strong> — guardar qué se hizo</li>
+<li><strong>Final report</strong> — resumen al terminar</li>
+</ul>
+<pre><code>import json
+import os
+from datetime import datetime
+<p>class AutonomousProcessor:
+    def __init__(self, input_file, output_file, checkpoint_file):
+        self.input_file = input_file
+        self.output_file = output_file
+        self.checkpoint_file = checkpoint_file
+        self.processed = 0
+        self.errors = []
+        self.errors_file = "error_log.json"
+        
+    def load_checkpoint(self):
+        if os.path.exists(self.checkpoint_file):
+            with open(self.checkpoint_file) as f:
+                return json.load(f)
+        return {'last_row': -1, 'processed': 0}
+    
+    def save_checkpoint(self, last_row):
+        with open(self.checkpoint_file, 'w') as f:
+            json.dump({
+                'last_row': last_row,
+                'processed': self.processed,
+                'timestamp': datetime.now().isoformat()
+            }, f)
+    
+    def process_batch(self, rows):
+        results = []
+        for row in rows:
+            try:
+                result = self.process_row(row)
+                results.append(result)
+                self.processed += 1
+            except Exception as e:
+                self.errors.append({
+                    'row': row,
+                    'error': str(e),
+                    'timestamp': datetime.now().isoformat()
+                })
+                # Continue processing - don't stop
+        return results
+    
+    def process_row(self, row):
+        # Tu lógica aquí
+        pass
+    
+    def run(self):
+        checkpoint = self.load_checkpoint()
+        start_row = checkpoint['last_row'] + 1
+        
+        print(f"Resuming from row {start_row}")
+        
+        # Tu código para leer input y procesar
+        # ...
+        
+        # Guardar checkpoint cada 100 filas
+        if self.processed % 100 == 0:
+            self.save_checkpoint(current_row)
+        
+        # Report final
+        self.save_errors()
+        print(f"Done. Processed: {self.processed}, Errors: {len(self.errors)}")
+</code></pre></p>
+<hr>
+<h2>Recomendación para BRAIN</h2>
+<p>Para ejecutar tareas largas sin preguntar:</p>
+<ul><li><strong>Usar checkpoint pattern</strong> — guardar progreso cada 100-500 filas</li>
+<li><strong>Try/except por item</strong> — si falla uno, continuar con el siguiente</li>
+<li><strong>Log de errores separado</strong> — no perder información</li>
+<li><strong>Resume capability</strong> — si se corta, continuar desde donde quedó</li>
+</ul>
+<hr>
+<em>Investigador — Tareas_Autonomas investigación completada.</em>
+</body>
+</html>

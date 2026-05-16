@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skills Per Agent Context Overhead — Research Findings</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 skills-context-overhead.md</p>
+    <strong>Topic:</strong> What is the maximum recommended number of skills per agent before context overhead becomes problematic?
+<strong>Priority:</strong> MED
+<strong>Date:</strong> 2026-04-23 08:02 CET
+<strong>Research by:</strong> Investigador Scout
+<strong>Status:</strong> ✅ COMPLETE
+<hr>
+<h2>1. WHAT IS — Definition & Core Concept</h2>
+<h3>Definition</h3>
+<strong>Skills context overhead</strong> is the token cost of injecting the skills list into the agent's system prompt. Unlike tool schemas (which are also in the prompt), skills have a compact XML representation that scales linearly with the number of skills.
+<p>The overhead comes from:
+<ul><li><strong>Base overhead</strong> — Fixed cost when ≥1 skill exists (195 characters)</li>
+<li><strong>Per-skill overhead</strong> — Scales with skill count (97 chars + XML-escaped name/description/location)</li>
+</ul>
+<h3>Token Calculation Formula</h3></p>
+<pre><code>total_chars = 195 + Σ (97 + len(name_escaped) + len(description_escaped) + len(location_escaped))
+total_tokens ≈ total_chars / 4 (OpenAI-style estimate)
+</code></pre>
+<strong>Key formula components:</strong>
+<ul><li>Base overhead: <strong>195 characters</strong> (~49 tokens)</li>
+<li>Per skill: <strong>97 + field lengths</strong> (~120-180 characters depending on field lengths)</li>
+<li>Per skill tokens: <strong>~24-45 tokens</strong> depending on field lengths</li>
+</ul>
+<h3>XML Escaping Impact</h3>
+<p>XML escaping expands <code>& < > " '</code> into entities (<code>&amp;</code>, <code>&lt;</code>, etc.), which increases length:
+<ul><li>Skill names with underscores/hyphens: minimal escaping</li>
+<li>Skill descriptions with quotes/ampersands: significant escaping (2x in extreme cases)</li>
+</ul>
+<hr></p>
+<h2>2. HOW IT WORKS — Context Window & Runtime Cap Mechanics</h2>
+<h3>Two-Level Context Limits</h3>
+<ul><li><strong>Model context window</strong> — Hardware/model limit (e.g., 204,800 tokens for MiniMax M2.7)</li>
+<li><strong>Runtime context cap</strong> — <code>agents.defaults.contextTokens</code> setting (e.g., 200,000 for MiniMax M2.7)</li>
+</ul>
+The runtime cap is typically set <strong>below</strong> the model context window to leave room for:
+<ul><li>Output tokens</li>
+<li>Safety margins</li>
+<li>Provider-specific overhead</li>
+</ul>
+<h3>Current System Configuration</h3>
+| Model | Context Window | Runtime Cap | Setting |
+|-------|---------------|-------------|---------|
+| MiniMax M2.7 | 204,800 | 200,000 | <code>agents.defaults.contextTokens</code> |
+| GPT-5.4 | 1,050,000 | 272,000 | <code>openai-codex</code> default |
+| Gemini 2.5 Pro | ~1,000,000+ | Provider default | N/A |
+| Gemini 2.5 Flash | ~128,000 | Provider default | N/A |
+<h3>Prompt Budget Breakdown</h3>
+<p>For MiniMax M2.7 (200,000 token runtime cap), typical budget allocation:</p>
+| Component | Typical Tokens | Notes |
+|-----------|---------------|-------|
+| System prompt core (tooling, safety, self-update, workspace, docs, time, runtime) | ~2,500-4,000 | Varies with thinking level |
+| Skills list | Variable | ~24-45/skill |
+| Bootstrap files (MEMORY.md, AGENTS.md, etc.) | ~1,000-15,000 | Controlled by <code>bootstrapMaxChars</code> |
+| Conversation history | Variable | Grows with turns |
+| Tool results | Variable | Depends on tool usage |
+| <strong>Available for new input + output</strong> | ~170,000-190,000 | After fixed costs |
+<hr>
+<h2>3. USES — Practical Skill Count Recommendations</h2>
+<h3>Conservative Recommendations (Safety Margin)</h3>
+| Scenario | Max Skills | Rationale |
+|----------|------------|-----------|
+| MiniMax M2.7 (200K cap) — aggressive | <strong>~200 skills</strong> | 200 × 45 tokens = 9,000 tokens (~5% of budget) |
+| MiniMax M2.7 (200K cap) — conservative | <strong>~100 skills</strong> | 100 × 45 tokens = 4,500 tokens (~2.5% of budget) |
+| MiniMax M2.7 (200K cap) — minimal overhead | <strong>~50 skills</strong> | 50 × 45 tokens = 2,250 tokens (~1% of budget) |
+| GPT-5.4 (272K cap) — conservative | <strong>~300 skills</strong> | Larger cap allows more |
+| Gemini 2.5 Flash (~128K cap) | <strong>~50 skills</strong> | Smaller cap requires discipline |
+<h3>Formula for Maximum Skills</h3>
+<pre><code>max_skills = (contextTokens - systemPromptTokens - bootstrapTokens - outputReserve) / tokensPerSkill
+</code></pre>
+<strong>Example for MiniMax M2.7:</strong>
+<ul><li>contextTokens: 200,000</li>
+<li>systemPromptTokens: ~3,000</li>
+<li>bootstrapTokens: ~5,000 (with MEMORY.md)</li>
+<li>outputReserve: ~10,000 (for model output)</li>
+<li>tokensPerSkill: ~35 (average with description length)</li>
+</ul>
+<pre><code>max_skills = (200,000 - 3,000 - 5,000 - 10,000) / 35 ≈ 5,200 skills (theoretical)
+</code></pre>
+<strong>Practical limit is much lower</strong> due to:
+<ul><li>Conversation history growth</li>
+<li>Tool results during session</li>
+<li>Compaction overhead</li>
+<li>Provider-specific overhead</li>
+</ul>
+<h3>Realistic Production Recommendations</h3>
+| Use Case | Recommended Max | Rationale |
+|----------|-----------------|-----------|
+| General purpose agent | <strong>50-100 skills</strong> | Leave room for conversation growth |
+| Research-heavy agent | <strong>30-50 skills</strong> | Need room for large tool results |
+| Memory-intensive agent | <strong>20-30 skills</strong> | MEMORY.md + history consume budget |
+| Lightweight/embedded agent | <strong>10-20 skills</strong> | Minimal context footprint |
+<h3>Current System Skill Count</h3>
+| Location | Count |
+|----------|-------|
+| Bundled (<code>openclaw/skills/</code>) | ~17 skills |
+| Managed (<code>~/.openclaw/skills/</code>) | 7 skills |
+| Workspace (<code>workspace/skills/</code>) | 1 skill |
+| <strong>Total visible</strong> | <strong>~25 skills</strong> |
+| <strong>Effective (with gating)</strong> | <strong>~10-15</strong> (some gated by requirements) |
+<strong>Current overhead:</strong> ~25 skills × ~35 tokens = ~875 tokens (~0.4% of 200K budget)
+<hr>
+<h2>4. PROBLEMS — When Context Overhead Becomes Problematic</h2>
+<h3>Warning Signs</h3>
+| Symptom | Threshold | Indication |
+|---------|-----------|------------|
+| Frequent <code>context overflow</code> errors | >85% context usage | Skills list + history too large |
+| Slow compaction triggers | >75% context usage | Model context filling up |
+| Token cost spikes | Unexpectedly high | Skills list growing unchecked |
+| <code>/context detail</code> shows skills >10% | Context budget concern | Reduce skill count |
+<h3>Failure Modes</h3>
+<ul><li><strong>Context overflow errors</strong> — Model rejects input when context full</li>
+<li><strong>Compaction thrashing</strong> — Excessive compaction degrades session quality</li>
+<li><strong>Memory pressure</strong> — High context = high memory for session</li>
+<li><strong>Cost inflation</strong> — More context = higher token costs per turn</li>
+</ul>
+<h3>Causes of Excessive Overhead</h3>
+| Cause | Solution |
+|-------|----------|
+| Too many skills enabled globally | Use per-agent <code>skills</code> allowlist |
+| Skills with long descriptions | Keep descriptions concise (<100 chars) |
+| Skills in all locations loaded | Restrict via <code>skills.load.extraDirs</code> |
+| No skill gating/filters | Use <code>requires.bins</code>, <code>requires.env</code> to auto-filter |
+| Bootstrap files too large | Set <code>bootstrapMaxChars</code>, <code>bootstrapTotalMaxChars</code> |
+<hr>
+<h2>5. SOLUTIONS — Managing Skills Context Overhead</h2>
+<h3>Strategy 1: Per-Agent Skill Allowlists</h3>
+<pre><code>{
+  agents: {
+    defaults: {
+      skills: ["github", "weather"],  // Small baseline
+    },
+    list: [
+      { id: "research", skills: ["github", "weather", "web-research", "continuous-improvement"] },
+      { id: "minimal", skills: [] },  // No skills
+    ],
+  },
+}
+</code></pre>
+<strong>Benefit:</strong> Only load skills needed for each agent
+<h3>Strategy 2: Skill Description Optimization</h3>
+<strong>BAD (long description):</strong>
+<pre><code>---
+name: my-skill
+description: "This skill does X, Y, Z and handles edge cases A, B, C when used in context of D and E scenarios"
+<hr>
+</code></pre>
+<strong>GOOD (concise description):</strong>
+<pre><code>---
+name: my-skill
+description: "When to use X and Y"
+<hr>
+</code></pre>
+<h3>Strategy 3: Skill Gating with Metadata</h3>
+<pre><code>---
+name: docker-build
+requires:
+  bins: ["docker"]
+<hr>
+</code></pre>
+<p>Skills with unmet requirements are <strong>automatically excluded</strong> from the eligible set, reducing overhead.</p>
+<h3>Strategy 4: Disable Unused Skills</h3>
+<pre><code>{
+  skills: {
+    entries: {
+      "unused-skill": { enabled: false }
+    }
+  }
+}
+</code></pre>
+<h3>Strategy 5: Runtime Context Cap Adjustment</h3>
+<pre><code>{
+  agents: {
+    defaults: {
+      contextTokens: 150000,  // Lower cap = less context pressure
+    }
+  }
+}
+</code></pre>
+<strong>Trade-off:</strong> Less room for conversation history
+<h3>Strategy 6: Use Smaller Models for Simple Tasks</h3>
+<pre><code>{
+  agents: {
+    defaults: {
+      model: {
+        primary: "minimax/MiniMax-M2.7",
+        fallbacks: ["google/gemini-3.1-flash-lite"]  // Use smaller for simple tasks
+      }
+    }
+  }
+}
+</code></pre>
+<hr>
+<h2>6. EDGE CASES — Unexpected Behaviors</h2>
+<h3>Edge Case: Skill Name Conflicts</h3>
+<p>When same skill exists in multiple locations:
+<ul><li>Only <strong>one</strong> entry appears in the skills list (highest precedence wins)</li>
+<li>Other copies are ignored</li>
+<li><strong>Overhead is per-unique-skill-name</strong>, not per-location</li>
+</ul>
+<h3>Edge Case: <code>disable-model-invocation: true</code></h3></p>
+<p>Skills with this flag are <strong>excluded from the model prompt</strong> but still available via user invocation (slash commands). This means:
+<ul><li><strong>Zero token overhead</strong> for model-visible skills list</li>
+<li>Available only when user explicitly invokes</li>
+</ul>
+<h3>Edge Case: Skills with <code>command-dispatch: tool</code></h3></p>
+<p>Slash command <strong>bypasses the model</strong> for dispatch. Still appears in skills list but:
+<ul><li>Model doesn't read SKILL.md for invocation</li>
+<li>Tool invoked directly</li>
+</ul>
+<h3>Edge Case: Skill Gating Removes Most Skills</h3></p>
+<p>If 100 skills are installed but only 5 meet gating criteria:
+<ul><li><strong>Only 5 appear in the skills list</strong></li>
+<li>Overhead is based on eligible count, not installed count</li>
+</ul>
+<h3>Edge Case: Compaction Changes Skill Overhead Ratio</h3></p>
+<p>As session grows and gets compacted:
+<ul><li>Historical context shrinks (compressed)</li>
+<li>Skills list stays constant</li>
+<li>Skills overhead <strong>percentage increases</strong> over time</li>
+</ul>
+<h3>Edge Case: <code>agents.defaults.skills</code> vs <code>agents.list[].skills</code></h3></p>
+<pre><code>{
+  agents: {
+    defaults: { skills: ["base"] },  // Baseline for all agents
+    list: [
+      { id: "extra", skills: ["base", "extra"] },  // REPLACES defaults
+    ]
+  }
+}
+</code></pre>
+<ul><li><code>skills: ["base", "extra"]</code> <strong>replaces</strong> defaults, does not merge</li>
+<li><code>skills: []</code> means <strong>no skills</strong></li>
+<li>No skills in either → all visible skills eligible</li>
+</ul>
+<hr>
+<h2>7. CREATIVE USES — Novel Applications</h2>
+<h3>Creative Use 1: Dynamic Skill Loading by Context</h3>
+<p>Combine <code>before_prompt_build</code> hook to dynamically adjust skill allowlist based on conversation topic:</p>
+<pre><code>api.registerHook({
+  events: ["before_prompt_build"],
+  handler: async (event) => {
+    const topic = event.context.recentTopics?.[0];
+    if (topic === "code") {
+      event.agentConfig.skills = ["github", "coding-agent", "code-review"];
+    } else if (topic === "research") {
+      event.agentConfig.skills = ["web-research", "continuous-improvement"];
+    }
+  }
+});
+</code></pre>
+<h3>Creative Use 2: Skill Overhead Budget Monitor</h3>
+<p>Create a hook that warns when skills overhead exceeds threshold:</p>
+<pre><code>api.registerHook({
+  events: ["before_agent_start"],
+  handler: async (event) => {
+    const skillsOverhead = calculateSkillsOverhead(event.visibleSkills);
+    if (skillsOverhead > 5000) {  // 5K tokens
+      console.warn(<code>High skills overhead: ${skillsOverhead} tokens</code>);
+    }
+  }
+});
+</code></pre>
+<h3>Creative Use 3: Context-Aware Skill Subsetting</h3>
+<p>For memory-intensive sessions, temporarily reduce skills:</p>
+<pre><code>{
+  agents: {
+    list: [{
+      id: "heavy-memory",
+      contextTokens: 180000,  // Lower cap
+      skills: ["core-only"]   // Fewer skills
+    }]
+  }
+}
+</code></pre>
+<h3>Creative Use 4: Skill-Based Context Budget Allocation</h3>
+<p>Use skills as a way to budget context:
+<ul><li>Keep skill descriptions under 100 characters</li>
+<li>Use <code>disable-model-invocation: true</code> for rarely-used skills</li>
+<li>Only load essential skills per agent</li>
+</ul>
+<hr></p>
+<h2>NEW QUESTIONS OPENED BY THIS RESEARCH</h2>
+<h3>a) Definition & Scope</h3>
+<ul><li>[ ] What triggers <code>context overflow</code> errors — skills alone, or skills + history? <strong>[MED]</strong></li>
+<li>[ ] Does <code>/context detail</code> show per-skill token breakdown? <strong>[MED]</strong></li>
+<li>[ ] How does compaction affect skills list visibility? <strong>[LOW]</strong></li>
+</ul>
+<h3>b) Internal Mechanics</h3>
+<ul><li>[ ] Can skills list be paginated or collapsed for very large skill sets (>500)? <strong>[MED]</strong></li>
+<li>[ ] What is exact overhead of <code>disable-model-invocation: true</code> skill? Zero or still listed? <strong>[MED]</strong></li>
+<li>[ ] Does <code>skills.load.extraDirs</code> add to visible skill count even if skills are gated out? <strong>[LOW]</strong></li>
+</ul>
+<h3>c) Use Cases</h3>
+<ul><li>[ ] Can per-agent skill allowlists be changed dynamically via hook? <strong>[MED]</strong></li>
+<li>[ ] Is there a cost difference between 50 short-description skills vs 50 long-description skills? <strong>[LOW]</strong></li>
+</ul>
+<h3>d) Best Practices</h3>
+<ul><li>[ ] What is recommended skill description length to minimize overhead? <strong>[MED]</strong></li>
+<li>[ ] Should rarely-used skills use <code>disable-model-invocation: true</code>? <strong>[MED]</strong></li>
+<li>[ ] What is better: many small skills or few comprehensive skills? <strong>[MED]</strong></li>
+</ul>
+<h3>e) Problems & Limitations</h3>
+<ul><li>[ ] Does high skill count affect model startup time (loading SKILL.md)? <strong>[LOW]</strong></li>
+<li>[ ] Is there a known issue with skills list not refreshing when <code>agents.defaults.skills</code> changes? <strong>[MED]</strong></li>
+</ul>
+<h3>f) Solutions & Workarounds</h3>
+<ul><li>[ ] Can skills be loaded from remote URLs to reduce local overhead? <strong>[MED]</strong></li>
+<li>[ ] Is there a way to profile skills overhead in production? <strong>[MED]</strong></li>
+</ul>
+<hr>
+<h2>Summary: Quick Reference</h2>
+| Question | Answer |
+|----------|--------|
+| Token overhead per skill | ~24-45 tokens (depending on field lengths) |
+| Base overhead | ~49 tokens (195 chars) |
+| Recommended max skills (MiniMax M2.7) | <strong>50-100 conservative, 200 aggressive</strong> |
+| Recommended max skills (GPT-5.4 272K) | <strong>150-300 conservative</strong> |
+| Recommended max skills (Gemini 2.5 Flash) | <strong>30-50 conservative</strong> |
+| Skills overhead % of 200K budget (100 skills) | ~2.5% |
+| Skills overhead % of 200K budget (200 skills) | ~5% |
+| Way to reduce overhead | Per-agent allowlists, short descriptions, <code>disable-model-invocation</code> |
+<hr>
+<h2>Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skills overhead formula, base + per-skill costs</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/reference/token-use.md</code> — Token use breakdown, context window mechanics</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/concepts/system-prompt.md</code> — System prompt structure, skills section</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/concepts/context.md</code> — Context window vs tracked tokens</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/concepts/model-providers.md</code> — Model contextWindow metadata</li>
+<li><code>~/.openclaw/openclaw.json</code> — Current system config (MiniMax M2.7: 204,800 contextWindow, 200,000 runtime cap)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/</code> — Source analysis for skills loading</li>
+</ul>
+<hr>
+<em>Research by: Investigador Scout | 2026-04-23 08:02 CET</em>
+</body>
+</html>

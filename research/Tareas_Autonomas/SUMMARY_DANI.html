@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RESUMEN PARA DANI — Tareas Largas Autónomas</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 SUMMARY_DANI.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<hr>
+<h2>El Problema</h2>
+<p>Cuando BRAIN ejecuta un script largo (3905 filas), si algo falla, se detiene y pregunta qué hacer.</p>
+<strong>Lo que quieres:</strong> BRAIN ejecuta solo, maneja errores, reporta al final.
+<hr>
+<h2>La Solución: Autonomous Processor Pattern</h2>
+<h3>Principios Clave</h3>
+| Patrón | Qué hace |
+|--------|----------|
+| <strong>Checkpointing</strong> | Guardar progreso cada N filas. Si se corta, reanuda donde quedó. |
+| <strong>Bounded retries</strong> | Si falla, reintenta con approach modificado (máx 3 veces). Si sigue fallando, registra error y continúa. |
+| <strong>Error log separado</strong> | No perder información si algo falla. |
+| <strong>Final report</strong> | Resumen al terminar: procesadas, errores, tiempo. |
+<hr>
+<h2>Script Listo para Usar</h2>
+<pre><code>#!/usr/bin/env python3
+"""
+Autonomous Batch Processor
+Procesa archivos grandes sin preguntar, maneja errores, reporta al final.
+"""
+<p>import json
+import os
+import sys
+from datetime import datetime</p>
+<p>class AutonomousProcessor:
+    def __init__(self, input_file, output_file, errors_file="errors.json"):
+        self.input_file = input_file
+        self.output_file = output_file
+        self.errors_file = errors_file
+        self.processed = 0
+        self.errors = []
+        self.checkpoint_file = ".checkpoint.json"
+        self.chunk_size = 100  # Guardar checkpoint cada 100 filas
+        
+    def load_checkpoint(self):
+        """Carga checkpoint si existe."""
+        if os.path.exists(self.checkpoint_file):
+            with open(self.checkpoint_file) as f:
+                return json.load(f)
+        return {'last_row': -1, 'processed': 0, 'timestamp': None}
+    
+    def save_checkpoint(self, last_row):
+        """Guarda checkpoint."""
+        with open(self.checkpoint_file, 'w') as f:
+            json.dump({
+                'last_row': last_row,
+                'processed': self.processed,
+                'timestamp': datetime.now().isoformat()
+            }, f)
+    
+    def log_error(self, row_num, row_data, error):
+        """Registra error sin parar."""
+        self.errors.append({
+            'row': row_num,
+            'data': str(row_data)[:200],  # Primeros 200 chars
+            'error': str(error),
+            'timestamp': datetime.now().isoformat()
+        })
+    
+    def save_errors(self):
+        """Guarda errores al archivo."""
+        with open(self.errors_file, 'w') as f:
+            json.dump(self.errors, f, indent=2)
+    
+    def process_row(self, row_num, row_data):
+        """
+        AQUÍ VA TU LÓGICA DE PROCESAMIENTO.
+        Modifica esta función según lo que necesites.
+        """
+        # Ejemplo:
+        # - Procesar fila Excel
+        # - Transformar datos
+        # - Escribir a output
+        
+        # Si algo sale mal, LANZA una excepción
+        # Si todo bien, devuelve el resultado
+        return processed_result
+    
+    def run(self):
+        """Ejecuta el procesamiento completo."""
+        checkpoint = self.load_checkpoint()
+        start_row = checkpoint['last_row'] + 1
+        self.processed = checkpoint['processed']
+        
+        print(f"🚀 Iniciando procesamiento...")
+        print(f"📁 Input: {self.input_file}")
+        print(f"📁 Output: {self.output_file}")
+        print(f"📍 Reanudando desde fila: {start_row}")
+        
+        # Abrir archivo de input (ejemplo CSV)
+        # Cambia esto según tu formato
+        with open(self.input_file, 'r', encoding='utf-8') as infile:
+            # Leer todas las líneas
+            lines = infile.readlines()
+            total = len(lines)
+            print(f"📊 Total filas: {total}")
+            
+            for i, line in enumerate(lines[start_row:], start=start_row):
+                try:
+                    # Parsear línea (ajusta según tu formato)
+                    row_data = line.strip().split(',')
+                    
+                    # Procesar
+                    result = self.process_row(i, row_data)
+                    
+                    # Escribir resultado
+                    with open(self.output_file, 'a') as outfile:
+                        outfile.write(json.dumps(result) + '\n')
+                    
+                    self.processed += 1
+                    
+                    # Progress cada 100 filas
+                    if self.processed % 100 == 0:
+                        self.save_checkpoint(i)
+                        self.save_errors()
+                        print(f"✅ Procesadas: {self.processed}/{total} | Errors: {len(self.errors)}")
+                    
+                except Exception as e:
+                    self.log_error(i, line, str(e))
+                    # CONTINÚA sin preguntar - no para
+        
+        # Guardar estado final
+        self.save_checkpoint(total - 1)
+        self.save_errors()
+        
+        print(f"\n🎉 FINALIZADO")
+        print(f"✅ Procesadas: {self.processed}")
+        print(f"❌ Errores: {len(self.errors)}")
+        print(f"📁 Errores guardados en: {self.errors_file}")</p>
+<h1>============================================</h1>
+<h1>USO</h1>
+<h1>============================================</h1>
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Uso: python autonomous_processor.py <input.csv> <output.json>")
+        sys.exit(1)
+    
+    processor = AutonomousProcessor(sys.argv[1], sys.argv[2])
+    processor.run()
+</code></pre>
+<hr>
+<h2>Cómo Adaptarlo</h2>
+<h3>Para tu script de Excel con 3905 filas:</h3>
+<ul><li><strong>Reemplaza <code>process_row</code></strong> con tu lógica que procesa cada fila</li>
+<li><strong>Cambia la lectura del archivo</strong> si no es CSV (ej: usar openpyxl para Excel)</li>
+<li><strong>Ajusta <code>chunk_size</code></strong> si quieres guardar más o menos seguido</li>
+</ul>
+<h3>Si el script ya existe:</h3>
+<pre><code><h1>En vez de modificar el script original,</h1>
+<h1>crea un wrapper que lo llame con este pattern:</h1>
+<p>class ExcelProcessor(AutonomousProcessor):
+    def process_row(self, row_num, row_data):
+        # Tu código original de procesar Excel
+        return existing_function(row_data)
+</code></pre></p>
+<hr>
+<h2>Patrones que Implementa</h2>
+| Patrón | Beneficio |
+|--------|-----------|
+| Checkpoint cada 100 filas | Si se corta, reanuda. No pierde trabajo. |
+| Try/except por fila | Si falla una, las demás siguen. |
+| Error log separado | Puedes revisar qué falló después. |
+| Progress cada 100 | Ves avance sin saturar output. |
+| Final report | Sabes resultado total al terminar. |
+<hr>
+<h2>Para Integrar con BRAIN</h2>
+<p>BRAIN puede ejecutar este script directamente:</p>
+<pre><code>python3 autonomous_processor.py datos.csv resultados.json
+</code></pre>
+<p>BRAIN no necesita preguntar — el script maneja todo.</p>
+<hr>
+<em>Investigador — Listo para usar.</em>
+</body>
+</html>

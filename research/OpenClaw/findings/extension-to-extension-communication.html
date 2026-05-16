@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extension to Extension Communication</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 extension-to-extension-communication.md</p>
+    <h2>What is it?</h2>
+<p>Extension-to-Extension (E2E) Communication is the mechanism by which multiple OpenClaw extensions can coordinate, share data, and react to shared events through a common EventBus. Since all extensions loaded in the same session share the same EventBus instance, one extension can subscribe to events fired by another extension, enabling indirect communication patterns.</p>
+<h2>How it works</h2>
+<h3>Core Architecture: Shared EventBus</h3>
+<pre><code>ExtensionRunner
+  ├── createEventBus() → EventBus instance
+  ├── extensions: Extension[]
+  │     └── each Extension
+  │           └── handlers: Map<string, HandlerFn[]>
+  └── emit(event) → chains handlers sequentially
+</code></pre>
+<p>All extensions in a session share ONE EventBus instance created in <code>loader.js</code> line 287:</p>
+<pre><code>const resolvedEventBus = eventBus ?? createEventBus();
+</code></pre>
+<p>When <code>loadExtensions()</code> is called, the same <code>eventBus</code> is passed to each extension's <code>createExtensionAPI()</code>, where it's stored as <code>pi.events</code>.</p>
+<h3>Event Emission Pattern</h3>
+<p>Every <code>emit<em></code> method in <code>ExtensionRunner</code> follows the same pattern:</p>
+<pre><code>async emit(event) {
+    const ctx = this.createContext();
+    for (const ext of this.extensions) {
+        const handlers = ext.handlers.get(event.type);
+        if (!handlers || handlers.length === 0) continue;
+        for (const handler of handlers) {
+            try {
+                const handlerResult = await handler(event, ctx);
+                if (handlerResult !== undefined) {
+                    event.payload = handlerResult; // chain the result
+                }
+            } catch (err) {
+                this.emitError({ extensionPath: ext.path, event: event.type, error: err.message, stack: err.stack });
+            }
+        }
+    }
+    return event;
+}
+</code></pre>
+<strong>Key behavior:</strong> If a handler returns a non-<code>undefined</code> value, it becomes the event payload for subsequent handlers (chained transformation). If handler returns <code>undefined</code>, payload passes through unchanged.
+<h3>Available Events</h3>
+<p>The <code>ExtensionAPI.events</code> (EventBus) supports 20+ event types:</p>
+| Event | Handler Signature | Purpose |
+|-------|-----------------|---------|
+| <code>session_start</code> | <code>(event) => void</code> | New session initialized |
+| <code>session_before_switch</code> | <code>(event, ctx) => SessionBeforeSwitchResult</code> | About to switch session |
+| <code>session_before_fork</code> | <code>(event, ctx) => SessionBeforeForkResult</code> | About to fork session |
+| <code>session_before_compact</code> | <code>(event, ctx) => SessionBeforeCompactResult</code> | Before auto-compaction |
+| <code>session_compact</code> | <code>(event) => void</code> | Compaction triggered |
+| <code>session_shutdown</code> | <code>(event) => void</code> | Session ending |
+| <code>before_agent_start</code> | <code>(event, ctx) => BeforeAgentStartResult</code> | Before agent starts |
+| <code>agent_start</code> | <code>(event) => void</code> | Agent started |
+| <code>agent_end</code> | <code>(event) => void</code> | Agent finished |
+| <code>turn_start</code> | <code>(event) => void</code> | New turn started |
+| <code>turn_end</code> | <code>(event) => void</code> | Turn completed |
+| <code>message_start</code> | <code>(event) => void</code> | Message incoming |
+| <code>message_update</code> | <code>(event) => void</code> | Message edited |
+| <code>message_end</code> | <code>(event) => void</code> | Message finalized |
+| <code>tool_execution_start</code> | <code>(event) => void</code> | Tool about to execute |
+| <code>tool_execution_update</code> | <code>(event) => void</code> | Tool progress update |
+| <code>tool_execution_end</code> | <code>(event) => void</code> | Tool completed |
+| <code>tool_call</code> | <code>(event, ctx) => ToolCallEventResult</code> | LLM called a tool |
+| <code>tool_result</code> | <code>(event, ctx) => ToolResultEventResult</code> | Tool returned result |
+| <code>model_select</code> | <code>(event) => void</code> | Model being selected |
+| <code>before_model_resolve</code> | <code>(event, ctx) => BeforeModelResolveResult</code> | Before model is resolved |
+| <code>before_provider_request</code> | <code>(event, ctx) => BeforeProviderRequestEventResult</code> | Before API call to provider |
+| <code>before_prompt_build</code> | <code>(event, ctx) => BeforePromptBuildResult</code> | Before prompt construction |
+| <code>context</code> | <code>(event, ctx) => ContextEventResult</code> | Context message added |
+| <code>resources_discover</code> | <code>(event) => void</code> | Resource discovery requested |
+| <code>user_bash</code> | <code>(event, ctx) => UserBashEventResult</code> | User ran bash command |
+| <code>input</code> | <code>(event, ctx) => InputEventResult</code> | User input received |
+<h3>ExtensionRunner.emit</em> Methods</h3>
+<p>Each major event has a dedicated <code>emit<em></code> method in ExtensionRunner:</p>
+<pre><code>emitSessionShutdownEvent(extensionRunner)    // Line 47-50 — special exported helper
+emit(event)                                  // Generic base emit (line 396)
+emitToolResult(event)                        // Line 427
+emitToolCall(event)                          // Line 474
+emitUserBash(event)                          // Line 493
+emitContext(messages)                        // Line 520
+emitBeforeProviderRequest(payload)           // Line 549 — returns transformed payload
+emitBeforeAgentStart(prompt, images, systemPrompt) // Line 581
+emitResourcesDiscover(cwd, reason)          // Line 630
+emitInput(text, images, source)              // Line 669
+</code></pre>
+<h3>Context Object</h3>
+<p>All handlers receive a shared <code>ctx</code> (ExtensionContext) with:
+<ul><li><code>session</code> — current AgentSession</li>
+<li><code>model</code> — active model</li>
+<li><code>cfg</code> — gateway config (contains secrets!)</li>
+<li><code>agentDir</code> — agent directory path</li>
+<li><code>runtime</code> — ExtensionRuntime with session-state methods</li>
+</ul>
+<h2>Uses</h2></p>
+<ul><li><strong>Inter-extension coordination</strong> — Extension A fires a custom event, Extension B reacts</li>
+<li><strong>Chained transformation</strong> — Multiple extensions each transform a payload sequentially</li>
+<li><strong>Session state sharing</strong> — Extensions read/write via shared <code>runtime.appendEntry()</code> to session store</li>
+<li><strong>Tool result interception</strong> — Extension A registers tool, Extension B intercepts result via <code>tool_result</code></li>
+<li><strong>Provider request middleware</strong> — Multiple extensions each transform API request payload</li>
+<li><strong>Session lifecycle hooks</strong> — Clean up resources when session ends via <code>session_shutdown</code></li>
+</ul>
+<h2>Problems</h2>
+<ul><li><strong>No priority ordering</strong> — Handler execution order is insertion order (Map iteration), no way to control priority</li>
+<li><strong>Silent error swallowing</strong> — Errors in one handler don't stop others, but also no rollback</li>
+<li><strong>No dead-letter queue</strong> — Failed events are logged via <code>emitError()</code> but no retry mechanism</li>
+<li><strong>No pub/sub acknowledgment</strong> — Publishing extensions have no way to know if any handler processed the event</li>
+<li><strong>Shared EventBus across all extensions</strong> — One misbehaving extension could flood the event bus</li>
+<li><strong>Session-scoped only</strong> — Events don't persist across sessions; new session = fresh EventBus</li>
+</ul>
+<h2>Solutions</h2>
+<ul><li><strong>Priority via naming convention</strong> — Prefix handlers with priority numbers (e.g., <code>01_myHandler</code>)</li>
+<li><strong>Error isolation</strong> — Each handler wrapped in try/catch individually; failures don't cascade</li>
+<li><strong>Idempotent handlers</strong> — Design handlers to handle duplicate/missing events gracefully</li>
+<li><strong>Extension ordering at load time</strong> — Control which extension loads first to determine handler order</li>
+<li><strong>State persistence via appendEntry</strong> — Use <code>runtime.appendEntry()</code> for cross-handler data sharing</li>
+</ul>
+<h2>Edge Cases</h2>
+<ul><li><strong>Handler throws synchronous exception</strong> — Caught by try/catch, logged via <code>emitError()</code>, event continues to next handler</li>
+<li><strong>Handler returns <code>undefined</code></strong> — Payload passes through unchanged (not replaced)</li>
+<li><strong>No handlers for event</strong> — <code>emit()</code> returns event unchanged; <code>hasHandlers()</code> returns false</li>
+<li><strong>Same handler registered twice</strong> — Both instances are called (no deduplication)</li>
+<li><strong>Extension loaded twice</strong> — Both instances share same EventBus; both handlers called</li>
+<li><strong><code>session_shutdown</code> handler throws</strong> — Exception caught, logged, shutdown continues</li>
+<li><strong><code>before_provider_request</code> returns wrong type</strong> — TypeScript types don't enforce at runtime; downstream provider may receive unexpected payload</li>
+</ul>
+<h2>Creative Uses</h2>
+<ul><li><strong>Distributed tracing</strong> — Each extension appends span info via <code>appendEntry()</code>, collected at session end</li>
+<li><strong>Event-driven middleware chain</strong> — Build a middleware pipeline where each extension inspects/modifies a payload</li>
+<li><strong>Extension dependency injection</strong> — Use <code>resources_discover</code> to announce capabilities other extensions consume</li>
+<li><strong>Cross-cutting logging</strong> — Multiple extensions attach to <code>tool_result</code>/<code>turn_end</code> with different loggers</li>
+<li><strong>Dynamic feature flags</strong> — One extension sets flags via runtime, another reads them in handler</li>
+<li><strong>Chaos engineering</strong> — Test extension that randomly delays or drops events to test error handling</li>
+</ul>
+<h2>Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/loader.js</code> — createEventBus instantiation (line 287), shared eventBus across extensions</li>
+<li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/runner.js</code> — ExtensionRunner.emit</em> methods (lines 44-50, 396-427, 427-456, 474-493, 493-509, 520-538, 549-580, 581-613, 630-657, 669-686)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/types.d.ts</code> — Event types and ExtensionContext (lines 702-728, 852)</li>
+</ul><li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/core/event-bus.js</code> — EventBus implementation (source from index.js.map export)</li>
+</body>
+</html>

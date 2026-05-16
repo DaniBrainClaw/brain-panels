@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skills Dependencies & Chaining — Research Findings</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 skill-dependencies-chaining.md</p>
+    <strong>Topic:</strong> Can skills declare dependencies on other skills (skill chaining)? Can skills call other skills recursively?
+<strong>Priority:</strong> MED
+<strong>Date:</strong> 2026-04-23 06:15 CET
+<strong>Research by:</strong> Investigador Scout
+<strong>Status:</strong> ✅ COMPLETED
+<hr>
+<h2>1. WHAT IS — Definition & Core Concept</h2>
+<h3>Skill Dependencies</h3>
+Skill dependencies refer to a skill that requires another skill to be present or enabled for its instructions to work correctly. Example: a "Madrid Wellness Report" skill might depend on a "Data Fetch" skill to retrieve member data.
+<h3>Skill Chaining</h3>
+Skill chaining means a skill can invoke or trigger another skill as part of its execution. Example: a "Morning Ritual" skill chains the "Sauna Protocol" skill + "Cold Plunge Log" skill + "Membership Check" skill in sequence.
+<h3>Skill Recursion</h3>
+Skill recursion means a skill that can call itself (directly or indirectly through a chain), creating potential infinite loops.
+<hr>
+<h2>2. HOW IT WORKS — OpenClaw Skill System Architecture</h2>
+<h3>Built-in Dependency System: NONE EXISTS</h3>
+<strong>Finding:</strong> OpenClaw has <strong>NO native skill dependency system</strong>. There is:
+<ul><li>❌ No <code>dependencies</code> field in SKILL.md frontmatter</li>
+<li>❌ No version pinning for skills</li>
+<li>❌ No <code>requires.skills</code> gate</li>
+<li>❌ No automatic skill resolution or installation of dependencies</li>
+<li>❌ No dependency tree validation</li>
+</ul>
+<h3>Skill Loading Mechanics</h3>
+<p>Skills are loaded at <strong>session start</strong> via snapshot mechanism:
+<ul><li>Skills watcher scans skill directories</li>
+<li>Gating filters applied (<code>requires.bins</code>, <code>requires.env</code>, <code>requires.config</code>, <code>os</code>, <code>always</code>)</li>
+<li>Per-agent allowlist filters applied</li>
+<li>Skills snapshot created for session</li>
+<li>Skills injected into system prompt as metadata list</li>
+</ul>
+Skills are <strong>TEXT that influences the model</strong> — they don't "run" in the traditional sense. The model reads skill instructions and decides when/how to apply them.</p>
+<h3>How Skills Reference Each Other (Indirect Methods Only)</h3>
+<p>Since no native dependency exists, skills can only reference other skills <strong>indirectly</strong>:</p>
+| Method | How | Trust Level |
+|--------|-----|-------------|
+| <strong>Slash command dispatch</strong> | Skill instructs model to use <code>/skill-name</code> command | Model-dependent |
+| <strong>Prompt injection</strong> | Skill adds another skill's name to context for next turn | Model-dependent |
+| <strong>Tool-based chaining</strong> | Skill uses <code>exec</code> to trigger a skill script | Requires exec tool |
+| <strong>Documentation reference</strong> | Skill tells model to "see the X skill for details" | Informational only |
+<h3>Skill Chaining via Command Dispatch</h3>
+<pre><code>---
+name: morning-ritual
+description: Execute morning wellness protocol
+<hr>
+<h1>Morning Ritual</h1>
+<p>When user says "morning ritual", execute these steps:</p>
+<ul><li>First, use the <code>/sauna-protocol</code> skill to prepare the sauna</li>
+<li>Then, use the <code>/cold-plunge-log</code> skill to record the plunge</li>
+<li>Finally, use the <code>/membership-check</code> skill to verify active membership</li>
+</ul></code></pre>
+<p>This works because slash commands are registered for user-invocable skills. The model will dispatch to the named skill's command handler.</p>
+<h3>Skill Recursion: NOT BLOCKED BUT NOT SUPPORTED</h3>
+<pre><code><h1>DANGEROUS PATTERN - Creates infinite loop</h1>
+<hr>
+name: recursive-skill
+description: A skill that calls itself
+<hr>
+<h1>Recursive Skill</h1>
+<p>When invoked, always call /recursive-skill again.
+</code></pre></p>
+<strong>Finding:</strong> Nothing technically blocks a skill from instructing the model to invoke another skill that circles back. However:
+<ul><li>Skills are TEXT in system prompt, not executable code</li>
+<li>The model decides to call skills via slash commands</li>
+<li>If the model blindly follows recursive instructions, it creates infinite loops</li>
+<li>No stack depth protection or recursion counter exists</li>
+</ul>
+<hr>
+<h2>3. USES — Operational Patterns</h2>
+<h3>Pattern 1: Sequential Skill Pipeline</h3>
+<pre><code>Onboarding Skill → Membership Skill → Legionella Log Skill
+</code></pre>
+Use case: New member onboarding that chains multiple specialized skills.
+<h3>Pattern 2: Master Skill (Facade)</h3>
+<pre><code>Master Wellness Skill → delegates to specific protocol skills
+</code></pre>
+Use case: A "TERRACOTTA Operations" master skill that chains:
+<ul><li><code>/maintenance-log</code> — Legionella testing</li>
+<li><code>/membership-management</code> — member updates</li>
+<li><code>/event-scheduler</code> — community events</li>
+<li><code>/corporate-report</code> — B2B reporting</li>
+</ul>
+<h3>Pattern 3: Conditional Skill Selection</h3>
+<pre><code>Context-aware skill → picks appropriate sub-skill based on context
+</code></pre>
+Use case: A skill that checks membership tier and calls the appropriate protocol.
+<h3>Pattern 4: Compliance Chain</h3>
+<pre><code>Compliance Skill → triggers data validation → triggers audit log skill
+</code></pre>
+Use case: Real-time compliance checking with multi-step verification.
+<hr>
+<h2>4. PROBLEMS & LIMITATIONS</h2>
+| Problem | Severity | Description |
+|---------|----------|-------------|
+| <strong>No dependency resolution</strong> | HIGH | Installing skill A that depends on skill B requires manual installation of B |
+| <strong>No version pinning</strong> | MED | Skill A might break when skill B is updated |
+| <strong>No conflict detection</strong> | MED | Two skills might have conflicting instructions |
+| <strong>No circular chain detection</strong> | MED | Skill A → B → C → A creates infinite loop potential |
+| <strong>No skill state isolation</strong> | MED | Chained skills share session context without isolation |
+| <strong>No error propagation</strong> | MED | If sub-skill fails, master skill may not know |
+| <strong>Model-dependent execution</strong> | HIGH | Chaining relies on model following instructions; not guaranteed |
+| <strong>No transactional execution</strong> | LOW | Partial chain failure leaves inconsistent state |
+<h3>Specific Limitations</h3>
+<ul><li><strong>No <code>requires.skills</code> gate</strong>: Cannot block skill loading when dependency is missing</li>
+<li><strong>No skill version constraints</strong>: <code>github</code> skill v2.0 might break <code>reports</code> skill that expects v1.0</li>
+<li><strong>No installation ordering</strong>: <code>clawhub install</code> installs skills alphabetically, not by dependency</li>
+<li><strong>No skill API</strong>: Skills cannot programmatically query "is skill X enabled?"</li>
+<li><strong>No nested transaction</strong>: Chain can't be rolled back if step 3 fails</li>
+</ul>
+<hr>
+<h2>5. SOLUTIONS & BEST PRACTICES</h2>
+<h3>Solution 1: Manual Dependency Documentation</h3>
+<pre><code><h1>SKILL.md for terracotta-maintenance</h1>
+<hr>
+name: terracotta-maintenance
+description: TERRACOTTA facility maintenance operations
+metadata: {"openclaw": {"requires": {"bins": ["python3"]}}}
+<hr>
+<h1>TERRACOTTA Maintenance Skill</h1>
+<h2>Dependencies (MANUAL INSTALL REQUIRED)</h2>
+This skill requires the following skills to be installed:
+<ul><li><code>legionella-log</code> — for water testing documentation</li>
+<li><code>membership-core</code> — for member data access</li>
+</ul>
+<h2>Usage</h2>
+When user asks about maintenance, use the appropriate sub-skill.
+</code></pre>
+<strong>Pros:</strong> Simple, no technical changes needed
+<strong>Cons:</strong> Manual, no enforcement, easy to break
+<h3>Solution 2: Master Skill Pattern</h3>
+<p>Create a "TERRACOTTA Operations" master skill that:
+<ul><li>Contains the orchestration logic</li>
+<li>References sub-skills via slash commands</li>
+<li>Includes error handling for missing sub-skills</li>
+</ul>
+<pre><code>---
+name: terracotta-operations
+description: Master skill for TERRACOTTA business operations
+<hr></p>
+<h1>TERRACOTTA Operations Master Skill</h1>
+<h2>Available Operations</h2>
+| Operation | Slash Command | Description |
+|-----------|--------------|-------------|
+| Legionella Log | <code>/legionella-log</code> | Water quality documentation |
+| Membership | <code>/membership-management</code> | Member onboarding/offboarding |
+| Event Planning | <code>/event-scheduler</code> | Community event coordination |
+| Corporate B2B | <code>/corporate-report</code> | Corporate wellness reporting |
+<h2>Error Handling</h2>
+If a sub-skill is not available, inform the user and suggest installing it.
+</code></pre>
+<strong>Pros:</strong> Clear interface, discoverable operations
+<strong>Cons:</strong> Still manual dependency management
+<h3>Solution 3: Hook-Based Skill Activation</h3>
+<p>Use <code>before_prompt_build</code> hook to inject skill context dynamically:</p>
+<pre><code>// In a hook, inject skill reference based on context
+api.registerHook({
+  events: ["before_prompt_build"],
+  handler: async (event) => {
+    // Detect which sub-skill context is needed
+    if (event.context.userMessage.includes("legionella")) {
+      event.context.systemPrompt += <code>\n\n[Use the /legionella-log skill for water testing.]</code>;
+    }
+  }
+});
+</code></pre>
+<strong>Pros:</strong> Dynamic, context-aware
+<strong>Cons:</strong> Requires custom hook code, not pure skill solution
+<h3>Solution 4: Skill Grouping via Directory</h3>
+<p>Organize related skills under a single directory:
+<pre><code>skills/terracotta/
+  SKILL.md (main index)
+  legionella-log/
+    SKILL.md
+  membership/
+    SKILL.md
+  events/
+    SKILL.md
+</code></pre></p>
+<p>Use workspace precedence so <code>skills/terracotta/</code> overrides any conflicting skills.</p>
+<strong>Pros:</strong> Logical grouping, versioned together
+<strong>Cons:</strong> No automatic dependency resolution
+<hr>
+<h2>6. EDGE CASES</h2>
+<h3>Edge Case 1: Two Skills Both Depend on Each Other</h3>
+<pre><code>Skill A instructions → "Use /skill-b"
+Skill B instructions → "Use /skill-a"
+</code></pre>
+<strong>Result:</strong> Potential infinite loop. Model alternates between skills until context limit hit.
+<h3>Edge Case 2: Master Skill Installed Before Sub-Skills</h3>
+<strong>Result:</strong> Master skill references non-existent slash commands. Model reports skill not found. User must manually install sub-skills.
+<h3>Edge Case 3: Skill Updates Break Chain</h3>
+Skill B v2.0 changes its slash command from <code>/membership</code> to <code>/member-manage</code>. Master skill A still references <code>/membership</code>.
+<strong>Result:</strong> Chain breaks silently. No error notification.
+<h3>Edge Case 4: Concurrent Skill Modification</h3>
+While Master Skill A is executing <code>/skill-b</code>, user updates skill B's SKILL.md.
+<strong>Result:</strong> In-flight operation uses old skill B content while new session would use updated content. Inconsistent behavior.
+<h3>Edge Case 5: Skill Recursion Depth</h3>
+<pre><code>Skill A → Skill B → Skill C → Skill D → Skill E → [context limit]
+</code></pre>
+<strong>Result:</strong> No explicit stack limit. Chain runs until model decides to stop or context overflows.
+<hr>
+<h2>7. CREATIVE USES</h2>
+<h3>Creative Use 1: Skill-Based Business Process Engine</h3>
+<pre><code>TERRACOTTA Core Operations
+├── Maintenance Protocols (Legionella, water quality)
+├── Membership Lifecycle (onboarding → active → churned)
+├── Marketing Automation (event announcement → follow-up)
+└── Corporate B2B (proposal → contract → reporting)
+</code></pre>
+<p>Each sub-skill is a "module" that can be invoked independently or chained.</p>
+<h3>Creative Use 2: Dynamic Skill Assembly</h3>
+A meta-skill that generates other skills based on context:
+<pre><code><h1>Dynamic Protocol Generator</h1>
+<p>When user describes a new TERRACOTTA procedure:
+<ul><li>Document the procedure in a new SKILL.md</li>
+<li>Register it as a slash command</li>
+<li>Add it to the operations index</li>
+</ul></code></pre></p>
+<h3>Creative Use 3: Skill-Based Compliance Engine</h3>
+<pre><code>Compliance Check Skill
+├── Validates against regulatory requirements
+├── Chains to appropriate documentation skill
+└── Logs compliance evidence
+</code></pre>
+<h3>Creative Use 4: Multi-Agent Skill Coordination</h3>
+Skills that invoke sub-agents for complex tasks:
+<pre><code><h1>Corporate Report Skill</h1>
+<p>When generating a corporate wellness report:
+<ul><li>Use <code>/data-fetch</code> to get member metrics</li>
+<li>Spawn sub-agent for report generation</li>
+<li>Deliver report via corporate channel</li>
+</ul></code></pre></p>
+<hr>
+<h2>NEW QUESTIONS FOR BACKLOG</h2>
+<h3>From Skill Dependencies Research</h3>
+<ul><li><strong>[MED]</strong> Could a skill manifest format with dependency declarations be added? Would require PR to OpenClaw core.</li>
+<li><strong>[MED]</strong> Can a before_prompt_build hook dynamically inject skill references based on session context?</li>
+<li><strong>[MED]</strong> What is the maximum recommended chain depth before context overhead becomes problematic?</li>
+<li><strong>[LOW]</strong> Can skills use the <code>exec</code> tool to invoke shell scripts that represent "sub-skills"?</li>
+<li><strong>[LOW]</strong> Could skill directories use a <code>_meta.json</code> for group-level metadata and dependencies?</li>
+<li><strong>[MED]</strong> Is there a way to implement skill "transactions" (all-or-nothing execution)?</li>
+<li><strong>[MED]</strong> Can skills be loaded conditionally based on other skill presence?</li>
+<li><strong>[LOW]</strong> What happens when two skills in a chain have conflicting instructions to the model?</li>
+</ul>
+<hr>
+<h2>Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skill loading, precedence, gating rules</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills-config.md</code> — Skill config schema</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/creating-skills.md</code> — Skill creation workflow</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/slash-commands.md</code> — Slash command dispatch</li>
+<li>OpenClaw source code analysis — skills snapshot mechanism, skill invocation flow</li>
+</ul>
+<hr>
+<em>Research by: Investigador Scout | 2026-04-23 06:15 CET</em>
+</body>
+</html>

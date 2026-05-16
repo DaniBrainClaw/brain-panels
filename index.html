@@ -5,173 +5,131 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BRAIN Dashboard</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0f; color: #e0e0e0; padding: 20px; }
-        h1 { color: #00d4aa; margin-bottom: 25px; text-align: center; font-size: 28px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card { background: linear-gradient(135deg, #1a1a24 0%, #12121a 100%); border-radius: 16px; padding: 24px; border: 1px solid #2a2a3a; cursor: pointer; transition: all 0.3s ease; }
-        .card:hover { transform: translateY(-4px); border-color: #00d4aa; box-shadow: 0 8px 32px rgba(0,212,170,0.15); }
-        .card:active { transform: scale(0.98); }
-        .card h2 { color: #00d4aa; font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
-        .card p { color: #888; font-size: 14px; line-height: 1.5; margin-bottom: 15px; }
-        .card-meta { font-size: 12px; color: #666; display: flex; justify-content: space-between; }
-        .card-link { color: #00d4aa; font-size: 14px; text-decoration: none; display: inline-block; margin-top: 10px; padding: 8px 16px; background: rgba(0,212,170,0.1); border-radius: 8px; }
-        .card-link:hover { background: rgba(0,212,170,0.2); }
-        .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; }
-        .badge-red { background: #ff4444; color: white; }
-        .badge-orange { background: #ffaa00; color: black; }
-        .badge-green { background: #44bb44; color: white; }
-        .section-title { color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 30px 0 15px 0; }
-        .stats-row { display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center; }
-        .stat { background: #1a1a24; padding: 20px 30px; border-radius: 12px; text-align: center; min-width: 120px; }
-        .stat-value { font-size: 32px; color: #00d4aa; font-weight: bold; }
-        .stat-label { font-size: 12px; color: #666; text-transform: uppercase; margin-top: 5px; }
-        .footer { text-align: center; color: #444; font-size: 11px; margin-top: 40px; }
-        a { color: #00d4aa; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        .click-hint { font-size: 11px; color: #444; text-align: center; margin-top: 15px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 20px; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+        .card { background: #1a1a2e; border-radius: 10px; padding: 20px; border: 1px solid #e94560; }
+        .card h3 { color: #e94560; margin-top: 0; }
+        .card p { color: #aaa; font-size: 0.9em; }
+        .card a { background: #e94560; color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px; }
+        .card a:hover { background: #fff; color: #e94560; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 0.8em; margin-right: 5px; }
+        .badge-critical { background: #e94560; }
+        .badge-high { background: #f39c12; }
+        .badge-medium { background: #3498db; }
+        .badge-low { background: #27ae60; }
+        .stats { display: flex; gap: 20px; margin: 20px 0; }
+        .stat { background: #1a1a2e; padding: 15px 25px; border-radius: 10px; text-align: center; }
+        .stat-value { font-size: 2em; color: #e94560; font-weight: bold; }
+        .stat-label { color: #aaa; font-size: 0.9em; }
     </style>
 </head>
 <body>
     <h1>🧠 BRAIN Dashboard</h1>
+    <p>Sistema de investigación continua — Panel público</p>
     
-    <div class="click-hint">👆 Click en cualquier tarjeta para explorar</div>
-    
-    <div class="stats-row">
+    <div class="stats">
         <div class="stat">
-            <div class="stat-value">134</div>
-            <div class="stat-label">Archivos</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value">8</div>
+            <div class="stat-value">11</div>
             <div class="stat-label">Investigaciones</div>
         </div>
         <div class="stat">
-            <div class="stat-value">10</div>
-            <div class="stat-label">Tareas</div>
+            <div class="stat-value">143+</div>
+            <div class="stat-label">Archivos</div>
         </div>
         <div class="stat">
-            <div class="stat-value">489</div>
-            <div class="stat-label">Sessions</div>
+            <div class="stat-value">85+</div>
+            <div class="stat-label">Fuentes consultadas</div>
         </div>
     </div>
-    
-    <div class="section-title">📋 Tareas Pendientes — Click para ver</div>
+
+    <h2>📊 Investigaciones Activas</h2>
     <div class="grid">
-        <div class="card" onclick="window.location.href='tareas.html'">
-            <h2>🔴 SSL estudiovirtual.es <span class="badge badge-red">CRÍTICO</span></h2>
-            <p>Sin SSL — Chrome marca como "no seguro". Contactar Diewaves para instalar Let's Encrypt.</p>
-            <div class="card-meta">
-                <span>⏱️ 30 min</span>
-                <span>📁 Docs: Web_Audit</span>
-            </div>
-        </div>
-        
-        <div class="card" onclick="window.location.href='tareas.html'">
-            <h2>🔴 Decidir multi-dominio MF3 <span class="badge badge-red">CRÍTICO</span></h2>
-            <p>mf3.es vs mediterraneanfusion.es — confusión de SEO. Necesitamos decidir cuál priorizar.</p>
-            <div class="card-meta">
-                <span>⏱️ Decisión</span>
-                <span>📁 MVP_Monetization</span>
-            </div>
-        </div>
-        
-        <div class="card" onclick="window.location.href='tareas.html'">
-            <h2>🟠 Meta descriptions <span class="badge badge-orange">ALTA</span></h2>
-            <p>8 webs sin meta descriptions. Listas para copiar/pegar en WordPress.</p>
-            <div class="card-meta">
-                <span>⏱️ 2 horas</span>
-                <span>✅ Listas</span>
-            </div>
-        </div>
-        
-        <div class="card" onclick="window.location.href='tareas.html'">
-            <h2>🟠 Outreach coaches <span class="badge badge-orange">ALTA</span></h2>
-            <p>10 mensajes para enviar. Templates listos en MVP_Coaches/.</p>
-            <div class="card-meta">
-                <span>⏱️ 1 hora</span>
-                <span>✅ Listo</span>
-            </div>
-        </div>
-        
-        <div class="card" onclick="window.location.href='tareas.html'">
-            <h2>🟠 Landing page Coaches <span class="badge badge-orange">ALTA</span></h2>
-            <p>Copy y templates listos. Falta crear en Carrd.</p>
-            <div class="card-meta">
-                <span>⏱️ 30 min</span>
-                <span>✅ Listo</span>
-            </div>
-        </div>
-        
-        <div class="card" onclick="window.location.href='tareas.html'">
-            <h2>🟡 Schema markup <span class="badge badge-green">MEDIA</span></h2>
-            <p>Datos estructurados para las 8 webs. Mejorar SEO local.</p>
-            <div class="card-meta">
-                <span>⏱️ 3 horas</span>
-                <span>⏳ Pendiente</span>
-            </div>
-        </div>
-    </div>
-    
-    <div class="section-title">📁 Investigaciones — Click para explorar</div>
-    <div class="grid">
-        <div class="card" onclick="window.location.href='investigaciones.html'">
-            <h2>🌐 Auditoría Web</h2>
-            <p>8 webs analizadas. Score: 5-7.5/10. 3 problemas críticos.</p>
-            <div class="card-meta">
-                <span>📂 Web_Audit/</span>
-                <span>9 archivos</span>
-            </div>
-        </div>
-        
-        <div class="card" onclick="window.location.href='investigaciones.html'">
-            <h2>💰 MVP Monetization</h2>
-            <p>8 pasos para €1,000/mes con coaches. Landing + outreach + pricing.</p>
-            <div class="card-meta">
-                <span>📂 MVP_Monetization/</span>
-                <span>11 archivos</span>
-            </div>
-        </div>
-        
-        <div class="card" onclick="window.location.href='investigaciones.html'">
-            <h2>📈 ROI Agent Optimization</h2>
-            <p>1,250-12,500% ROI potencial. Cómo rentabilizar BRAIN.</p>
-            <div class="card-meta">
-                <span>📂 ROI_Agent_Optimization/</span>
-                <span>13 archivos</span>
-            </div>
-        </div>
-        
-        <div class="card" onclick="window.location.href='investigaciones.html'">
-            <h2>🧠 MiniMax M2.7 Analysis</h2>
-            <p>Coding 78%, Agentic ELO 1495. Mejor modelo para código.</p>
-            <div class="card-meta">
-                <span>📂 MiniMax_M2.7_analysis/</span>
-                <span>17 archivos</span>
-            </div>
-        </div>
-        
-        <div class="card" onclick="window.location.href='investigaciones.html'">
-            <h2>🔗 GitHub BRAIN Integration</h2>
-            <p>Backup automático, panels públicos, automatización.</p>
-            <div class="card-meta">
-                <span>📂 GitHub_BRAIN_Integration/</span>
-                <span>8 archivos</span>
-            </div>
-        </div>
-        
-        <div class="card" onclick="window.location.href='investigaciones.html'">
-            <h2>🔍 OpenClaw Deep Dive</h2>
+        <div class="card">
+            <h3>🔍 OpenClaw Deep Dive</h3>
             <p>Hooks, skills, agents, patterns avanzados.</p>
-            <div class="card-meta">
-                <span>📂 OPENCLAW/</span>
-                <span>25 archivos</span>
-            </div>
+            <span class="badge badge-high">25 archivos</span>
+            <a href="research/OpenClaw/index.html">Ver →</a>
+        </div>
+        <div class="card">
+            <h3>📈 ROI Agent Optimization</h3>
+            <p>1,250-12,500% ROI potencial. Cómo rentabilizar BRAIN.</p>
+            <span class="badge badge-high">13 archivos</span>
+            <a href="research/ROI_Agent_Optimization/index.html">Ver →</a>
+        </div>
+        <div class="card">
+            <h3>💰 MVP Monetization</h3>
+            <p>8 pasos para €1,000/mes con coaches.</p>
+            <span class="badge badge-medium">11 archivos</span>
+            <a href="research/MVP_Monetization/index.html">Ver →</a>
+        </div>
+        <div class="card">
+            <h3>🌐 Web Audit</h3>
+            <p>8 webs analizadas. Score: 5-7.5/10.</p>
+            <span class="badge badge-medium">9 archivos</span>
+            <a href="research/Web_Audit/index.html">Ver →</a>
+        </div>
+        <div class="card">
+            <h3>🧠 MiniMax M2.7 Analysis</h3>
+            <p>Coding 78%, Agentic ELO 1495.</p>
+            <span class="badge badge-high">17 archivos</span>
+            <a href="research/MiniMax_M2.7_analysis/index.html">Ver →</a>
+        </div>
+        <div class="card">
+            <h3>🔗 GitHub BRAIN Integration</h3>
+            <p>Backup automático, panels públicos.</p>
+            <span class="badge badge-medium">8 archivos</span>
+            <a href="research/GitHub_BRAIN_Integration/index.html">Ver →</a>
+        </div>
+        <div class="card">
+            <h3>🤖 Hermes Agent Analysis</h3>
+            <p>Agente de nudge periódico.</p>
+            <span class="badge badge-low">5 archivos</span>
+            <a href="research/Hermes_Agent_Analysis/index.html">Ver →</a>
+        </div>
+        <div class="card">
+            <h3>⚡ Tareas Autónomas</h3>
+            <p>Script para procesar 3905 filas sin preguntar.</p>
+            <span class="badge badge-low">4 archivos</span>
+            <a href="research/Tareas_Autonomas/index.html">Ver →</a>
+        </div>
+        <div class="card">
+            <h3>🎨 OpenClaw Panels</h3>
+            <p>Paneles interactivos y canvas.</p>
+            <span class="badge badge-low">en desarrollo</span>
+            <a href="research/OpenClaw_Panels/index.html">Ver →</a>
+        </div>
+        <div class="card">
+            <h3>💵 Monetization BRAIN</h3>
+            <p>Cómo monetizar el sistema BRAIN.</p>
+            <span class="badge badge-medium">en desarrollo</span>
+            <a href="research/Monetization_BRAIN/index.html">Ver →</a>
+        </div>
+        <div class="card">
+            <h3>🏛️ Web Implementation Plan</h3>
+            <p>Plan de 4 semanas para optimizar webs.</p>
+            <span class="badge badge-high">actualizado</span>
+            <a href="WEB_IMPLEMENTATION_PLAN.html">Ver →</a>
         </div>
     </div>
-    
-    <div class="footer">
-        BRAIN v2026.4.21 | <a href="https://github.com/DaniBrainClaw/brain-panels">GitHub</a>
+
+    <h2>⚠️ Prioridades Críticas</h2>
+    <div class="grid">
+        <div class="card">
+            <h3>🔴 SSL estudiovirtual.es CRÍTICO</h3>
+            <p>Sin SSL — Chrome marca como "no seguro". Contactar Diewaves.</p>
+            <span class="badge badge-critical">30 min</span>
+        </div>
+        <div class="card">
+            <h3>🔴 Decidir multi-dominio MF3</h3>
+            <p>mf3.es vs mediterraneanfusion.es — confusión SEO.</p>
+            <span class="badge badge-critical">decisión</span>
+        </div>
     </div>
+
+    <p style="text-align: center; color: #666; margin-top: 40px;">
+        Generado automáticamente por BRAIN — Sistema de investigación continua
+    </p>
 </body>
 </html>

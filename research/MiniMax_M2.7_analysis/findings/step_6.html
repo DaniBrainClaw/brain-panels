@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 6: Pricing Efficiency</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_6.md</p>
+    <h2>Query</h2>
+"MiniMax M2.7 pricing efficiency"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://artificialanalysis.ai/articles/minimax-m2-7-everything-you-need-to-know</li>
+<li>https://pricepertoken.com/pricing-page/model/minimax-minimax-m2.7</li>
+<li>https://openrouter.ai/minimax/minimax-m2.7</li>
+<li>https://wavespeed.ai/blog/posts/minimax-m2-7-self-evolving-agent-model-features-benchmarks-2026/</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>Pricing oficial</h3>
+| Tipo | Costo por 1M tokens |
+|------|---------------------|
+| Input | $0.30 |
+| Output | $1.20 |
+| Cache (input) | $0.06 |
+| Blended (3:1 ratio) | ~$0.45-$0.55 |
+<h3>Costo por inteligencia — el dato clave</h3>
+<p>M2.7 cuesta <strong>$175</strong> para correr el Artificial Analysis Intelligence Index completo.</p>
+<p>Comparación a inteligencia equivalente:
+<ul><li><strong>GLM-5 (Reasoning)</strong>: $547 (3x más)</li>
+<li><strong>Kimi K2.5 (Reasoning)</strong>: $371 (2x más)</li>
+<li><strong>Gemini 3 Flash Preview</strong>: $278 (1.5x más)</li>
+<li><strong>M2.7</strong>: $175 ← el más barato</li>
+</ul>
+<strong>M2.7 está en la Pareto frontier</strong> del chart Intelligence vs Cost.</p>
+<h3>Costo vs Claude Opus 4.6</h3>
+| Aspecto | M2.7 | Claude Opus 4.6 |
+|---------|------|-----------------|
+| Input por 1M | $0.30 | $5.00 (~17x) |
+| Output por 1M | $1.20 | $25.00 (~21x) |
+| Costo Intelligence Index | $175 | significativamente más |
+<strong>No es 50x</strong> (ese número era contra Opus 4.1). Contra Opus 4.6 es ~17x.
+<h3>Verbosity tax — la trampa</h3>
+<p>M2.7 usó <strong>87M output tokens</strong> para correr la evaluación de Artificial Analysis.
+<ul><li>M2.5 usó ~56M (55% menos)</li>
+<li>Median para modelos similares: ~26M</li>
+<li><strong>M2.7 es 3.35x más verboso que el promedio</strong></li>
+</ul>
+Esto significa que el costo real por tarea puede ser MUCHO mayor que el per-token rate sugiere.</p>
+<strong>ECPT (Effective Cost Per Task)</strong>: 
+<ul><li>Kilo Bench: M2.7 consumió 2.8M input tokens por trial</li>
+<li>Opus consumió 1.18M en el mismo PR</li>
+<li><strong>M2.7 lee 2.4x más contexto por tarea</strong></li>
+</ul>
+<h3>Plan de tokens de MiniMax</h3>
+| Plan | Precio | Requests/5h | Features |
+|------|--------|-------------|----------|
+| Starter | $10/mes | 1,500 | M2.7 solo |
+| Plus | $20/mes | 4,500 | + speech, image |
+| Max | $50/mes | 15,000 | + video, music |
+| Plus-Highspeed | $40/mes | 4,500 | highspeed variant |
+| Max-Highspeed | $80/mes | 15,000 | highspeed variant |
+| Ultra-Highspeed | $150/mes | 30,000 | todo incluido |
+<h3>Mejores prácticas para costo</h3>
+<ul><li><strong>Usar cache</strong> — input cacheado a $0.06/M (vs $0.30/M)</li>
+<li><strong>Prompt engineering claro</strong> — reduce tokens desperdiciados</li>
+<li><strong>System prompts cortos</strong> — M2.7 puede terminate early cerca del límite</li>
+<li><strong>Phased processing</strong> — dividir tareas largas en ventanas</li>
+<li><strong>Evitar verbose outputs</strong> — especificar formato explícito</li>
+</ul>
+<hr>
+<h2>Resumen pricing</h2>
+<p>✅ <strong>Excellent cost efficiency</strong> — mejor inteligencia/dólar de su tier
+✅ <strong>Cache automático</strong> reduce costos en workloads repetitivos
+⚠️ <strong>Verbosity trap</strong> — 3.35x más output que median
+⚠️ <strong>ECPT puede ser mayor que Opus</strong> para tareas muy complejas
+⚠️ <strong>No es 50x más barato</strong> — eso era contra Opus 4.1, no 4.6</p>
+<strong>Best for</strong>: tareas de volumen alto, coding tasks bounded, agent workloads
+<strong>Cuidado con</strong>: tareas largas, contexts extremos, workflows que requieren outputs detallados
+</body>
+</html>

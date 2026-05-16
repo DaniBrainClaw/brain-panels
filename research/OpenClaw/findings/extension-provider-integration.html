@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extension Provider Integration</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 extension-provider-integration.md</p>
+    <h2>What is it?</h2>
+<p>Extension Provider Integration allows extensions to dynamically register, override, or remove LLM model providers at runtime. This enables extensions to:</p>
+<ul><li><strong>Add new model providers</strong> (e.g., a proxy extension that routes requests through a corporate gateway)</li>
+<li><strong>Override existing provider URLs</strong> (e.g., point <code>anthropic</code> at a proxy endpoint)</li>
+<li><strong>Register OAuth-based providers</strong> (enterprise SSO authentication)</li>
+<li><strong>Unregister providers</strong> (restore original built-in models)</li>
+</ul>
+<h2>How it works</h2>
+<h3>Registration Flow</h3>
+<pre><code>Extension.load()
+  → pi.registerProvider(name, config)
+    → runtime.registerProvider(name, config, extension.path)
+      → pendingProviderRegistrations.push({ name, config, extensionPath })
+<p>ExtensionRunner.bindCore()
+  → for each pending registration:
+      → providerActions?.registerProvider(name, config)  [optional passthrough]
+      → modelRegistry.registerProvider(name, config)
+  → runtime.registerProvider = direct call (no longer queued)
+</code></pre></p>
+<strong>Phase 1 (Extension Loading):</strong> Extensions call <code>pi.registerProvider()</code> during their factory function execution. Since the <code>ModelRegistry</code> isn't yet bound to the runtime, calls are queued in <code>pendingProviderRegistrations[]</code>.
+<strong>Phase 2 (bindCore):</strong> Once the runner has the <code>ModelRegistry</code> reference, it flushes all pending registrations. The runtime's <code>registerProvider</code> is then replaced with a direct call that registers immediately, bypassing the queue.
+<h3><code>before_provider_request</code> Event</h3>
+<p>The <code>before_provider_request</code> event fires just before any provider API call is made. Extensions can intercept and transform the request payload:</p>
+<pre><code>pi.on("before_provider_request", async (event, ctx) => {
+    // Transform the payload before it goes to the provider
+    return modifiedPayload; // Replaces event.payload for the actual call
+});
+</code></pre>
+<strong>Event chain:</strong> Each handler's return value becomes the payload for the next handler (chained transformation). If a handler returns <code>undefined</code>, the payload passes through unchanged.
+<h3>ProviderConfig Interface</h3>
+<pre><code>interface ProviderConfig {
+    baseUrl?: string;           // Required when defining models
+    apiKey?: string;            // Required when defining models (unless oauth)
+    api?: Api;                  // API type (required at provider or model level)
+    streamSimple?: (model, context, options?) => AssistantMessageEventStream;
+    headers?: Record<string, string>;
+    authHeader?: boolean;       // If true, adds Authorization: Bearer header
+    models?: ProviderModelConfig[];  // If provided, replaces all existing models
+    oauth?: {                   // OAuth provider for /login support
+        name: string;
+        login(callbacks: OAuthLoginCallbacks): Promise<OAuthCredentials>;
+        refreshToken(credentials: OAuthCredentials): Promise<OAuthCredentials>;
+        getApiKey(credentials: OAuthCredentials): string;
+        modifyModels?: (models, credentials) => Model[];
+    };
+}
+</code></pre>
+<h3>ProviderModelConfig Interface</h3>
+<pre><code>interface ProviderModelConfig {
+    id: string;                // e.g., "claude-sonnet-4-20250514"
+    name: string;              // Display name
+    api?: Api;                 // API type override for this model
+    reasoning: boolean;        // Supports extended thinking
+    input: ("text" | "image")[];
+    cost: { input: number; output: number; cacheRead: number; cacheWrite: number };
+    contextWindow: number;     // Max tokens in context
+    maxTokens: number;         // Max output tokens
+    headers?: Record<string, string>;
+    compat?: Model<Api>["compat"];
+}
+</code></pre>
+<h3>Unregister Flow</h3>
+<pre><code>pi.unregisterProvider(name)
+  → runtime.unregisterProvider(name)
+    → if before bindCore: removes from pendingProviderRegistrations
+    → if after bindCore: calls modelRegistry.unregisterProvider(name)
+      → removes from registeredProviders
+      → calls refresh() to restore built-in models
+</code></pre>
+<h2>Uses</h2>
+<ul><li><strong>Corporate AI proxies</strong> — Route API calls through enterprise proxies with custom auth</li>
+<li><strong>Model gateway extensions</strong> — Aggregate multiple providers under one extension</li>
+<li><strong>SSO-protected providers</strong> — Enterprise login with token refresh</li>
+<li><strong>Custom API endpoints</strong> — Point existing providers at different baseUrls (e.g., for testing)</li>
+<li><strong>Dynamic provider switching</strong> — Swap providers at runtime based on conditions</li>
+</ul>
+<h2>Problems</h2>
+<ul><li><strong>Double registration conflict</strong> — If two extensions register the same provider name, the second overwrites the first silently</li>
+<li><strong>No unregister confirmation</strong> — No way to know if an unregister call actually removed something</li>
+<li><strong>Validation only on register</strong> — <code>validateProviderConfig</code> is only called during <code>registerProvider</code>, not <code>unregisterProvider</code></li>
+<li><strong>OAuth state persistence gap</strong> — Credentials returned by <code>login()</code>/<code>refreshToken()</code> must be persisted by the extension; OpenClaw doesn't handle this automatically</li>
+</ul>
+<h2>Solutions</h2>
+<ul><li><strong>Conflict detection</strong> — Could check <code>modelRegistry.registeredProviders.has(name)</code> before registering and warn</li>
+<li><strong>Unregister result</strong> — <code>unregisterProvider</code> could return <code>boolean</code> indicating whether something was removed</li>
+<li><strong>Idempotent unregister</strong> — Already works (returns early if not registered), but could be more explicit</li>
+<li><strong>Credential storage</strong> — Extensions should use <code>pi.appendEntry()</code> to persist OAuth credentials in session state</li>
+</ul>
+<h2>Edge Cases</h2>
+<ul><li><strong>Register during event handler</strong> — After <code>bindCore</code>, calling <code>registerProvider</code> in a <code>tool_call</code> handler takes effect immediately (no reload needed)</li>
+<li><strong>Register same provider twice</strong> — Second call replaces the first; no merge of model lists</li>
+<li><strong>Unregister non-existent provider</strong> — No-op (silent)</li>
+<li><strong>Register provider with only <code>baseUrl</code></strong> — Overrides URL for all existing models from that provider (doesn't replace models)</li>
+<li><strong><code>streamSimple</code> without <code>api</code></strong> — Throws validation error: <code>"Provider X: "api" is required when registering streamSimple."</code></li>
+<li><strong>OAuth without apiKey</strong> — Allowed; <code>getApiKey</code> from credentials is used instead</li>
+</ul>
+<h2>Creative Uses</h2>
+<ul><li><strong>A/B testing proxy</strong> — Route different percentages of requests to different provider endpoints</li>
+<li><strong>Cost tracking extension</strong> — Intercept <code>before_provider_request</code> to log token counts per request</li>
+<li><strong>Request caching layer</strong> — Inspect payload and return cached responses for identical requests</li>
+<li><strong>Response transformation</strong> — Transform provider responses (e.g., strip proprietary metadata) via <code>before_provider_request</code> return value</li>
+<li><strong>Provider fallback chain</strong> — On provider failure, automatically retry with a different provider registered in the same extension</li>
+<li><strong>Dynamic model rotation</strong> — Rotate through multiple model IDs from the same provider based on time or load</li>
+</ul>
+<h2>Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/loader.js</code> — Provider registration queue (lines 113-120, 213-214)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/runner.js</code> — bindCore flush + direct call replacement (lines 144-177, emitBeforeProviderRequest)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/types.d.ts</code> — ProviderConfig, ProviderModelConfig, BeforeProviderRequestEvent (lines 396-397, 712, 836-974)</li>
+</ul><li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/core/model-registry.js</code> — registerProvider/unregisterProvider implementation (lines 481-510)</li>
+</body>
+</html>

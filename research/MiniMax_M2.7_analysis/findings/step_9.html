@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 9: MiniMax M2.7 vs Gemini Performance Comparison</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_9.md</p>
+    <h2>Query</h2>
+"MiniMax M2.7 vs Gemini performance comparison"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://docsbot.ai/models/compare/minimax-m2-7/gemini-3-1-pro</li>
+<li>https://docsbot.ai/models/compare/minimax-m2-7/gemini-2-5-flash</li>
+<li>https://artificialanalysis.ai/models/comparisons/minimax-m2-7-vs-gemini-3-1-pro-preview</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>M2.7 vs Gemini 3.1 Pro</h3>
+| Aspect | M2.7 | Gemini 3.1 Pro |
+|---------|------|----------------|
+| Input context | 204.8K | 1M (5x más) |
+| Max output | 204.8K | 64K |
+| Input $/M | $0.30 | $2.50 (8.3x más) |
+| Output $/M | $1.20 | $15.00 (12.5x más) |
+| Multimodal | ❌ text only | ✅ images, voice, video |
+| Open source | ⚠️ (M2.5 sí, M2.7 no) | ❌ |
+| Release date | March 2026 | Feb 2026 |
+<strong>Costo relativo</strong>: Gemini 3.1 Pro es ~11.7x más caro que M2.7.
+<h3>M2.7 vs Gemini 2.5 Flash</h3>
+| Aspect | M2.7 | Gemini 2.5 Flash |
+|---------|------|-----------------|
+| Input context | 204.8K | 1M (5x más) |
+| Max output | 204.8K | 65K |
+| Input $/M | $0.30 | ~$0.10-0.25 |
+| Output $/M | $1.20 | ~$0.40 |
+| Multimodal | ❌ | ✅ |
+<strong>Ventaja de M2.7</strong>: mucho más barato para tareas de coding/agente
+<strong>Ventaja de Gemini</strong>: 5x más context window, multimodal, más barato en input
+<h3>Benchmark comparison (from Artificial Analysis)</h3>
+<p>M2.7 vs Gemini 3.1 Flash Preview (Reasoning):
+<ul><li>M2.7 Intelligence Index: 50</li>
+<li>Gemini 3.1 Flash Preview: menor</li>
+<li>M2.7 es mejor en coding/agente tasks</li>
+<li>Gemini es mejor en context window largo</li>
+</ul>
+<h3>MLE-Bench comparison</h3></p>
+<ul><li>M2.7: 66.6% medal rate — <strong>tie con Gemini 3.1</strong></li>
+<li>M2.7: mismo nivel que Gemini en ML research tasks</li>
+</ul>
+<h3>Cuándo elegir M2.7 sobre Gemini</h3>
+<p>✅ <strong>Coding tasks</strong>: M2.7 es significativamente mejor (SWE-Pro 56.22%)
+✅ <strong>Agentic workflows</strong>: 97% skill adherence, agentic index 62.1
+✅ <strong>Cost-sensitive</strong>: 8-12x más barato
+✅ <strong>Office productivity</strong>: GDPval-AA ELO 1495 vs Gemini inferior</p>
+<h3>Cuándo elegir Gemini sobre M2.7</h3>
+<p>✅ <strong>Context largo</strong>: 1M tokens vs 205K — para documentos enormes
+✅ <strong>Multimodal</strong>: images, audio, video — M2.7 solo texto
+✅ <strong>Speed</strong>: Gemini 2.5 Flash tiene TTFT de 0.40s vs M2.7 más lento
+✅ <strong>Long context reasoning</strong>: LCR benchmark podría favorecerse de mayor ventana</p>
+<hr>
+<h2>Resumen</h2>
+<p>M2.7 es mejor que cualquier Gemini para:
+<ul><li>Coding/computación</li>
+<li>Agentic workflows</li>
+<li>Cost efficiency</li>
+</ul>
+Gemini es mejor para:
+<ul><li>Contextos muy largos (1M vs 200K)</li>
+<li>Tareas multimodales</li>
+<li>Speed crítico</li>
+</ul><li>Tareas generales de bajo costo (Gemini Flash)</li></p>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub + BRAIN Integration — Query 3: GitHub Pages Use Cases Beyond Static Websites</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_3.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<strong>Query:</strong> "github pages use cases beyond static websites"
+<strong>Resultados:</strong> 20 found
+<hr>
+<h2>Fuentes</h2>
+<ul><li><strong>GitHub Pages: Advanced Uses</strong> — paulserban.eu (tutorial completo)</li>
+<li><strong>What is GitHub Pages</strong> — docs.github.com (oficial)</li>
+<li><strong>GitHub Pages examples collection</strong> — github.com/collections/github-pages-examples</li>
+</ul>
+<hr>
+<h2>GitHub Pages — Qué es</h2>
+<p>Servicio de hosting estático de GitHub:
+<ul><li>Toma archivos HTML/CSS/JS directamente del repo</li>
+<li>Opcionalmente los procesa (Jekyll, etc.)</li>
+<li>Publica como website</li>
+<li>SSL gratis, CDN global</li>
+</ul>
+<h3>Tipos de sitios:</h3></p>
+| Tipo | URL default | Repo |
+|------|-------------|------|
+| <strong>User/Org</strong> | <code>https://<owner>.github.io</code> | <code><owner>.github.io</code> |
+| <strong>Project</strong> | <code>https://<owner>.github.io/<repo></code> | cualquier repo |
+<hr>
+<h2>Use Cases Más Allá de Static Websites</h2>
+<h3>1. Blogs con Jekyll</h3>
+<pre><code><h1>Jekyll integrado nativamente en GitHub Pages</h1>
+<h1>Solo necesitas escribir en Markdown</h1>
+<h1>GitHub hace build y deploy automático</h1>
+</code></pre>
+<strong>Setup mínimo:</strong>
+<pre><code>_repo/
+  _config.yml
+  index.md
+  posts/
+    2026-05-16-first-post.md
+</code></pre>
+<h3>2. Documentation Sites</h3>
+<pre><code><h1>Docusaurus, MkDocs, VuePress</h1>
+<h1>Generan sitio searchable desde Markdown</h1>
+</code></pre>
+<strong>Ejemplo Docusaurus config:</strong>
+<pre><code>module.exports = {
+  url: 'https://DaniBrainClaw.github.io',
+  baseUrl: '/my-docs/',
+  organizationName: 'DaniBrainClaw',
+  projectName: 'my-docs',
+};
+</code></pre>
+<h3>3. SPAs (Single Page Applications)</h3>
+<ul><li>React, Vue, JavaScript vanilla</li>
+<li>Client-side rendering</li>
+<li>GitHub Actions para build automático</li>
+</ul>
+<strong>SPA Routing fix (404.html):</strong>
+<pre><code><script>
+const redirectToIndex = () => {
+  const path = location.pathname;
+  if (path !== '/' && !path.endsWith('.html')) {
+    location.replace('/index.html');
+  }
+};
+redirectToIndex();
+</script>
+</code></pre>
+<p>O usar hash routing: <code>HashRouter</code> en vez de <code>BrowserRouter</code>.</p>
+<h3>4. Portfolios y CVs online</h3>
+<ul><li>Gratis y versionado</li>
+<li>Deploy con push a main</li>
+</ul>
+<h3>5. Landing pages para negocios</h3>
+<ul><li>Carrd.co + GitHub Pages hosting</li>
+<li>Dominio custom gratis</li>
+</ul>
+<h3>6. API Documentation interactiva</h3>
+<ul><li>Swagger UI</li>
+<li>Stoplight</li>
+<li>Redoc</li>
+</ul>
+<h3>7. Dashboards (client-side)</h3>
+<ul><li>Datos de APIs externas</li>
+<li>Gráficos con Chart.js / D3.js</li>
+<li>Sin backend necesario</li>
+</ul>
+<hr>
+<h2>GitHub Actions para GitHub Pages</h2>
+<pre><code>name: Deploy to GitHub Pages
+<p>on:
+  push:
+    branches: [main]</p>
+<p>jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Build
+        run: npm run build
+        
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+</code></pre></p>
+<hr>
+<h2>Jekyll — Built-in en GitHub Pages</h2>
+<h3>_config.yml mínimo:</h3>
+<pre><code>title: Mi Blog
+description: Blog de Dani
+theme: minima
+collections:
+  posts:
+    output: true
+</code></pre>
+<h3>Crear post:</h3>
+<pre><code>---
+title: "Primer post"
+date: 2026-05-16
+<hr>
+<p>Hola mundo desde GitHub Pages!
+</code></pre></p>
+<hr>
+<h2>Límites Importantes</h2>
+| Aspecto | Límite |
+|---------|--------|
+| <strong>Storage</strong> | 1 GB soft, 5 GB hard |
+| <strong>Bandwidth</strong> | 100 GB/month (soft) |
+| <strong>Deploys</strong> | 10/hour (soft) |
+| <strong>Private repos</strong> | Solo GitHub Pro/Team/Enterprise |
+<hr>
+<h2>Dominio Custom</h2>
+<p>GitHub Pages soporta dominio custom:
+<ul><li>Settings → Pages → Custom domain</li>
+<li>Configurar DNS en tu proveedor</li>
+<li>SSL automático con Let's Encrypt</li>
+</ul>
+<h3>DNS para apex domain (ej: dani.es):</h3>
+<pre><code>@  A  185.199.108.153
+@  A  185.199.109.153
+@  A  185.199.110.153
+@  A  185.199.111.153
+www  CNAME  DaniBrainClaw.github.io
+</code></pre></p>
+<h3>DNS para subdomain (ej: blog.dani.es):</h3>
+<pre><code>blog  CNAME  DaniBrainClaw.github.io
+</code></pre>
+<hr>
+<h2>Para BRAIN + Dani: Aplicaciones Prácticas</h2>
+| Aplicación | Uso |
+|------------|-----|
+| <strong>Portfolio</strong> | mf3.es → redirige a GitHub Pages con portfolio |
+| <strong>Landing pages</strong> | Páginas de venta para servicios de Dani |
+| <strong>Blog de negocio</strong> | Blog técnico para Green Axis, etc. |
+| <strong>Dashboard público</strong> | Stats de BRAIN visibles online |
+| <strong>Documentation</strong> | Docs de habilidades y configuración |
+| <strong>CV online</strong> | Portfolio profesional |
+<hr>
+<h2>Ejemplo: Dashboard Público con BRAIN</h2>
+<h3>Setup:</h3>
+<ul><li>Crear repo <code>DaniBrainClaw.github.io</code></li>
+<li>BRAIN genera dashboard HTML con datos públicos</li>
+<li>GitHub Actions hace deploy automáticamente</li>
+</ul>
+<h3>GitHub Actions:</h3>
+<pre><code>name: Update Dashboard
+on:
+  schedule:
+    - cron: '0 <em>/6 </em> <em> </em>'  # Cada 6 horas
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate dashboard
+        run: |
+          curl -s http://localhost:18789/api/stats > public/data.json
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+</code></pre>
+<hr>
+<h2>Alternativas a GitHub Pages (si creces)</h2>
+| Plataforma | Ventaja | Precio |
+|-----------|---------|--------|
+| <strong>Netlify</strong> | Deploy automático, Forms, Functions | Gratis + paid |
+| <strong>Vercel</strong> | Edge functions, Optimized images | Gratis + paid |
+| <strong>Cloudflare Pages</strong> | Edge network, Free tier generous | Gratis + paid |
+<hr>
+<em>Investigador — Query 3 completada.</em>
+</body>
+</html>

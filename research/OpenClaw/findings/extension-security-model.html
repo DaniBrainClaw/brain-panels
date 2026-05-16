@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extension Security Model — COMPLETE RESEARCH FINDINGS</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 extension-security-model.md</p>
+    <strong>Research Date:</strong> 2026-04-23
+<strong>Topic:</strong> L25 — Extension Security Model
+<strong>Priority:</strong> HIGH
+<strong>Research Depth:</strong> 6-Layer Exhaustive Analysis
+<hr>
+<h2>1. WHAT IS — Definition</h2>
+<p>The <strong>Extension Security Model</strong> in OpenClaw defines the trust and isolation boundaries for custom <code>pi-hooks</code> (Pi extensions). Unlike many modern plugin systems, OpenClaw extensions are <strong>not sandboxed</strong>. They operate as first-class citizens within the Gateway process, granting them full access to the internal state, host file system, network, and secrets management.</p>
+<hr>
+<h2>2. HOW IT WORKS — Mechanics</h2>
+<ul><li><strong>In-Process Execution:</strong> Extensions are loaded via <code>jiti</code> and execute within the same Node.js process as the OpenClaw Gateway.</li>
+<li><strong>Shared Memory:</strong> There is no memory isolation. An extension can read/modify the <code>ExtensionContext</code> or <code>SessionManager</code> state of any other extension or the agent core itself.</li>
+<li><strong>Privilege Inheritance:</strong> Extensions inherit the OS-level permissions of the Gateway process.</li>
+<li><strong>Credential Access:</strong> Through <code>ExtensionContext</code> (specifically <code>sessionManager</code> and <code>modelRegistry</code>), extensions have programmatic access to API keys, OAuth credentials, and session tokens.</li>
+<li><strong>Event-Driven Hooks:</strong> Security is reliant on event-based interception (e.g., <code>tool_call</code> events) rather than preemptive resource restriction.</li>
+</ul>
+<hr>
+<h2>3. USES — Applications</h2>
+<ul><li><strong>Deep Integration:</strong> Building plugins that require real-time, low-latency access to the agent loop.</li>
+<li><strong>UI Customization:</strong> Modifying the terminal UI (TUI) via <code>ExtensionUIContext</code> widgets, overlays, and custom editors.</li>
+<li><strong>Workflow Automation:</strong> Orchestrating complex tasks that involve multiple tools and sessions.</li>
+</ul>
+<hr>
+<h2>4. PROBLEMS — Limitations</h2>
+<ul><li><strong>Critical Security Deficit:</strong> Total lack of process/memory sandboxing means a single compromised extension can compromise the entire OpenClaw instance.</li>
+<li><strong>Exfiltration Risk:</strong> Extensions can make outbound network calls, allowing for easy data exfiltration of any internal information (including session history or credentials).</li>
+<li><strong>No Least-Privilege:</strong> There is no capability-based security model; extensions are either loaded or not.</li>
+<li><strong>Persistence Risks:</strong> Malicious extensions can modify core agent files, inject malicious prompts into future sessions, or install persistent backdoors.</li>
+</ul>
+<hr>
+<h2>5. SOLUTIONS — Best Practices</h2>
+<ul><li><strong>Trusted Sources Only:</strong> Treat third-party extensions as running arbitrary code with <code>sudo</code> equivalent permissions.</li>
+<li><strong>Code Review:</strong> Manually audit any extension source code before loading it via <code>additionalExtensionPaths</code>.</li>
+<li><strong>Environment Separation:</strong> Use separate OpenClaw Gateway instances (dev/prod) if testing unverified extensions.</li>
+<li><strong>Minimize Dependencies:</strong> Audit the dependency tree of any extension, as malicious upstream packages pose the same risk as the extension itself.</li>
+<li><strong>Hook Hygiene:</strong> Use only the minimum required events. Avoid <code>before_agent_start</code> or broad-reaching lifecycle hooks if unnecessary.</li>
+</ul>
+<hr>
+<h2>6. EDGE CASES</h2>
+<ul><li><strong>Dependency Attacks:</strong> A seemingly safe extension could pull in a compromised npm package, giving the attacker in-process control.</li>
+<li><strong>Resource Exhaustion:</strong> A poorly written extension could cause memory leaks or CPU spikes, affecting the stability of the Gateway process itself.</li>
+<li><strong>Hook Conflicts:</strong> If multiple extensions register conflicting event handlers, the execution order is dictated by the load order, which may not be deterministic.</li>
+</ul>
+<hr>
+<h2>7. CREATIVE USES</h2>
+<ul><li><strong>Security Auditing Extension:</strong> A "meta-extension" that hooks into all lifecycle events to log activity, detect prompt injection, or monitor for suspicious tool calls.</li>
+<li><strong>Compliance Enforcement:</strong> Use extension hooks to force compliance by injecting mandatory system prompt guidelines at the start of every session.</li>
+</ul>
+<hr>
+<h2>8. NEW Questions Opened by This Research</h2>
+<ul><li>[ ] Can we implement a secondary "sandbox" runtime (e.g., WebAssembly or child process) for extensions?</li>
+<li>[ ] Is it feasible to provide a restricted <code>ExtensionAPI</code> sub-set for "untrusted" extensions?</li>
+<li>[ ] Could we add a manifest file (e.g., <code>manifest.json</code>) to extensions to declare requested capabilities/permissions?</li>
+</ul>
+<hr>
+<h2>9. Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/types.d.ts</code></li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/architecture.md</code></li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/help/troubleshooting.md</code></li>
+</ul>
+</body>
+</html>

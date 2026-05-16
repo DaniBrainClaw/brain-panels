@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Sources — OpenClaw</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 sources.md</p>
+    <p>Documented sources for all OpenClaw research conducted by Investigador Scout.</p>
+<h2>L38 — Per-Agent Skill Allowlists & Dynamic Hook Modification (2026-04-23)</h2>
+<strong>Topic:</strong> Can per-agent skill allowlists be changed dynamically via hook?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/agent-command-BRtqb5oD.js</code> — Skills snapshot building logic (lines 1097-1122)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/pi-embedded-runner-CefZK1Pt.js</code> — <code>before_prompt_build</code> hook execution (lines 3573-3588)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/agent-scope-D7mk_f98.js</code> — <code>resolveAgentSkillsFilter</code> function (lines 101-103)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/hook-runner-global-D9t7KsGJ.js</code> — Hook merge function (<code>mergeBeforePromptBuild</code>, lines 54-66)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Hook documentation</li>
+</ul>
+<hr>
+<h2>L28 — Dangerous-Code Scanner for Skill Installs (2026-04-23)</h2>
+<strong>Topic:</strong> Can malicious skill bypass dangerous-code scanner for skill installs?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — primary source for scanner behavior, Gateway-backed install pipeline, CLI install path difference</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/gateway/security/index.md</code> — security model, audit glossary (<code>skills.code_safety</code>), trust boundaries</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/security/THREAT-MODEL-ATLAS.md</code> — Critical residual risk: "Skills run with agent privileges"</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/clawhub.md</code> — CLI install path documentation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/plugin.md</code> — <code>--dangerously-force-unsafe-install</code> flag (similar concept for plugins)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/gateway/security/index.md</code> — <code>skills.code_safety</code> checkId definition</li>
+</ul>
+<hr>
+<h2>L29 — Hook Infinite Loops (2026-04-23)</h2>
+<strong>Topic:</strong> Can hooks trigger infinite loops?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/gateway/hooks.md</code> — hook system documentation</li>
+<li>OpenClaw source code analysis via exec grep on dist/ directory</li>
+<li>Gateway hook execution internals</li>
+</ul>
+<hr>
+<h2>L30 — Skills Sandbox & Post-Install Privilege Model (2026-04-23)</h2>
+<strong>Topic:</strong> Are skills sandboxed post-install? What sandboxing options exist?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/security/THREAT-MODEL-ATLAS.md</code> — Skill sandboxing recommendation R-002, "Skills run with agent privileges" residual risk</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/gateway/sandboxing.md</code> — Sandboxing architecture, shows sandbox applies to tools, not skill text</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills-config.md</code> — Skills config, env injection behavior, sandbox interaction notes</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Scanner behavior, install paths, Gateway-backed vs CLI</li>
+</ul>
+<hr>
+<h2>L31 — Scanner Scope: SKILL.md vs Installer Metadata (2026-04-23)</h2>
+<strong>Topic:</strong> Does the dangerous-code scanner analyze SKILL.md content itself or only installer metadata?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/skill-scanner-DKzA4y0J.js</code> — Scanner implementation: <code>SCANNABLE_EXTENSIONS</code> = .js/.ts/.jsx/.tsx/.mjs/.cjs/.mts/.cts (NOT .md); <code>scanSource()</code> applies LINE_RULES + SOURCE_RULES</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/install-security-scan.runtime-5cdnayzJ.js</code> — <code>scanSkillInstallSourceRuntime()</code> calls <code>scanDirectoryTarget()</code> which only scans code files</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/skills-install-BOrVGZan.js</code> — Skill install flow: <code>scanSkillInstallSource({ sourceDir: entry.skill.baseDir })</code></li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/audit-extra.async-GfHD3ETo.js</code> — <code>collectInstalledSkillsCodeSafetyFindings()</code> uses same scanner; SKILL.md only collected for symlink-escape checks, NOT content scanning</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skills documentation: scanner runs on Gateway-backed installs only</li>
+</ul>
+<hr>
+<h2>L32 — Skills Dependencies & Chaining (2026-04-23)</h2>
+<strong>Topic:</strong> Can skills declare dependencies on other skills? Can skills call each other recursively?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skill loading, precedence, gating rules, no dependency system</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills-config.md</code> — Skill config schema</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/creating-skills.md</code> — Skill creation workflow</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/slash-commands.md</code> — Slash command dispatch for skill invocation</li>
+<li>OpenClaw source code analysis — skills snapshot mechanism, skill invocation flow</li>
+</ul>
+<hr>
+<h2>Previous Sources</h2>
+<p>(Research sources for L20-L27 documented in their respective findings files.)</p>
+<h2>L16 — Hook Execution Order (2026-04-23)</h2>
+<strong>Topic:</strong> What is exact hook execution order when multiple hooks fire on same event?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/config-Nq7s3Dxw.js</code> — Hook source policy definitions (<code>HOOK_SOURCE_POLICIES</code>), precedence system, sorting algorithm</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/hook-runner-global-D9t7KsGJ.js</code> — Hook execution runner: <code>runVoidHook</code>, <code>runModifyingHook</code>, <code>runClaimingHook</code>, <code>getHooksForName</code>, priority sorting, failure policy</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/internal-hooks-2legcEEL.js</code> — Internal hooks implementation: registration order, error handling</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Official hooks documentation</li>
+</ul>
+<h2>L14 — Hook Types Difference: Internal vs Plugin Hooks (2026-04-23)</h2>
+<strong>Topic:</strong> What is exact difference between internal hooks (5) vs plugin hooks (28+)?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Internal hooks documentation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/architecture.md</code> — Plugin architecture, provider runtime hooks (44+ hooks table)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/hook-runner-global-D9t7KsGJ.js</code> — Hook execution runner implementation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/internal-hooks-2legcEEL.js</code> — Internal hooks implementation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/loader-DuIH27tS.js</code> — Hook registry: <code>registry.typedHooks.push()</code></li>
+</ul>
+<hr>
+<h2>L35 — Skills Context Overhead (2026-04-23)</h2>
+<strong>Topic:</strong> What is the maximum recommended number of skills per agent before context overhead becomes problematic?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skills overhead formula: 195 base chars + 97 chars/skill + XML-escaped field lengths</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/reference/token-use.md</code> — Token use breakdown, context window mechanics</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/concepts/system-prompt.md</code> — System prompt structure, skills section</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/concepts/context.md</code> — Context window vs tracked tokens</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/concepts/model-providers.md</code> — Model contextWindow metadata</li>
+<li><code>~/.openclaw/openclaw.json</code> — Current system config (MiniMax M2.7: 204,800 contextWindow, 200,000 runtime cap)</li>
+</ul>
+<h2>L36 — Skills Dynamic Enable/Disable (2026-04-23)</h2>
+<strong>Topic:</strong> Can skills be dynamically enabled/disabled mid-session without gateway restart?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skills watcher documentation (line 317+)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills-config.md</code> — <code>enabled</code> and <code>disableModelInvocation</code> fields</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/refresh-p9Dzo7mb.js</code> — Skills watcher implementation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/skills-DYF-hmoJ.js</code> — Snapshot building logic</li>
+</ul>
+<h2>L34 — Dangerous Code Scanner Patterns (Red-Teaming) (2026-04-23)</h2>
+<strong>Topic:</strong> What is the complete list of patterns the dangerous-code scanner detects? What bypass techniques exist?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/skill-scanner-DKzA4y0J.js</code> — Scanner implementation: SCANNABLE_EXTENSIONS, LINE_RULES, SOURCE_RULES</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Scanner behavior documentation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/gateway/security/index.md</code> — Security model, audit glossary</li>
+</ul>
+<h2>L33 — Plugin Hook Dynamic Registration + State Access (2026-04-23)</h2>
+<strong>Topic:</strong> Can plugin hooks be dynamically registered/unregistered at runtime? Can hooks access gateway internal state?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/internal-hooks-2legcEEL.js</code> — Internal hooks implementation: <code>registerInternalHook</code>, <code>unregisterInternalHook</code>, <code>clearInternalHooks</code></li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/hook-runner-global-D9t7KsGJ.js</code> — Plugin hook runner: no dynamic registration API, <code>getHooksForName</code> reads from immutable-at-runtime registry</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/loader-DuIH27tS.js</code> — Plugin loader: <code>registerHook</code> during plugin load, <code>unregisterInternalHook</code> only at plugin unload</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Hook event context structure (context.cfg, context.sessionEntry)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/architecture.md</code> — Plugin architecture, load pipeline, registry model</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/plugin-sdk/src/plugins/types.d.ts</code> — Plugin SDK types: <code>registerHook</code> API (no unregister counterpart)</li>
+</ul>
+<hr>
+<h2>L26 — Workspace Hooks vs Managed Hooks Discovery Precedence (2026-04-23)</h2>
+<strong>Topic:</strong> How do workspace hooks (<code><workspace>/hooks/</code>) differ from managed hooks (<code>~/.openclaw/hooks/</code>) in discovery precedence?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/workspace-OPw5btC5.js</code> — <code>discoverWorkspaceHookEntries()</code> function (lines 236-271): discovery order, hook loading from 5 sources (extraDirs, bundled, plugin, managed, workspace)</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/config-Nq7s3Dxw.js</code> — <code>resolveHookEntries()</code>, <code>canOverrideHook()</code>, <code>HOOK_SOURCE_POLICIES</code> (lines 4-95): two-phase resolution (sort by precedence then merge by override rules), override rules matrix</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/hooks-cli-DUQiYAeY.js</code> — Hook collision warning: <code>"Ignoring openclaw-workspace hook "X" because it cannot override openclaw-managed hook code"</code></li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/hooks-status-DvOjzvmc.js</code> — Hook status display with managed-by-plugin detection</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Hook documentation</li>
+</ul>
+<hr>
+<h2>L37 — Skills Persistent State & Hook Dynamic Modification (2026-04-23)</h2>
+<strong>Topic:</strong> Can skills implement persistent state across sessions (file-based)? Can hooks dynamically modify the skills list at runtime?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/session-updates-3NulUPmS.js</code> — <code>persistSessionEntryUpdate</code> with skillsSnapshot persistence</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/agent-command-BRtqb5oD.js</code> — Skills snapshot building and session entry update</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/refresh-p9Dzo7mb.js</code> — Skills watcher implementation, <code>bumpSkillsSnapshotVersion</code></li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Hook event types, <code>before_prompt_build</code> modifying merge, <code>session:patch</code> context</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skills loading, watcher behavior</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/sdk-runtime.md</code> — <code>saveSessionStore</code> API</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/skills-DYF-hmoJ.js</code> — <code>buildWorkspaceSkillSnapshot</code> implementation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/skills-CUMOpDXe.js</code> — Skills snapshot related exports</li>
+<li>OpenClaw source code analysis via exec grep on dist/ directory for session management and skills loading</li>
+</ul>
+<hr>
+<h2>L39 — Skills Overhead Profiling & Reload Mechanisms (2026-04-23)</h2>
+<strong>Topic:</strong> Can skills overhead be profiled in production? Is there a tool command to reload skills without file changes?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/concepts/context.md</code> — <code>/context detail</code> documentation, per-skill breakdown, context window mechanics</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skills snapshot, watcher, hot reload documentation, token overhead formula</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills-config.md</code> — <code>skills.entries.*</code> config fields, hot-reload behavior, watcher config</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/refresh-p9Dzo7mb.js</code> — Skills watcher implementation: <code>watcher.on("add/change/unlink")</code>, <code>bumpSkillsSnapshotVersion</code></li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/skills-DYF-hmoJ.js</code> — <code>buildWorkspaceSkillSnapshot</code> implementation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/agent-command-BRtqb5oD.js</code> — Snapshot version checking, rebuild logic, <code>needsSkillsSnapshot</code> check</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/commands-handlers.runtime-qpU8MeZd.js</code> — <code>/context</code> command handlers: list/detail/json/deep modes</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/reference/token-use.md</code> — Token use reference, <code>/context</code> commands</li>
+</ul><h2>L41 — Hook Exception Handler Behavior (2026-04-23)</h2>
+<strong>Topic:</strong> What happens if hook handler throws uncaught exception - does it crash gateway?
+<strong>Sources:</strong>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/hook-runner-global-D9t7KsGJ.js</code> — Plugin hook runner: exception handling, failure policies, <code>shouldCatchHookErrors</code>, <code>handleHookError</code>, <code>runVoidHook</code>, <code>runModifyingHook</code>, <code>runClaimingHook</code></li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/internal-hooks-2legcEEL.js</code> — Internal hook trigger: <code>triggerInternalHook</code> with per-handler try/catch</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Hook documentation</li>
+</ul>
+</body>
+</html>

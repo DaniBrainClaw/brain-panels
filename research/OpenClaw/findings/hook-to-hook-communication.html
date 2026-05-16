@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hook-to-Hook Communication — L27</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 hook-to-hook-communication.md</p>
+    <strong>Research:</strong> What's the recommended approach for hook-to-hook communication in OpenClaw?
+<strong>Status:</strong> ✅ COMPLETADO — 2026-04-23 13:10 CET
+<hr>
+<h2>Exhaustive Research Order</h2>
+<p>Following the research protocol: What is → How works → Uses → Problems → Solutions → Edge cases → Creative uses</p>
+<hr>
+<h2>1. What is hook-to-hook communication?</h2>
+<p>Hook-to-hook communication refers to mechanisms where one hook can trigger, influence, or exchange data with another hook within the OpenClaw system. This enables:
+<ul><li>Coordinated behavior between multiple hooks from different plugins</li>
+<li>Data sharing across hook lifecycles</li>
+<li>Sequential processing chains where one hook's output feeds into another</li>
+<li>Event propagation patterns</li>
+</ul>
+<hr></p>
+<h2>2. How does hook-to-hook communication work?</h2>
+<h3>2.1 Native Mechanisms</h3>
+<p>OpenClaw has <strong>NO dedicated hook-to-hook communication API</strong>. However, there are indirect mechanisms:</p>
+<p>#### A. Sequential Modifying Hooks (Primary Pattern)</p>
+<p>The most common hook-to-hook communication is via <strong>sequential execution with result merging</strong>:</p>
+<pre><code>// From hook-runner-global-D9t7KsGJ.js
+async function runModifyingHook(hookName, event, ctx, policy = {}) {
+  let result;
+  for (const hook of hooks) {
+    const handlerResult = await hook.handler(event, ctx);
+    if (policy.mergeResults) {
+      result = policy.mergeResults(result, handlerResult, hook);
+    }
+  }
+  return result;
+}
+</code></pre>
+<strong>Key merge patterns:</strong>
+<ul><li><code>mergeBeforePromptBuild</code>: concatenates systemPrompt, prependContext, prependSystemContext, appendSystemContext</li>
+<li><code>mergeBeforeModelResolve</code>: uses firstDefined to pick first non-undefined value</li>
+<li><code>mergeSubagentSpawningResult</code>: combines status and threadBindingReady</li>
+<li><code>mergeMessageSendingResult</code>: handles cancel (terminal) and message modifications</li>
+</ul>
+#### B. Terminal/Stop Conditions
+<p>Modifying hooks support <code>shouldStop</code> policy for early termination:</p>
+<pre><code>// before_tool_call hook
+shouldStop: (result) => result.block === true,
+terminalLabel: "block=true"
+<p>// message_sending hook
+shouldStop: (result) => result.cancel === true,
+terminalLabel: "cancel=true"
+</code></pre></p>
+<p>When a handler returns <code>{ block: true }</code> or <code>{ cancel: true }</code>, lower-priority handlers are skipped.</p>
+<p>#### C. Context Object Sharing</p>
+<p>All hooks receive the same <code>ctx</code> object which CAN be mutated:</p>
+<pre><code>// Hook handler signature
+handler(event, ctx) // ctx is mutable
+</code></pre>
+<strong>However</strong>, this is <strong>NOT recommended</strong> because:
+<ul><li>Void hooks run in parallel - no predictable execution order</li>
+<li>Different hooks may run in different executions (before_tool_call vs after_tool_call)</li>
+<li>No guarantee handlers will execute in a specific sequence</li>
+</ul>
+#### D. Session Store for Cross-Hook State
+<p>Hooks can use the session store to share state:</p>
+<pre><code>// Within a hook handler
+api.saveSessionStore(sessionKey, { 
+  myHookData: "value",
+  sharedState: { counter: 1 }
+});
+</code></pre>
+<p>Other hooks can read this via <code>api.getSessionStore()</code>.</p>
+<hr>
+<h2>3. Uses — What can hook-to-hook communication achieve?</h2>
+<h3>3.1 Data Chaining</h3>
+<p>One hook modifies data, next hook sees the modification:</p>
+<ul><li><code>before_prompt_build</code> hooks inject context that subsequent hooks see</li>
+<li><code>message_sending</code> hooks can progressively transform outgoing messages</li>
+</ul>
+<h3>3.2 Blocking/Allow Patterns</h3>
+<p>One hook can block further processing:</p>
+<ul><li><code>before_tool_call</code> returning <code>{ block: true }</code> stops the tool execution</li>
+<li><code>message_sending</code> returning <code>{ cancel: true }</code> aborts message send</li>
+</ul>
+<h3>3.3 Priority-Based Decision Making</h3>
+<p>Lower-priority hooks only see results if higher-priority didn't block:</p>
+<pre><code>// mergeBeforeModelResolve uses firstDefined
+const firstDefined = (prev, next) => prev ?? next;
+</code></pre>
+<h3>3.4 Event Sequencing</h3>
+<p>The agent loop defines a natural hook chain:</p>
+<pre><code>message_received → before_dispatch → before_agent_reply → 
+before_prompt_build → before_model_resolve → llm_input → 
+[model call] → llm_output → before_tool_call → [tool execution] → 
+after_tool_call → message_sending → message_sent → agent_end
+</code></pre>
+<hr>
+<h2>4. Problems — What's broken or missing?</h2>
+<h3>4.1 No Direct Inter-Hook Triggering</h3>
+<strong>PROBLEM:</strong> There is NO API to explicitly trigger another hook from within a hook. You cannot do:
+<pre><code>// NOT POSSIBLE
+function myHook(event, ctx) {
+  ctx.triggerHook("another_hook", event, ctx); // No such API
+}
+</code></pre>
+<h3>4.2 Void Hooks Run in Parallel</h3>
+<strong>PROBLEM:</strong> <code>runVoidHook</code> executes all handlers in parallel via <code>Promise.all</code>:
+<pre><code>const promises = hooks.map(async (hook) => {
+  await hook.handler(event, ctx);
+});
+await Promise.all(promises);
+</code></pre>
+<p>This means:
+<ul><li>No predictable order</li>
+<li>Cannot chain void hooks sequentially</li>
+<li>Race conditions possible when sharing mutable state</li>
+</ul>
+<h3>4.3 No Pub/Sub or Event Bus Between Hooks</h3></p>
+<strong>PROBLEM:</strong> Hooks cannot subscribe to other hook events. There's no:
+<ul><li><code>ctx.on("hook:before_tool_call", handler)</code></li>
+<li><code>ctx.emit("hook:custom_event", data)</code></li>
+<li>Event bus for inter-hook messaging</li>
+</ul>
+<h3>4.4 Context Mutation is Unreliable</h3>
+<strong>PROBLEM:</strong> While you CAN mutate <code>ctx</code>, it's risky because:
+<ul><li>Execution order varies by hook type</li>
+<li>No atomicity guarantees</li>
+<li>Can conflict with other hooks</li>
+</ul>
+<h3>4.5 No Hook-to-Hook Error Propagation</h3>
+<strong>PROBLEM:</strong> Errors in one hook don't automatically affect others (unless fail-closed policy):
+<ul><li>Hook errors are caught individually</li>
+<li>One hook failing doesn't prevent others</li>
+</ul>
+<h3>4.6 Session Store is Asynchronous and Per-Session</h3>
+<strong>PROBLEM:</strong> Using session store for hook communication:
+<ul><li>Only works within same session</li>
+<li>Adds async overhead</li>
+<li>Requires sessionKey knowledge</li>
+</ul>
+<hr>
+<h2>5. Solutions — Recommended Patterns</h2>
+<h3>5.1 Use Modifying Hooks with mergeResults</h3>
+<strong>RECOMMENDED:</strong> When you need hook A → hook B communication, ensure:
+<ul><li>Both hooks register for the same event (e.g., <code>before_tool_call</code>)</li>
+<li>Use <code>runModifyingHook</code> semantics (sequential execution)</li>
+<li>Define clear mergeResults behavior</li>
+</ul>
+<pre><code>// In hook definition
+{
+  hookName: "before_tool_call",
+  priority: 100,
+  handler: async (event, ctx) => {
+    return { block: false, log: true };
+  }
+}
+</code></pre>
+<h3>5.2 Use Terminal Conditions for Blocking</h3>
+<strong>RECOMMENDED:</strong> To prevent lower-priority hooks from running:
+<pre><code>// High priority hook
+return { block: true, blockReason: "security policy" };
+// Lower priority hooks are skipped
+</code></pre>
+<h3>5.3 Use Session Store for Cross-Hook State</h3>
+<strong>RECOMMENDED:</strong> For state that must persist across different hook events:
+<pre><code>// Hook A
+await api.saveSessionStore(sessionKey, { 
+  authToken: encryptedToken 
+});
+<p>// Hook B (different event)
+const store = await api.getSessionStore(sessionKey);
+const token = store.authToken;
+</code></pre></p>
+<h3>5.4 Chain via Tool Execution</h3>
+<strong>WORKAROUND:</strong> Use tool execution as a coordination mechanism:
+<ul><li>Hook A sets up state, calls a tool</li>
+<li>Tool execution triggers <code>before_tool_call</code> / <code>after_tool_call</code> hooks</li>
+<li>Hook B reads results from tool execution</li>
+</ul>
+<h3>5.5 Use Multiple Priority Levels</h3>
+<strong>RECOMMENDED:</strong> Leverage priority for ordering:
+<pre><code>// Execution order: priority 100 → 50 → 0 → -50
+const hookA = { hookName: "before_tool_call", priority: 100, ... };
+const hookB = { hookName: "before_tool_call", priority: 50, ... };
+</code></pre>
+<h3>5.6 Use before_install for Pre-Install Coordination</h3>
+<strong>FOR PLUGINS:</strong> The <code>before_install</code> hook runs sequentially and can block installs:
+<pre><code>// Hook A
+return { block: false, augment: { findings: [...] } };
+<p>// Hook B (lower priority) sees augment data
+// Can access acc.augment from previous hooks
+</code></pre></p>
+<hr>
+<h2>6. Edge Cases</h2>
+<h3>6.1 Hooks with Same Priority</h3>
+<strong>EDGE CASE:</strong> Two hooks with same priority registered for same event.
+<strong>BEHAVIOR:</strong> Execution order is <strong>insertion order</strong> (order in which hooks were registered), which is not deterministic across restarts or plugin load order.
+<h3>6.2 Mixed Hook Types</h3>
+<strong>EDGE CASE:</strong> What if one hook is void, another is modifying, for same event?
+<strong>BEHAVIOR:</strong> Hooks are typed by their event (not by handler). <code>message_sending</code> is modifying, <code>message_received</code> is void. They don't mix.
+<h3>6.3 Cross-Plugin Hook Communication</h3>
+<strong>EDGE CASE:</strong> Plugin A hook wants to communicate with Plugin B hook.
+<strong>SOLUTION:</strong> Only possible if:
+<ul><li>Both register for same event</li>
+<li>Use session store</li>
+<li>Use shared tool execution chain</li>
+</ul>
+<h3>6.4 Hook Failure and State</h3>
+<strong>EDGE CASE:</strong> What happens to shared state if a hook throws?
+<strong>BEHAVIOR:</strong> Depends on failure policy:
+<ul><li><code>fail-open</code> (default): error logged, other hooks continue</li>
+<li><code>fail-closed</code> (before_tool_call): throws and halts</li>
+</ul>
+<h3>6.5 Sessionless Hooks</h3>
+<strong>EDGE CASE:</strong> Some hooks run outside session context (e.g., gateway:startup).
+<strong>PROBLEM:</strong> Cannot use session store for communication. Limited to context object mutation.
+<hr>
+<h2>7. Creative Uses</h2>
+<h3>7.1 Multi-Stage Validation Chain</h3>
+<pre><code>// Hook 1: priority 100 - Security check
+return { valid: true, securityFindings: [...] };
+<p>// Hook 2: priority 50 - Compliance check
+// Reads acc.securityFindings, adds complianceFindings</p>
+<p>// Hook 3: priority 0 - Final decision
+// Blocks if any findings present
+return { block: findings.length > 0 };
+</code></pre></p>
+<h3>7.2 Distributed Rate Limiting</h3>
+<pre><code>// Each hook increments counter in session store
+const store = await api.getSessionStore(sessionKey);
+const count = (store.rateLimitCount || 0) + 1;
+await api.saveSessionStore(sessionKey, { rateLimitCount: count });
+<p>// Later hook checks threshold
+return { block: count > 100 };
+</code></pre></p>
+<h3>7.3 Plugin Dependency Resolution</h3>
+<pre><code>// before_install: priority 100
+// Records plugin dependencies
+return { dependencies: ["plugin-a", "plugin-b"] };
+<p>// after_install: priority 50
+// Reads acc.dependencies, triggers installation of deps
+</code></pre></p>
+<h3>7.4 Cross-Session Coordination</h3>
+<pre><code>// Use shared session store key
+await api.saveSessionStore("SHARED_GLOBAL", { 
+  globalState: "shared across sessions" 
+});
+</code></pre>
+<h3>7.5 Hook Pipeline Tracing</h3>
+<pre><code>// Each hook adds to trace
+const trace = acc.trace || [];
+trace.push({ plugin: myPluginId, stage: "before_tool_call" });
+return { trace };
+</code></pre>
+<hr>
+<h2>Summary</h2>
+| Aspect | Finding |
+|--------|---------|
+| <strong>Native hook-to-hook API</strong> | ❌ NONE |
+| <strong>Sequential execution</strong> | ✅ Yes (modifying hooks only) |
+| <strong>Result merging</strong> | ✅ Yes (via mergeResults) |
+| <strong>Terminal conditions</strong> | ✅ Yes (block:true, cancel:true) |
+| <strong>Context mutation</strong> | ⚠️ Risky (void hooks parallel) |
+| <strong>Session store</strong> | ✅ Yes (cross-hook state) |
+| <strong>Event bus</strong> | ❌ NONE |
+| <strong>Priority control</strong> | ✅ Yes |
+<hr>
+<h2>NEW QUESTIONS GENERATED</h2>
+<ul><li><strong>[MED]</strong> Can hooks implement a custom event bus using session store?</li>
+<li><strong>[MED]</strong> What is performance impact of session store for inter-hook state?</li>
+<li><strong>[LOW]</strong> Can hooks register for "synthetic" events triggered by other hooks?</li>
+<li><strong>[MED]</strong> Is there a recommended pattern for plugin A to wait for plugin B's hook?</li>
+<li><strong>[LOW]</strong> Can hooks share state without session store via in-memory cache?</li>
+</ul>
+<hr>
+<h2>Sources</h2>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/hook-runner-global-D9t7KsGJ.js</code> — Hook execution runner: <code>runVoidHook</code>, <code>runModifyingHook</code>, <code>runClaimingHook</code>, <code>mergeResults</code>, <code>shouldStop</code>, priority sorting</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Hook documentation</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/building-plugins.md</code> — Plugin hook reference</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/plugins/sdk-overview.md</code> — SDK hook types and return values</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/concepts/agent-loop.md</code> — Agent loop hook chain</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/internal-hooks-2legcEEL.js</code> — Internal hooks implementation</li>
+</ul>
+<hr>
+<em>Research completed by: Investigador Scout — 2026-04-23 13:10 CET</em>
+</body>
+</html>

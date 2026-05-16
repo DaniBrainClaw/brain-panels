@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes Agent Analysis — Step 4: Comparison con BRAIN</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_4.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<hr>
+<h2>Overview</h2>
+<p>BRAIN es un agente basado en OpenClaw con modelo MiniMax M2.7. Hermes es un agente auto-mejorante de Nous Research con soporte para 200+ modelos.</p>
+<h3>Basic Info</h3>
+| Aspecto | BRAIN | Hermes |
+|---------|-------|--------|
+| <strong>Framework</strong> | OpenClaw | Hermes (Nous Research) |
+| <strong>Modelo</strong> | MiniMax M2.7 | 200+ modelos (OpenRouter, OpenAI, etc.) |
+| <strong>Stars GitHub</strong> | N/A | 153K |
+| <strong>Self-improving</strong> | No (manual) | Yes (built-in loop) |
+| <strong>Target user</strong> | Dani (VPS, personal) | General, developers |
+<hr>
+<h2>Memory System</h2>
+<h3>BRAIN Memory</h3>
+<pre><code>~/.openclaw/
+├── MEMORY.md           # Long-term curated memory
+├── USER.md             # User profile
+├── memory/
+│   └── YYYY-MM-DD.md   # Daily logs
+└── AGENTS.md, SOUL.md, TOOLS.md
+</code></pre>
+<strong>Características:</strong>
+<ul><li>3 archivos principales + daily logs</li>
+<li>Escritura manual o automática</li>
+<li>Sin límites estrictos de chars</li>
+<li>Sin búsqueda full-text</li>
+</ul>
+<h3>Hermes Memory (4 Layers)</h3>
+<pre><code>~/.hermes/
+├── memories/
+│   ├── MEMORY.md       # 2,200 chars max
+│   └── USER.md         # 1,375 chars max
+├── sessions/          # SQLite + FTS5
+├── skills/            # Procedural memory
+└── project context    # AGENTS.md files
+</code></pre>
+<strong>Características:</strong>
+<ul><li>Límites estrictos (3,575 chars total)</li>
+<li>Búsqueda FTS5 en sesiones</li>
+<li>LLM summarization para retrieval</li>
+<li>Periodic nudge automático</li>
+</ul>
+<h3>Comparación</h3>
+| Aspecto | BRAIN | Hermes | Ventaja |
+|---------|-------|--------|---------|
+| Memory layers | 2-3 | 4 | Hermes |
+| Límites activos | No | Yes (curation) | Hermes |
+| Session search | Basic | FTS5 + LLM | Hermes |
+| Periodic nudge | No | Yes | Hermes |
+| Auto-curation | No | Yes | Hermes |
+<hr>
+<h2>Skills System</h2>
+<h3>BRAIN Skills</h3>
+<ul><li>Skills directory con SKILL.md files</li>
+<li>Cargadas al inicio o bajo demanda</li>
+<li>No hay progressive disclosure</li>
+<li>Actualización manual</li>
+</ul>
+<h3>Hermes Skills</h3>
+<ul><li>Progressive disclosure (3 levels)</li>
+<li>Conditional activation (fallback skills)</li>
+<li>Self-patching durante uso</li>
+<li>Autonomy creation después de tareas complejas</li>
+<li>Open standard (agentskills.io)</li>
+</ul>
+<h3>Comparación</h3>
+| Aspecto | BRAIN | Hermes | Ventaja |
+|---------|-------|--------|---------|
+| Skill loading | All at once | Progressive | Hermes |
+| Auto-creation | No | Yes | Hermes |
+| Self-patching | No | Yes | Hermes |
+| Fallback skills | No | Yes | Hermes |
+| Open standard | No | Yes | Hermes |
+<hr>
+<h2>Self-Improvement Loop</h2>
+<h3>BRAIN</h3>
+<ul><li>Mejora manual (Dani le dice qué corregir)</li>
+<li>Memory update después de errores</li>
+<li>Skills creados manualmente</li>
+<li>Sin loop automático</li>
+</ul>
+<h3>Hermes</h3>
+<pre><code>Understand → Act → Verify → Save Memory → Create Skills → Load Next Time
+                              ↑                              ↓
+                              └──────── NUDGE (periodic) ────┘
+</code></pre>
+<strong>Features:</strong>
+<ul><li>Periodic nudge (cada ciertos intervals)</li>
+<li>Triggers: 5+ tools, errors, corrections, non-obvious workflows</li>
+<li>Skill creation after complex tasks</li>
+<li>Self-patching skills during use</li>
+</ul>
+<h3>Comparación</h3>
+| Aspecto | BRAIN | Hermes | Ventaja |
+|---------|-------|--------|---------|
+| Automatic loop | No | Yes | Hermes |
+| Periodic nudge | No | Yes | Hermes |
+| Trigger-based creation | No | Yes | Hermes |
+| Skill self-improvement | No | Yes | Hermes |
+| Verification requirement | Manual | Built-in | Hermes |
+<hr>
+<h2>Messaging Platforms</h2>
+<h3>BRAIN</h3>
+<ul><li>OpenClaw channels (Telegram, etc.)</li>
+<li>Depends on configuration</li>
+</ul>
+<h3>Hermes</h3>
+<pre><code>CLI │ Telegram │ Discord │ Slack │ WhatsApp │ Signal │ 
+Matrix │ Mattermost │ Email │ SMS │ DingTalk │ Feishu │ 
+WeCom │ Weixin │ QQ Bot │ Yuanbao │ BlueBubbles │ 
+Home Assistant │ Microsoft Teams │ Google Chat
+</code></pre>
+20+ platforms, un solo gateway.
+<h3>Comparación</h3>
+| Aspecto | BRAIN | Hermes | Ventaja |
+|---------|-------|--------|---------|
+| Platform count | ~5-10 | 20+ | Hermes |
+| Gateway unification | Partial | Full | Hermes |
+<hr>
+<h2>Deployment Options</h2>
+<h3>BRAIN</h3>
+<ul><li>VPS (current setup)</li>
+<li>Local</li>
+<li>Depends on OpenClaw</li>
+</ul>
+<h3>Hermes</h3>
+<pre><code>Local │ Docker │ SSH │ Singularity │ Modal │ Daytona │ Vercel
+</code></pre>
+<ul><li>Daytona/Modal: serverless persistence (hibernation)</li>
+<li>$5 VPS hasta GPU cluster</li>
+</ul>
+<hr>
+<h2>Cron Scheduling</h2>
+<h3>BRAIN</h3>
+<ul><li>System cron jobs</li>
+<li>Requiere setup manual</li>
+<li>Bash scripts</li>
+</ul>
+<h3>Hermes</h3>
+<ul><li>Built-in cron scheduler</li>
+<li>Natural language scheduling</li>
+<li>Delivery a cualquier platform</li>
+</ul>
+<pre><code>hermes cron "daily report at 9am"
+hermes cron "backup every night at 3am"
+</code></pre>
+<hr>
+<h2>Subagents</h2>
+<h3>BRAIN</h3>
+<ul><li>Subagents capability</li>
+<li>Used for spawning isolated runs</li>
+</ul>
+<h3>Hermes</h3>
+<ul><li>Spawn isolated subagents</li>
+<li>Parallel workstreams</li>
+<li>Programmatic tool calling via <code>execute_code</code></li>
+<li>Zero-context-cost turns</li>
+</ul>
+<hr>
+<h2>Voice Mode</h2>
+<h3>BRAIN</h3>
+<ul><li>Depende de config</li>
+<li>No built-in (requiere OpenClaw config)</li>
+</ul>
+<h3>Hermes</h3>
+<ul><li>Real-time voice interaction</li>
+<li>CLI, Telegram, Discord, Discord VC</li>
+<li>Requiere ffmpeg + voice deps</li>
+</ul>
+<hr>
+<h2>Model Support</h2>
+<h3>BRAIN</h3>
+<ul><li>MiniMax M2.7 (principal)</li>
+<li>OpenClaw model flexibility</li>
+</ul>
+<h3>Hermes</h3>
+<ul><li>200+ models vía OpenRouter</li>
+<li>Nous Portal, OpenAI, NVIDIA NIM, Xiaomi MiMo, Kimi, MiniMax, Hugging Face</li>
+<li>Switch con <code>hermes model</code> — no code changes</li>
+</ul>
+<hr>
+<h2>Identidad / Personality</h2>
+<h3>BRAIN</h3>
+<ul><li>SOUL.md para personality</li>
+<li>AGENTS.md para instructions</li>
+</ul>
+<h3>Hermes</h3>
+<ul><li>SOUL.md como primary identity (slot #1 in system prompt)</li>
+<li><code>/personality</code> para session-level overlays</li>
+<li>Built-in personalities: helpful, concise, technical, creative, teacher, kawaii, catgirl, pirate, shakespeare, surfer, noir, uwu, philosopher, hype</li>
+</ul>
+<hr>
+<h2>Lo que Hermes tiene que BRAIN NO</h2>
+<ul><li><strong>Self-improving loop automático</strong></li>
+<li><strong>Periodic nudge</strong> para memory curation</li>
+<li><strong>Autonomous skill creation</strong></li>
+<li><strong>Skill self-patching during use</strong></li>
+<li><strong>FTS5 session search + LLM summarization</strong></li>
+<li><strong>4-layer memory architecture</strong></li>
+<li><strong>Adaptive reasoning effort</strong></li>
+<li><strong>Built-in natural language cron</strong></li>
+<li><strong>Fallback skills system</strong></li>
+<li><strong>20+ messaging platforms unificados</strong></li>
+<li><strong>Progressive disclosure para skills</strong></li>
+<li><strong>RL training pipeline (Atropos)</strong></li>
+<li><strong>200+ model support</strong></li>
+<li><strong>Serverless persistence (Daytona/Modal)</strong></li>
+</ul>
+<hr>
+<h2>Lo que BRAIN tiene que Hermes NO (o menos)</h2>
+<ul><li><strong>Simplicidad</strong> — más fácil de setup para caso simple</li>
+<li><strong>OpenClaw ecosystem</strong> — skills, integrations existentes</li>
+<li><strong>Investigador agent</strong> — BRAIN tiene agente de investigación dedicado</li>
+<li><strong>Dani's existing setup</strong> — ya configurado y funcionando</li>
+</ul>
+<hr>
+<h2>Migration Path</h2>
+<p>Hermes tiene migración directa desde OpenClaw:
+<pre><code>hermes claw migrate
+</code></pre></p>
+<p>Esto significa que Dani podría migrar de BRAIN a Hermes si quisiera, aunque perdería:
+<ul><li>Su configuración actual</li>
+<li>Sus daily memory files</li>
+<li>Sus skills personalizados</li>
+<li>El agente Investigador</li>
+</ul>
+<hr></p>
+<h2>Veredicto: ¿Debería Dani Migrar a Hermes?</h2>
+<h3>NO, por ahora — razones:</h3>
+<ul><li><strong>Ya tiene BRAIN funcionando</strong> —迁移 significa perder contexto</li>
+<li><strong>El agente Investigador</strong> — BRAIN tiene algo que Hermes no: agente de investigación dedicado</li>
+<li><strong>Setup personalizado</strong> — todo lo que tiene Dani está en su VPS</li>
+<li><strong>MiniMax es suficiente</strong> — no necesita 200+ modelos</li>
+</ul>
+<h3>SÍ, solo si:</h3>
+<ul><li>Quiere el self-improving loop automático</li>
+<li>Necesita 20+ plataformas de messaging</li>
+<li>Quiere explorar skill creation automático</li>
+<li>Está dispuesto a migrar y reconfigurar</li>
+</ul>
+<hr>
+<h2>Recomendación: Implementar en BRAIN</h2>
+<p>En vez de migrar, podemos <strong>implementar features de Hermes en BRAIN</strong>:</p>
+<h3>High Priority (implementable):</h3>
+<ul><li><strong>Memory curation activa</strong> — limitar MEMORY.md a X chars</li>
+<li><strong>Periodic self-review</strong> — BRAIN revisa su memory semanalmente</li>
+<li><strong>Skill creation trigger</strong> — después de 5+ tool calls, sugerir skill</li>
+<li><strong>FTS5 session search</strong> — buscar en sesiones pasadas (complejo)</li>
+<li><strong>Natural language cron</strong> — crear wrapper para scheduling</li>
+</ul>
+<h3>Medium Priority:</h3>
+<ul><li><strong>Fallback skills</strong> — implementar system de fallback skills</li>
+<li><strong>Verification requirement</strong> — antes de decir "listo", verificar</li>
+</ul>
+<h3>Low Priority (no implementable fácilmente):</h3>
+<ul><li>RL training pipeline</li>
+<li>200+ model support</li>
+<li>Serverless persistence</li>
+<li>20+ platform gateway</li>
+</ul>
+<hr>
+<em>Investigador — Step 4 completado.</em>
+</body>
+</html>

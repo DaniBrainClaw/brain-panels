@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes Agent Analysis — Step 2: Funcionalidades Principales</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_2.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<hr>
+<h2>Fuentes</h2>
+<ul><li><strong>Self-Improving AI Guide</strong> — hermes-agent.ai/blog/self-improving-ai-guide</li>
+<li><strong>Inside Hermes Agent: How a Self-Improving AI Agent Actually Works</strong> — mranand.substack.com</li>
+<li><strong>Documentación oficial</strong> — hermes-agent.nousresearch.com/docs/</li>
+</ul>
+<hr>
+<h2>Sistema de Memory — 4 Layers</h2>
+<p>Hermes usa 4 capas de memory, cada una con un propósito específico:</p>
+<h3>Layer 1: Prompt Memory (Always-On)</h3>
+<ul><li>Se inyecta al inicio de <strong>cada sesión</strong></li>
+<li>2 archivos: <code>MEMORY.md</code> + <code>USER.md</code></li>
+<li>Límite total: 3,575 chars (curated, no grows infinitamente)</li>
+<li>El agente lo gestiona via <code>memory</code> tool</li>
+</ul>
+<h3>Layer 2: Session Archive</h3>
+<ul><li>Cada sesión se guarda en SQLite con FTS5 (full-text search)</li>
+<li>El agente puede buscar sesiones pasadas</li>
+<li>Results pasan por LLM summarization antes de entrar al contexto</li>
+<li>Solo lo relevante entra en el contexto actual</li>
+</ul>
+<h3>Layer 3: Skills (Procedural Memory)</h3>
+<ul><li>El agente crea skills desde experiencia</li>
+<li>Se guardan en <code>~/.hermes/skills/</code></li>
+<li>Formato: <a href="https://agentskills.io/specification">agentskills.io</a> open standard</li>
+<li>Portable across agents compatibles</li>
+</ul>
+<h3>Layer 4: Project Context Files</h3>
+<ul><li>AGENTS.md, context files por proyecto</li>
+<li>Se cargan cuando el proyecto está activo</li>
+</ul>
+<hr>
+<h2>Self-Improvement Loop — Cómo Funciona</h2>
+<h3>El Loop Completo:</h3>
+<pre><code>1. Understand task + inspect environment
+<ul><li>Act with tools (no guessing)</li>
+<li>Verify result (tests, browser checks, command output)</li>
+<li>Save durable facts as memory</li>
+<li>Convert reusable procedures into skills</li>
+<li>Load those skills automatically next time</li>
+</ul></code></pre>
+<h3>Periodic Nudge (El Trigger):</h3>
+<ul><li>Cada ciertos intervalos, el agente recibe un "nudge" interno</li>
+<li>El nudge pregunta: "¿Hay algo worth persisting?"</li>
+<li>El agente escanea actividad reciente</li>
+<li>Si cruza threshold → escribe a MEMORY.md</li>
+</ul>
+<h3>Triggers para crear skills:</h3>
+<ul><li>5+ tool calls en una tarea</li>
+<li>Recovery from error</li>
+<li>User correction</li>
+<li>Non-obvious workflow that worked</li>
+</ul>
+<h3>Skills se actualizan solos:</h3>
+<ul><li>El agente usa <code>patch</code> (no full rewrite)</li>
+<li>Solo cambia lo que mejoró</li>
+<li>Más token-efficient, menos risk de romper</li>
+</ul>
+<hr>
+<h2>Skill Management — 6 Acciones</h2>
+<pre><code>skill_manage(action="create")   # Nueva skill
+skill_manage(action="patch")    # Actualizar parte (default)
+skill_manage(action="edit")    # Reescribir completo
+skill_manage(action="delete")  # Borrar
+skill_manage(action="write_file")   # Archivos adicionales
+skill_manage(action="remove_file")  # Borrar archivos
+</code></pre>
+<h3>Progressive Disclosure para Skills:</h3>
+<pre><code>Level 0: skills_list() → [{name, description, category}, ...]  (~3k tokens)
+Level 1: skill_view(name) → Full content + metadata
+Level 2: skill_view(name, path) → Specific reference file
+</code></pre>
+<hr>
+<h2>Session Search — FTS5 + LLM Summarization</h2>
+<h3>Cómo funciona:</h3>
+<ul><li>Sesiones se guardan en SQLite archive</li>
+<li>FTS5 index para búsqueda full-text</li>
+<li>Agent busca cuando necesita contexto pasado</li>
+<li>Results → LLM summarization → solo lo relevante entra</li>
+</ul>
+<h3>Diferencia con prompt memory:</h3>
+| Aspecto | Prompt Memory | Session Search |
+|---------|---------------|----------------|
+| Carga | Always-on, cada sesión | On-demand, cuando agent decide |
+| Contenido | Permanente, para todas las future sessions | Específico, para topic actual |
+| Size | Fijo (3,575 chars) | Variable |
+<hr>
+<h2>Adaptive Reasoning Effort</h2>
+<p>Hermes puede controlar <strong>cuánto razonamiento gastar</strong> en cada tarea:</p>
+<ul><li>Tarea pequeña (formato) → poco reasoning</li>
+<li>Tarea compleja (debug multi-repo) → reasoning profundo</li>
+</ul>
+No todas las tareas consumen el mismo presupuesto de tokens.
+<hr>
+<h2>Crons — Scheduled Automations</h2>
+<pre><code><h1>Built-in cron scheduler</h1>
+<h1>Natural language scheduling</h1>
+hermes cron "daily report at 9am"
+hermes cron "backup every night at 3am"
+hermes cron "weekly audit every Monday"
+</code></pre>
+<h3>Características:</h3>
+<ul><li>Delivery a cualquier platform (Telegram, Discord, etc.)</li>
+<li>No necesita intervención</li>
+<li>Natural language scheduling</li>
+</ul>
+<hr>
+<h2>Subagents — Parallel Workstreams</h2>
+<pre><code><h1>Spawn isolated subagents</h1>
+hermes delegate "research this topic"
+</code></pre>
+<h3>Características:</h3>
+<ul><li>Aislados entre sí</li>
+<li>Parallel workstreams</li>
+<li>Zero-context-cost turns (programmatic tool calling)</li>
+</ul>
+<hr>
+<h2>Voice Mode</h2>
+<ul><li>Real-time voice interaction</li>
+<li>CLI, Telegram, Discord, Discord VC</li>
+<li>Requiere: ffmpeg + voice dependencies</li>
+</ul>
+<hr>
+<h2>Gateway — Messaging Platform</h2>
+<p>Un solo gateway process conecta a 20+ plataformas:
+<pre><code>CLI │ Telegram │ Discord │ Slack │ WhatsApp │ Signal │ 
+Matrix │ Mattermost │ Email │ SMS │ DingTalk │ Feishu │ 
+WeCom │ Weixin │ QQ Bot │ Yuanbao │ BlueBubbles │ 
+Home Assistant │ Microsoft Teams │ Google Chat
+</code></pre></p>
+<hr>
+<h2>Tool System — 70+ Tools</h2>
+<h3>Herramientas built-in:</h3>
+<ul><li>Terminal (local, Docker, SSH, Singularity, Modal, Daytona)</li>
+<li>Web search, browse, extract</li>
+<li>Vision (image analysis)</li>
+<li>Image generation</li>
+<li>TTS</li>
+<li>File operations</li>
+<li>Code execution</li>
+</ul>
+<h3>Toolset system:</h3>
+<ul><li>Organizes tools logically</li>
+<li>Conditional activation (fallback skills)</li>
+<li>MCP integration para tools externos</li>
+</ul>
+<hr>
+<h2>Migration desde OpenClaw</h2>
+<pre><code>hermes claw migrate
+</code></pre>
+<p>Hermes tiene migración directa para usuarios de OpenClaw.</p>
+<hr>
+<h2>Comparison con BRAIN/OpenClaw</h2>
+| Feature | BRAIN (OpenClaw) | Hermes |
+|---------|------------------|--------|
+| Memory layers | MEMORY.md, USER.md, daily files | 4 layers (prompt, session, skills, project) |
+| Session search | Basic | FTS5 + LLM summarization |
+| Skill creation | Skills system | Autonomous skill creation after complex tasks |
+| Skill updates | Manual | Self-patching during use |
+| Periodic nudge | No | Yes — automatic memory curation |
+| Adaptive reasoning | No | Yes — controls thinking depth |
+| Cron | Via system cron | Built-in natural language cron |
+| Subagents | Subagents | Isolated + parallel workstreams |
+| Voice mode | Depends on config | Built-in |
+| Messaging gateway | OpenClaw channels | 20+ platforms unified |
+| Model-agnostic | MiniMax M2.7 | 200+ models via OpenRouter |
+<hr>
+<em>Investigador — Step 2 completado.</em>
+</body>
+</html>

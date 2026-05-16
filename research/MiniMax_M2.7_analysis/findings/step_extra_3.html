@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extra Step 3: MiniMax M2.7 Coding Plan, Agents, Workflow</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_extra_3.md</p>
+    <h2>Query</h2>
+"MiniMax M2.7 coding plan agents workflow non-API"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://platform.minimax.io/docs/guides/text-ai-coding-tools</li>
+<li>https://medium.com/data-science-in-your-pocket/minimax-m2-7-best-agentic-ai-llm-is-here-07e00857b29b</li>
+<li>https://www.analyticsvidhya.com/blog/2026/04/minimax-m2-7-goes-open-weight-to-let-you-run-agents-locally/</li>
+<li>https://developer.nvidia.com/blog/minimax-m2-7-advances-scalable-agentic-workflows-on-nvidia-platforms-for-complex-ai-applications/</li>
+<li>https://www.minimax.io/models/text/m27</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>M2.7 Coding Plan de MiniMax</h3>
+<p>MiniMax ofrece un "Coding Plan" que NO es la API. Es un plan específico para coding con estas características:</p>
+<ul><li><strong>Model name para Codex</strong>: <code>codex-MiniMax-M2.7</code></li>
+<li><strong>Optimizado para</strong>: Claude Code, Cursor, Zed, VS Code, OpenCode</li>
+<li><strong>Compatible con</strong>: Claude Code Extension for VS Code</li>
+</ul>
+<strong>Integration</strong>: Se configura via <code>~/.claude/settings.json</code> apuntando a <code>api.minimax.io/anthropic</code> con API key de MiniMax.
+<h3>Agentes que usan M2.7 nativamente</h3>
+<p>M2.7 está integrado en múltiples coding agents:</p>
+<ul><li><strong>Claude Code</strong> — configuración directa documentada por MiniMax</li>
+<li><strong>OpenCode</strong> — M2.7 es preloaded built-in</li>
+<li><strong>Cursor</strong> — via API</li>
+<li><strong>Kilo Code</strong> — testing head-to-head con otros modelos</li>
+<li><strong>Codex CLI</strong> — recomendado usar <code>codex-MiniMax-M2.7</code></li>
+<li><strong>TokenRing Coder</strong> — soporte oficial</li>
+</ul>
+<h3>Agent Teams — Multi-agent collaboration</h3>
+<p>M2.7 soporta Agent Teams, donde múltiples roles trabajan juntos:
+<ul><li>Uno escribe código</li>
+<li>Otro hace review</li>
+<li>Otro testa y debug</li>
+</ul>
+Roles con identidad estable y decisión autónoma. No es prompting — está built-in.</p>
+<h3>Terminal Bench 2 — System-level comprehension</h3>
+<p>M2.7 scored 57.0% en Terminal Bench 2. Esto demuestra:
+<ul><li>Deep understanding de operational logic</li>
+<li>No solo code generation</li>
+<li>Comprende sistemas complejos (logs, metrics, deployment timelines, database state)</li>
+</ul>
+<h3>Production debugging capability</h3></p>
+<p>Ejemplo descrito en docs: M2.7 puede correlacionar:
+<ul><li>Logs + metrics + deployment timelines</li>
+<li>Database state + missing migrations</li>
+<li>Error patterns + system behavior</li>
+</ul>
+Y sugiere fixes priorizados (ej: apply non-blocking changes before deeper fixes).</p>
+<strong>Resultado</strong>: recovery time < 3 minutos en producción.
+<h3>Open-weight availability</h3>
+<p>M2.7 weights están disponibles en:
+<ul><li>HuggingFace: <code>MiniMaxAI/MiniMax-M2.7</code></li>
+<li>ModelScope: <code>MiniMax/MiniMax-M2.7</code></li>
+<li>NVIDIA NIM: endpoint dedicado</li>
+</ul>
+<h3>Deployment options</h3></p>
+<ul><li><strong>SGLang</strong> — recommended por MiniMax</li>
+<li><strong>vLLM</strong> — alternative popular</li>
+<li><strong>Transformers</strong> — HuggingFace</li>
+<li><strong>Local</strong> — Ollama (2 días gratis M2.5)</li>
+<li><strong>Cloud</strong> — Together AI, OpenRouter, NVIDIA NIM</li>
+</ul>
+<h3>vLLM con tool call parser</h3>
+<pre><code>vllm serve MiniMaxAI/MiniMax-M2.7 \
+  --tensor-parallel-size 4 \
+  --tool-call-parser minimax_m2 \
+  --reasoning-parser minimax_m2
+</code></pre>
+<h3>Skill adherence — 97% en 40 complex skills</h3>
+<p>Cada skill > 2000 tokens. M2.7 mantiene 97% adherence.</p>
+<p>Esto es relevante para BRAIN porque significa que puede seguir instrucciones complejas de workflow.</p>
+<h3>Agentic performance en números</h3>
+<ul><li><strong>MMClaw</strong>: 62.7% (close to Sonnet 4.6)</li>
+<li><strong>GDPval-AA ELO</strong>: 1495 (highest among open-source)</li>
+<li><strong>Skill adherence</strong>: 97% on 40 complex tasks</li>
+<li><strong>Agentic Index</strong>: 62.1 (alto para agentic workflows)</li>
+</ul>
+<h3>Para BRAIN — cómo usar M2.7 como coding agent</h3>
+<p>El modelo está optimizado para:
+<ul><li><strong>Multi-step tool use</strong> — puede invocar tools sequentially</li>
+<li><strong>Memory</strong> — mantiene contexto across long workflows</li>
+<li><strong>Self-correction</strong> — analiza failure y modifica approach</li>
+<li><strong>Code + system understanding</strong> — no solo syntax, también operational logic</li>
+</ul>
+<strong>Recomendación</strong>: Para tareas de coding en BRAIN, usar M2.7 como agent (no solo chat). Configurar Claude Code o similar con M2.7 como backend.</p>
+<hr>
+<h2>Resumen</h2>
+<p>M2.7 tiene un ecosystem robusto de coding tools:
+<ul><li>Coding Plan dedicado</li>
+<li>Integración nativa con Claude Code, OpenCode, Cursor, etc.</li>
+<li>Agent Teams para multi-role collaboration</li>
+<li>97% skill adherence en tareas complejas</li>
+<li>Open-weight para local deployment</li>
+</ul>
+Para BRAIN: M2.7 es ideal como coding agent backend.</p>
+</body>
+</html>

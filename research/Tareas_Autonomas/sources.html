@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tareas Largas Autonomas — Fuentes</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 sources.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<hr>
+<h2>Artículos Principales</h2>
+| Recurso | URL |
+|---------|-----|
+| <strong>Building AI Agents That Actually Complete Tasks</strong> | https://atticusli.com/blog/posts/building-ai-agents-that-complete-tasks/ |
+| <strong>Long-running Agents</strong> | https://addyosmani.com/blog/long-running-agents/ |
+| <strong>Microsoft: Agent Autonomous Batch Processing</strong> | https://learn.microsoft.com/en-us/entra/msidweb/agent-id-sdk/scenarios/agent-autonomous-batch |
+<hr>
+<h2>Patrones de Diseño</h2>
+| Patrón | Descripción |
+|--------|-------------|
+| <strong>Ralph Loop</strong> | Geoffrey Huntley — bash script que itera sobre tareas con checkpointing |
+| <strong>ReAct</strong> | Reason Then Act — después de cada acción, razona antes de continuar |
+| <strong>State Checkpoints</strong> | Guardar estado cada N pasos para poder reanudar |
+| <strong>Bounded Retries</strong> | Retry con approach modificado, máximo 3 intentos |
+<hr>
+<h2>Errores Comunes en Agentes Largos</h2>
+<ul><li><strong>Infinite loops</strong> — Repite misma acción</li>
+<li><strong>Goal drift</strong> — Pierde el objetivo original</li>
+<li><strong>Context overflow</strong> — Se queda sin contexto</li>
+<li><strong>Over-confidence</strong> — Dice "listo" sin verificar</li>
+</ul>
+<hr>
+<h2>Links Adicionales</h2>
+| Recurso | URL |
+|---------|-----|
+| <strong>Claude Agent SDK - Long-running agents</strong> | https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents |
+| <strong>Cursor: Scaling long-running agents</strong> | https://cursor.com/blog/scaling-agents |
+| <strong>METR Time Horizons</strong> | https://metr.org/ |
+<hr>
+<em>Investigador — Fuentes completadas.</em>
+</body>
+</html>

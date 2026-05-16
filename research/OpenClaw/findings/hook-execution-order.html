@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hook Execution Order — COMPLETE RESEARCH FINDINGS</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 hook-execution-order.md</p>
+    <strong>Research Date:</strong> 2026-04-23  
+<strong>Topic:</strong> What is exact hook execution order when multiple hooks fire on same event?  
+<strong>Priority:</strong> MEDIUM (from backlog.md #16)  
+<strong>Research Depth:</strong> 6-Layer Exhaustive
+<hr>
+<h2>TABLE OF CONTENTS</h2>
+<ul><li><a href="#1-what-is--definition--core-concept">What Is — Definition & Core Concept</a></li>
+<li><a href="#2-how-it-works--architecture--mechanics">How It Works — Architecture & Mechanics</a></li>
+<li><a href="#3-uses--practical-applications">Uses — Practical Applications</a></li>
+<li><a href="#4-problems--known-issues--limitations">Problems — Known Issues & Limitations</a></li>
+<li><a href="#5-solutions--best-practices--workarounds">Solutions — Best Practices & Workarounds</a></li>
+<li><a href="#6-edge-cases--unusual-scenarios">Edge Cases — Unusual Scenarios</a></li>
+<li><a href="#7-creative-uses--innovative-applications">Creative Uses — Innovative Applications</a></li>
+<li><a href="#8-new-questions-opened-by-this-research">NEW Questions Opened by This Research</a></li>
+<li><a href="#9-sources">Sources</a></li>
+</ul>
+<hr>
+<h2>1. WHAT IS — Definition & Core Concept</h2>
+<h3>Definition</h3>
+<strong>Hook execution order</strong> determines how OpenClaw resolves conflicts and sequences multiple handlers when the same hook event fires. OpenClaw uses a <strong>two-level sorting system</strong> combining <strong>source precedence</strong> (hook origin hierarchy) and <strong>priority values</strong> (within same source).
+<h3>Two-Level Sorting Architecture</h3>
+| Level | Sort Factor | Scope | Default Behavior |
+|-------|-------------|-------|------------------|
+| <strong>Level 1</strong> | Source Precedence | Across different hook sources | Higher precedence wins |
+| <strong>Level 2</strong> | Registration Index | Within same precedence | FIFO (first-registered = first-run) |
+<h3>Hook Source Hierarchy (Precedence Order)</h3>
+| Source | Precedence | Trusted Local Code | Default Enable Mode | Can Override |
+|--------|------------|-------------------|-------------------|--------------|
+| <code>openclaw-bundled</code> | 10 (lowest) | ✅ Yes | Default-on | <code>openclaw-bundled</code> only |
+| <code>openclaw-plugin</code> | 20 | ✅ Yes | Default-on | <code>openclaw-bundled</code>, <code>openclaw-plugin</code> |
+| <code>openclaw-managed</code> | 30 | ✅ Yes | Default-on | All except <code>openclaw-workspace</code> |
+| <code>openclaw-workspace</code> | 40 (highest) | ✅ Yes | <strong>Explicit-opt-in</strong> | <code>openclaw-workspace</code> only |
+<strong>Key insight</strong>: Workspace hooks have HIGHEST precedence but are DISABLED by default. They must be explicitly enabled via config.
+<h3>Discovery Order vs Execution Order</h3>
+| Concept | Meaning |
+|---------|---------|
+| <strong>Discovery order</strong> | Directories scanned → hook directories found → loaded into registry |
+| <strong>Execution order</strong> | Two-level sort: source precedence FIRST, then registration index |
+<strong>Important</strong>: Discovery order and execution order are DIFFERENT. Execution order is determined by source precedence, not discovery order.
+<hr>
+<h2>2. HOW IT WORKS — Architecture & Mechanics</h2>
+<h3>Hook Registry Structure</h3>
+<p>Each registered hook entry contains:
+<pre><code>interface HookEntry {
+  hook: {
+    name: string;           // e.g., "before_prompt_build"
+    source: HookSource;    // "openclaw-bundled" | "openclaw-plugin" | "openclaw-managed" | "openclaw-workspace"
+  };
+  priority?: number;       // Optional priority override (default: 0)
+  handler: Function;       // The handler implementation
+  pluginId: string;        // Plugin identifier
+}
+</code></pre></p>
+<h3>Sorting Algorithm (from <code>config-Nq7s3Dxw.js</code>)</h3>
+<pre><code>// Level 1: Source precedence delta
+const precedenceDelta = getHookSourcePolicy(a.entry.hook.source).precedence 
+                      - getHookSourcePolicy(b.entry.hook.source).precedence;
+if (precedenceDelta !== 0) return precedenceDelta;
+<p>// Level 2: Registration index (FIFO)
+return a.index - b.index;
+</code></pre></p>
+<strong>Within same precedence level</strong>: Registration order (first loaded = first executed). NOT priority value here.
+<h3>Priority Override Within Same Source</h3>
+<p>For hooks from the <strong>same source</strong>, execution order within that source is determined by registration index. However, hooks can set an explicit <code>priority</code> value that affects ordering <strong>within same precedence</strong>:</p>
+<pre><code>// getHooksForName sorts by priority (higher first)
+return registry.typedHooks.filter((h) => h.hookName === hookName)
+  .toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+</code></pre>
+<strong>Note</strong>: Priority sorting applies AFTER source precedence filtering — it's a secondary sort for hooks that share the same precedence level.
+<h3>Three Hook Execution Modes</h3>
+<p>OpenClaw has <strong>three distinct execution patterns</strong> based on hook type:</p>
+<p>#### Mode 1: Void Hook (Fire-and-Forget)
+<ul><li><strong>Behavior</strong>: All handlers run in PARALLEL via <code>Promise.all()</code></li>
+<li><strong>Error handling</strong>: Each handler wrapped in try/catch; errors logged but don't block other handlers</li>
+<li><strong>Failure policy</strong>: <code>fail-open</code> (default) — logs error and continues</li>
+<li><strong>Example hooks</strong>: Most plugin hooks use this pattern</li>
+</ul>
+<pre><code>async function runVoidHook(hookName, event, ctx) {
+  const hooks = getHooksForName(registry, hookName);
+  const promises = hooks.map(async (hook) => {
+    try {
+      await hook.handler(event, ctx);
+    } catch (err) {
+      handleHookError({ hookName, pluginId: hook.pluginId, error: err });
+    }
+  });
+  await Promise.all(promises);
+}
+</code></pre></p>
+<p>#### Mode 2: Modifying Hook (Sequential with Merge)
+<ul><li><strong>Behavior</strong>: Handlers run SEQUENTIALLY in priority order</li>
+<li><strong>Result handling</strong>: Each handler's result merges into accumulator; <code>mergeResults</code> policy function combines results</li>
+<li><strong>Early termination</strong>: If <code>shouldStop</code> policy returns true, stops executing remaining handlers</li>
+<li><strong>Example hooks</strong>: <code>before_model_resolve</code>, <code>before_prompt_build</code>, <code>before_agent_start</code></li>
+</ul>
+<pre><code>async function runModifyingHook(hookName, event, ctx, policy = {}) {
+  let result;
+  for (const hook of hooks) {
+    const handlerResult = await hook.handler(event, ctx);
+    if (handlerResult !== void 0 && handlerResult !== null) {
+      if (policy.mergeResults) result = policy.mergeResults(result, handlerResult, hook);
+      else result = handlerResult;
+      if (policy.shouldStop?.(result)) break; // Early termination
+    }
+  }
+  return result;
+}
+</code></pre></p>
+<p>#### Mode 3: Claiming Hook (First-Wins)
+<ul><li><strong>Behavior</strong>: Handlers run SEQUENTIALLY; first <code>{ handled: true }</code> wins</li>
+<li><strong>Result handling</strong>: Returns immediately when a handler returns <code>{ handled: true }</code></li>
+<li><strong>Example hooks</strong>: <code>inbound_claim</code> (first plugin to claim handles the message)</li>
+</ul>
+<pre><code>async function runClaimingHook(hookName, event, ctx) {
+  for (const hook of hooks) {
+    try {
+      const handlerResult = await hook.handler(event, ctx);
+      if (handlerResult?.handled) return handlerResult;
+    } catch (err) {
+      handleHookError({ hookName, pluginId: hook.pluginId, error: err });
+    }
+  }
+}
+</code></pre></p>
+<h3>Failure Policy System</h3>
+<p>Each hook has a <strong>failure policy</strong> determining behavior when handler throws:</p>
+| Policy | Behavior | Default Hooks |
+|--------|----------|---------------|
+| <code>fail-open</code> | Log error, continue to next handler | Most hooks |
+| <code>fail-closed</code> | Throw, halt execution | <code>before_tool_call</code> |
+<pre><code>const shouldCatchHookErrors = (hookName) => 
+  catchErrors && (failurePolicyByHook[hookName] ?? "fail-open") === "fail-open";
+<p>// Current failure policy config:
+failurePolicyByHook: { before_tool_call: "fail-closed" }
+</code></pre></p>
+<h3>Error Handling Detail</h3>
+<pre><code>const handleHookError = (params) => {
+  const msg = <code>[hooks] ${params.hookName} handler from ${params.pluginId} failed: ${String(params.error)}</code>;
+  if (shouldCatchHookErrors(params.hookName)) {
+    logger?.error(msg);
+    return; // Continue to next handler
+  }
+  throw new Error(msg, { cause: params.error }); // Halt execution
+};
+</code></pre>
+<h3>Internal Hooks Execution Order</h3>
+<p>For <strong>internal hooks</strong> (standalone hooks in <code>~/.openclaw/hooks/</code>):
+<ul><li>Handlers called in <strong>registration order</strong> (insertion order)</li>
+<li>Errors caught and logged per-handler</li>
+<li>No priority sorting for internal hooks (only plugin hooks have priority field)</li>
+</ul>
+From <code>internal-hooks-2legcEEL.js</code>:
+<blockquote>"Handlers are called in registration order. Errors are caught and logged"</blockquote></p>
+<h3>Plugin Hook Execution Order</h3>
+<p>For <strong>plugin hooks</strong> (hooks from plugins):
+<ul><li>Source precedence (bundled < plugin < managed < workspace)</li>
+<li>Within same source: priority value (higher first), then registration index</li>
+<li>Execution mode depends on hook type (void/modifying/claiming)</li>
+</ul>
+<h3>Execution Order Flow Diagram</h3></p>
+<pre><code>Hook Event Fires
+       │
+       ▼
+┌─────────────────────────────────────┐
+│ Get all handlers for hook name      │
+│ Sort by:                           │
+│   1. Source precedence (high→low)  │
+│   2. Priority (high→low)           │
+│   3. Registration index (FIFO)     │
+└─────────────────────────────────────┘
+       │
+       ▼
+┌─────────────────────────────────────┐
+│ Execute based on hook type:        │
+│   • void → Promise.all (parallel)  │
+│   • modifying → sequential+merge   │
+│   • claiming → first-wins         │
+└─────────────────────────────────────┘
+       │
+       ▼
+┌─────────────────────────────────────┐
+│ Error handling per failure policy  │
+│   • fail-open → log + continue    │
+│   • fail-closed → throw + halt     │
+└─────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>3. USES — Practical Applications</h2>
+<h3>Multi-Plugin Processing Pipeline</h3>
+<p>When multiple plugins want to process the same data (e.g., <code>before_prompt_build</code>):</p>
+<pre><code>Plugin A (openclaw-plugin, priority=0) → Plugin B (openclaw-plugin, priority=10) → Plugin C (openclaw-managed)
+         │                                        │                                    │
+         ▼                                        ▼                                    ▼
+   Runs first (higher priority)            Runs second                         Runs last (highest precedence)
+</code></pre>
+<h3>Priority-Based Access Control</h3>
+<p>Plugins can use priority to establish processing order for security checks:</p>
+| Priority | Plugin | Purpose |
+|----------|--------|---------|
+| 100 | <code>security-check</code> | First: validate input |
+| 50 | <code>sanitizer</code> | Second: sanitize content |
+| 0 | <code>content-logger</code> | Third: log for audit |
+<h3>Hook Override Pattern</h3>
+<p>Managed hooks can override bundled hooks with the same name:</p>
+<pre><code>// Bundled hook (precedence=10) runs first
+// Managed hook (precedence=30) can override/replace it
+</code></pre>
+<h3>Chained Modification</h3>
+<p>For <code>before_prompt_build</code>, each modifying hook builds on previous result:</p>
+<pre><code>// Handler 1: Add system context
+result = { system: { context: "base" } }
+<p>// Handler 2: Merge additional context  
+result = merge(prev, { system: { context: "base + extension" } })</p>
+<p>// Handler 3: Final transformation
+result = merge(prev, { system: { context: "base + extension + final" } })
+</code></pre></p>
+<hr>
+<h2>4. PROBLEMS — Known Issues & Limitations</h2>
+<h3>Problem 1: Confusing Precedence vs Priority</h3>
+<strong>Issue</strong>: Developers often confuse "precedence" (source hierarchy) with "priority" (numeric value within same source).
+<strong>Symptom</strong>: Setting <code>priority: 100</code> on a bundled hook doesn't make it run before a managed hook with <code>priority: 0</code>.
+<strong>Reality</strong>: Source precedence always wins. Priority only matters within same source level.
+<h3>Problem 2: Workspace Hooks Disabled by Default</h3>
+<strong>Issue</strong>: Workspace hooks have HIGHEST precedence but are disabled by default.
+<strong>Confusion</strong>: Users enable a workspace hook expecting it to override everything, but it doesn't fire because it's still disabled.
+<strong>Solution</strong>: Must explicitly set <code>hooks.internal.entries.my-workspace-hook.enabled: true</code> in config.
+<h3>Problem 3: No Built-in Hook Ordering Comments</h3>
+<strong>Issue</strong>: When multiple hooks from same source register for same event, there's no built-in way to enforce ordering comments.
+<strong>Current state</strong>: Registration index determines order, but there's no mechanism for "Plugin A must run before Plugin B."
+<strong>Workaround</strong>: Use same plugin or consolidate into single hook with internal dispatching.
+<h3>Problem 4: Void Hooks Run In Parallel (Non-Deterministic Within Priority Group)</h3>
+<strong>Issue</strong>: Void hooks execute all handlers via <code>Promise.all()</code>, meaning completion order is non-deterministic.
+<strong>Problem for async dependencies</strong>: If Handler B depends on Handler A completing first, void hooks won't guarantee this.
+<strong>Example problematic scenario</strong>:
+<pre><code>// Handler A: Updates session state (async)
+// Handler B: Reads session state (expects A done)
+// In void mode, B might run before A completes
+</code></pre>
+<h3>Problem 5: Error Isolation Can Hide Failures</h3>
+<strong>Issue</strong>: With <code>fail-open</code> policy, individual handler failures are logged but don't stop execution.
+<strong>Risk</strong>: Partial failures may not be visible to users or operators without log inspection.
+<h3>Problem 6: No Execution Order Tracing</h3>
+<strong>Issue</strong>: There's no built-in mechanism to trace execution order at runtime.
+<strong>Debugging difficulty</strong>: When something goes wrong with hook execution order, diagnosis requires code inspection.
+<hr>
+<h2>5. SOLUTIONS — Best Practices & Workarounds</h2>
+<h3>Solution 1: Understanding the Two-Level Sort</h3>
+<strong>Best practice</strong>: Always remember: <strong>Source precedence → Registration index → Priority value</strong> (in that order).
+<strong>Mental model</strong>:
+<ul><li>First, hooks are filtered by their source (bundled < plugin < managed < workspace)</li>
+<li>Within same source, registration order determines base order</li>
+<li>Priority is a tiebreaker for same-source hooks</li>
+</ul>
+<h3>Solution 2: Enable Workspace Hooks Explicitly</h3>
+<strong>For workspace hooks to fire</strong>:
+<pre><code>{
+  "hooks": {
+    "internal": {
+      "entries": {
+        "my-workspace-hook": {
+          "enabled": true
+        }
+      }
+    }
+  }
+}
+</code></pre>
+<h3>Solution 3: Use Same Source for Ordering Dependencies</h3>
+<strong>If you need Plugin A to run before Plugin B</strong>:
+<ul><li>Option 1: Put both in same plugin</li>
+<li>Option 2: Use managed hooks (same precedence level)</li>
+<li>Option 3: Consolidate into single hook with internal handler registry</li>
+</ul>
+<h3>Solution 4: Use Modifying Hooks for Ordered Processing</h3>
+<strong>For sequential dependencies</strong>: Use hooks that support <code>runModifyingHook</code> pattern:
+<ul><li><code>before_prompt_build</code> — sequential, result merging</li>
+<li><code>before_model_resolve</code> — sequential, result merging</li>
+<li><code>before_agent_start</code> — sequential, result merging</li>
+</ul>
+<strong>Avoid void hooks</strong> when handlers have dependencies.
+<h3>Solution 5: Debug Hook Execution</h3>
+<strong>Check what hooks are registered</strong>:
+<pre><code>openclaw hooks list --verbose
+</code></pre>
+<strong>Check specific hook eligibility</strong>:
+<pre><code>openclaw hooks info <hook-name>
+</code></pre>
+<strong>View gateway logs for hook execution</strong>:
+<pre><code>./scripts/clawlog.sh | grep hook
+</code></pre>
+<h3>Solution 6: Use Priority Wisely</h3>
+<strong>Setting priority for same-source hooks</strong>:
+<pre><code>// In your hook's HOOK.md
+metadata: {
+  openclaw: {
+    priority: 100  // Run before other hooks from same source
+  }
+}
+</code></pre>
+<strong>Priority value guidelines</strong>:
+| Priority | Use Case |
+|----------|----------|
+| 100+ | Critical pre-processing (security, validation) |
+| 50-99 | Normal pre-processing |
+| 0 | Default |
+| Negative | Post-processing (after everything else) |
+<h3>Solution 7: Design for Failure</h3>
+<strong>Always wrap hook handlers in try/catch</strong>:
+<pre><code>const handler = async (event) => {
+  try {
+    // Your logic
+  } catch (err) {
+    console.error(<code>[my-hook] Failed:</code>, err);
+    // Don't rethrow unless critical
+  }
+};
+</code></pre>
+<strong>Rationale</strong>: <code>fail-open</code> means your error won't block other hooks, but only if you don't rethrow.
+<hr>
+<h2>6. EDGE CASES — Unusual Scenarios</h2>
+<h3>Edge Case 1: Two Plugins Register Same Hook Name</h3>
+<strong>Scenario</strong>: Plugin A and Plugin B both register <code>before_prompt_build</code>.
+<strong>Resolution</strong>: Both run, sorted by source precedence first, then priority/index. Since both are <code>openclaw-plugin</code>, they use same precedence level — priority or registration order determines execution.
+<strong>Key insight</strong>: Plugin hooks for same event from same source don't override each other — both run.
+<h3>Edge Case 2: Hook Returns Non-Object Value</h3>
+<strong>Scenario</strong>: Modifying hook handler returns a primitive (string, number) instead of object.
+<strong>Resolution</strong>: Non-object results are ignored for merging purposes. Handler continues without affecting result accumulation.
+<h3>Edge Case 3: Handler Returns undefined vs null</h3>
+<strong>Scenario</strong>: Modifying hook handler returns <code>undefined</code> vs <code>null</code>.
+<strong>Resolution</strong>: Both <code>undefined</code> and <code>null</code> are treated as "no result" and don't update the accumulated result.
+<h3>Edge Case 4: before_tool_call Failure Policy is fail-closed</h3>
+<strong>Scenario</strong>: <code>before_tool_call</code> hook throws an error.
+<strong>Resolution</strong>: Execution HALTS (fail-closed policy). Tool is NOT called.
+<strong>Security implication</strong>: This is intentional — tool execution failures should block the operation.
+<h3>Edge Case 5: Hook Enabled/Disabled While Gateway Running</h3>
+<strong>Scenario</strong>: User toggles hook enable/disable via CLI while gateway is processing.
+<strong>Resolution</strong>: Depends on when the config reload happens. Some changes hot-reload; others may require restart. Hooks that are mid-execution complete normally.
+<h3>Edge Case 6: Void Hook Handler Returns Promise</h3>
+<strong>Scenario</strong>: Void hook handler is async (returns Promise).
+<strong>Resolution</strong>: Void hooks use <code>Promise.all()</code> which properly awaits async handlers. Each handler's rejection is caught individually.
+<h3>Edge Case 7: Modifying Hook with shouldStop Policy</h3>
+<strong>Scenario</strong>: Hook handler returns a "stop signal" via <code>shouldStop</code> policy function.
+<strong>Resolution</strong>: After <code>shouldStop(result)</code> returns true, remaining handlers in the chain are SKIPPED entirely.
+<strong>Use case</strong>: Early exit when a handler determines no further processing is needed.
+<h3>Edge Case 8: Claiming Hook No Handler Claims</h3>
+<strong>Scenario</strong>: No handler returns <code>{ handled: true }</code> for claiming hook.
+<strong>Resolution</strong>: Returns <code>undefined</code> or <code>{ status: "declined" }</code>, depending on context.
+<h3>Edge Case 9: Priority Values Across Different Sources</h3>
+<strong>Scenario</strong>: Workspace hook has priority=0, managed hook has priority=100.
+<strong>Resolution</strong>: Workspace still runs first (precedence=40 vs managed=30) despite lower priority.
+<strong>Key insight</strong>: Priority cannot override source precedence.
+<hr>
+<h2>7. CREATIVE USES — Innovative Applications</h2>
+<h3>Creative Use 1: Priority-Based Security Pipeline</h3>
+<p>Implement a security scanning pipeline where each plugin handles one aspect:</p>
+<pre><code>// Priority 100: Input validation
+// Priority 75: Rate limiting check  
+// Priority 50: Content policy scan
+// Priority 25: Data loss prevention
+// Priority 0: Audit logging
+</code></pre>
+<h3>Creative Use 2: Dynamic Hook Priority Reconfiguration</h3>
+<p>Use a master configuration hook that adjusts priorities at runtime:</p>
+<pre><code>// In a before_agent_start handler:
+event.context.cfg.hooks.internal.entries["my-hook"].priority = 
+  determinePriorityBasedOnSessionContext();
+</code></pre>
+<h3>Creative Use 3: Hook Execution Observer</h3>
+<p>Create a monitoring hook that tracks execution patterns:</p>
+<pre><code>// Priority: -1000 (runs last)
+const observer = {
+  async handler(event) {
+    log(<code>[observer] ${event.type} executing with ${handlers.length} handlers</code>);
+    // Record timing, ordering, results
+  }
+};
+</code></pre>
+<h3>Creative Use 4: Conditional Hook Chaining</h3>
+<p>Use <code>shouldStop</code> pattern for conditional processing:</p>
+<pre><code>// Handler decides if further processing needed
+if (!event.context.needsFurtherProcessing) {
+  return { stop: true };
+}
+</code></pre>
+<h3>Creative Use 5: Multi-Phase Processing</h3>
+<p>Break complex processing into sequential phases:</p>
+<pre><code>Phase 1: Collect (before_prompt_build)
+Phase 2: Transform (before_agent_start)  
+Phase 3: Validate (before_tool_call)
+Phase 4: Respond (after_tool_call)
+</code></pre>
+<hr>
+<h2>8. NEW QUESTIONS OPENED BY THIS RESEARCH</h2>
+<h3>NEW Questions Generated:</h3>
+<ul><li><strong>[MED]</strong> What is the maximum recommended number of handlers per hook before performance degrades?</li>
+</ul>   - <strong>Rationale</strong>: Void hooks run in parallel via Promise.all; modifying hooks run sequentially. Too many handlers could slow down agent response.
+<ul><li><strong>[LOW]</strong> Can hook execution order be traced or logged at runtime without debug mode?</li>
+</ul>   - <strong>Rationale</strong>: Debugging execution order issues currently requires log inspection or code review.
+<ul><li><strong>[MED]</strong> Is there a way to enforce ordering between plugins from different sources?</li>
+</ul>   - <strong>Rationale</strong>: Source precedence can't be overridden; if Plugin A (workspace) needs to run after Plugin B (managed), they must be in same source category.
+<ul><li><strong>[LOW]</strong> What happens to in-flight hook executions when gateway restarts?</li>
+</ul>   - <strong>Rationale</strong>: If a restart happens mid-execution, hook cleanup is not guaranteed.
+<ul><li><strong>[MED]</strong> Can hooks communicate execution order constraints to the registry?</li>
+</ul>   - <strong>Rationale</strong>: Currently no mechanism for "must run before X" declarations between plugins.
+<ul><li><strong>[LOW]</strong> Is there a performance benchmark for hook overhead?</li>
+</ul>   - <strong>Rationale</strong>: Each hook adds latency; there's no documented threshold.
+<ul><li><strong>[MED]</strong> Does the claim-first-wins pattern support priority among claiming hooks?</li>
+</ul>   - <strong>Rationale</strong>: Looking at code, claiming hooks seem to use same priority sort, but this isn't documented.
+<ul><li><strong>[LOW]</strong> Can modifying hooks accumulate results across multiple invocations (not just within single event)?</li>
+</ul>   - <strong>Rationale</strong>: Result merging is per-event; no cross-event state.
+<hr>
+<h2>9. SOURCES</h2>
+<h3>Primary Sources</h3>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/config-Nq7s3Dxw.js</code> — Hook source policy definitions (<code>HOOK_SOURCE_POLICIES</code>), precedence system, sorting algorithm</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/hook-runner-global-D9t7KsGJ.js</code> — Hook execution runner: <code>runVoidHook</code>, <code>runModifyingHook</code>, <code>runClaimingHook</code>, <code>getHooksForName</code>, priority sorting, failure policy</li>
+<li><code>/usr/local/lib/node_modules/openclaw/dist/internal-hooks-2legcEEL.js</code> — Internal hooks implementation: registration order, error handling</li>
+<li><code>/usr/local/lib/node_modules/openclaw/docs/automation/hooks.md</code> — Official hooks documentation</li>
+</ul>
+<h3>Related Findings (Previously Researched)</h3>
+<ul><li><code>Research/OpenClaw/findings/openclaw-hooks-system.md</code> (L18) — Complete hook system overview</li>
+<li><code>Research/OpenClaw/findings/hook-security-audit.md</code> (L20) — Hook security model</li>
+<li><code>Research/OpenClaw/findings/hook-infinite-loops.md</code> (L29) — Hook recursion patterns</li>
+</ul>
+<hr>
+<em>Research by: Investigador Scout</em>  
+<em>Date: 2026-04-23</em>  
+<em>Status: COMPLETE ✅</em>
+</body>
+</html>

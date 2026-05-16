@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 2: MiniMax M2.7 vs GPT-4 vs Claude Comparison</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_2.md</p>
+    <h2>Query</h2>
+"MiniMax M2.7 vs GPT-4 vs Claude comparison"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://aithinkerlab.com/minimax-m2-7-vs-gpt4-claude-benchmarks/</li>
+<li>https://blog.kilo.ai/p/we-tested-minimax-m27-against-claude</li>
+<li>https://thomas-wiegold.com/blog/minimax-m-2-7-review-is-it-worth-the-hype/</li>
+<li>https://medium.com/@tentenco/minimax-m2-7-vs-claude-opus-4-7-vs-gpt-5-4-which-coding-model-actually-wins-in-2026-ff415f6d6d75</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>Pricing comparison</h3>
+| Model | Input $/M | Output $/M | Ratio vs M2.7 |
+|-------|-----------|-----------|---------------|
+| MiniMax M2.7 | $0.30 | $1.20 | baseline |
+| Claude Opus 4.6 | $5.00 | $25.00 | ~17x more expensive |
+| GPT-5 (estimated) | higher | higher | ~30x+ more expensive |
+<strong>Nota</strong>: "50x cheaper" comparaba contra Opus 4.1 ($15/M input), no contra Opus 4.6 actual ($5/M).
+<h3>Real-world test (Kilo Code - 3 TypeScript codebases)</h3>
+<p>Ambos modelos encontraron los 6 bugs y 10 vulnerabilidades. Diferencias:</p>
+| Aspect | M2.7 | Claude Opus 4.6 |
+|--------|------|-----------------|
+| Tests escritos | 20 unit tests | 41 integration tests |
+| Arquitectura | Flat, fewer files | Modular directory structure |
+| Fix quality | Good, simpler | More thorough + rollback logic |
+| Costo total tarea | $0.27 | $3.67 |
+| Quality ratio | 90% | 100% |
+| <strong>Cost ratio</strong> | <strong>7%</strong> | <strong>100%</strong> |
+<strong>Conclusión Kilo</strong>: M2.7 entrega ~90% de la calidad por 7% del costo.
+<h3>Donde M2.7 supera a Claude Opus</h3>
+<ul><li><strong>SWE-bench Verified</strong>: 78% vs 55% — gap de 23 puntos</li>
+<li><strong>Currency fix</strong>: usó integer math (cents) vs floats — solución técnicamente mejor</li>
+<li><strong>SWE-bench multilingual</strong>: 76.5 (genuine cross-language, no solo English)</li>
+<li><strong>Unique task solutions</strong>: resolvió problemas que otros modelos no pudieron (89-task eval, Kilo Bench)</li>
+<li><strong>Hallucination rate</strong>: 34% vs 46% (Sonnet 4.6) y 50% (Gemini 3.1) — más confiable en hechos</li>
+</ul>
+<h3>Donde M2.7 queda por debajo</h3>
+<ul><li><strong>Test coverage</strong>: 20 vs 41 tests — menos cobertura</li>
+<li><strong>Modular architecture</strong>: flat structure vs proper separation of concerns</li>
+<li><strong>Rollback logic</strong>: no maneja partial failures en multi-item orders</li>
+<li><strong>Security fix quality</strong>: fixes menos completos (rate limiting parcial, SSRF validation only at delivery)</li>
+<li><strong>BridgeBench</strong>: dropped vs M2.5 — peor en vibe-coding/natural language to code</li>
+</ul>
+<h3>Verbosity trap (importantísimo)</h3>
+<p>M2.7 genera 87M tokens de output en la evaluación de Artificial Analysis vs median de 26M — <strong>3.35x más verboso</strong>. Esto erosiona significativamente el ahorro de per-token pricing.</p>
+<p>ECPT (Effective Cost Per Task): Para tareas complejas de ingeniería, M2.7 puede costar más por tarea que Opus porque:
+<ul><li>Lee mucho más contexto por tarea (2.8M input tokens en Kilo Bench vs 1.18M de Opus en mismo PR)</li>
+<li>Escribe mucho más output</li>
+</ul>
+<strong>No бюджетируйте por per-token pricing — modelen ECPT.</strong></p>
+<h3>Speed real</h3>
+<ul><li>Claimed: 100 TPS</li>
+<li>Actual (Artificial Analysis, standard variant): <strong>45.7 TPS</strong> vs median 109.7 TPS — <strong>2.4x más lento que el promedio de su tier</strong></li>
+<li>Time to first token: 2.49s vs 1.84s median</li>
+<li>Full attention architecture → degrades further en long context</li>
+</ul>
+<hr>
+<h2>Resumen</h2>
+<p>M2.7 es mejor que Opus en:
+<ul><li>SWE-bench Verified (78% vs 55%)</li>
+<li>Cost efficiency para tareas bounded</li>
+<li>Multilingual engineering</li>
+<li>Lower hallucination rate</li>
+</ul>
+Opus es mejor en:
+<ul><li>Architecture quality y test coverage</li>
+<li>Thoroughness de fixes</li>
+<li>Speed real (no claimado)</li>
+<li>Complex multi-step reasoning</li>
+</ul>
+<strong>Recomendación</strong>: Usar M2.7 para coding tasks bounded y de costo-efectividad. Usar Opus para arquitectura y tareas que requieren máxima thoroughness.</p>
+</body>
+</html>

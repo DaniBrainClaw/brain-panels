@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 5: Context Window Limitations</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_5.md</p>
+    <h2>Query</h2>
+"MiniMax M2.7 context window limitations"
+<h2>Fuentes consultadas</h2>
+<ul><li>https://platform.minimax.io/docs/token-plan/best-practices</li>
+<li>https://huggingface.co/nvidia/MiniMax-M2.7-NVFP4/discussions/2</li>
+<li>https://artificialanalysis.ai/models/minimax-m2-7</li>
+</ul>
+<hr>
+<h2>Hallazgos principales</h2>
+<h3>Context window specs</h3>
+<ul><li><strong>Total</strong>: 204,800 tokens (input + output combined)</li>
+<li><strong>Max output</strong>: 131,072 tokens</li>
+<li><strong>Recommended usable</strong>: ~200K tokens (input + output juntos)</li>
+<li><strong>Official recommendation</strong>: keep total input+output within 200k tokens</li>
+</ul>
+<h3>Full attention = performance degradation</h3>
+<strong>Importante</strong>: M2.7 usa full attention across its entire context window. Esto significa:
+<ul><li>Performance degrades significativamente en long-context workloads</li>
+<li>Lo hace más lento que modelos con attention más eficiente</li>
+<li>Communities en llama.cpp han identificado esto: "Minimax applied full attention, thus it's so slow in long ctx"</li>
+</ul>
+<h3>NVIDIA version context issue</h3>
+ Algunos usuarios reportan que la versión NVFP4 de M2.7 solo alcanza ~88K context en local (vs los 196K esperados). Posible problema de量化 o configuración.
+<h3>Best practices oficiales de MiniMax</h3>
+<ul><li><strong>Phased processing</strong>: usar múltiples ventanas en lugar de un solo context muy largo</li>
+<li><strong>State tracking</strong>: M2.7 tiene good state tracking — puede mantener coherence en long sequences</li>
+<li><strong>Maximize context</strong>: hacer full use del context window antes de continuar a siguiente ventana</li>
+<li><strong>Compression tools</strong>: si usas tools como Claude Code que soportan context compression, controlar el system prompt size</li>
+</ul>
+<h3>Warning crítico de documentación oficial</h3>
+<blockquote>"When using tools that support context compression (such as Claude Code), it's recommended to control the number of tokens in system prompts. M2.7 may terminate tasks early when approaching context capacity thresholds."</blockquote>
+<p>Esto es relevante para nuestro uso en OpenClaw — el system prompt de BRAIN es largo (~4K tokens), lo que reduce el context efectivo disponible.</p>
+<h3>Recommended system prompt para tasks largos</h3>
+<pre><code>This is a very lengthy task. It's recommended that you make full use of the complete output context to handle it—keep the total input and output tokens within 200k tokens. Make full use of the context window length to complete the task thoroughly and avoid exhausting tokens.
+</code></pre>
+<hr>
+<h2>Limitaciones documentadas</h2>
+<ul><li><strong>No images/audio/video</strong> — solo text input</li>
+<li><strong>Full attention = slow</strong> en contexts largos</li>
+<li><strong>Approaching limit = early termination</strong> — possible cut-off de tareas</li>
+<li><strong>Long context = degraded performance</strong></li>
+<li><strong>No cache para output tokens</strong> — cache solo para input</li>
+</ul>
+<hr>
+<h2>Comparación con competencia</h2>
+| Model | Context Window | Attention |
+|-------|---------------|-----------|
+| M2.7 | 205K | Full (slow on long) |
+| Claude Opus 4.6 | 200K | Más eficiente |
+| GPT-5.2 | 128K | — |
+| Gemini 3.1 Pro | 2M | — |
+<p>M2.7 tiene más context que GPT-5.2 pero mucho menos que Gemini 3.1 Pro.</p>
+<hr>
+<h2>Implicaciones para BRAIN</h2>
+<ul><li><strong>System prompt largo = context perdido</strong> — BRAIN tiene ~4K de system prompt + memory</li>
+<li><strong>Tasks largos de coding</strong> pueden requerir phased approach (dividir en ventanas)</li>
+<li><strong>Long conversations</strong> eventually degraded — usar compression o restart después de ~150K tokens</li>
+</ul><li><strong>Para tareas que requieren máximo context</strong> → cambiar a Gemini 3.1 Flash o similar</li>
+</body>
+</html>
