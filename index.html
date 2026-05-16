@@ -11,6 +11,7 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .card { background: linear-gradient(135deg, #1a1a24 0%, #12121a 100%); border-radius: 16px; padding: 24px; border: 1px solid #2a2a3a; cursor: pointer; transition: all 0.3s ease; }
         .card:hover { transform: translateY(-4px); border-color: #00d4aa; box-shadow: 0 8px 32px rgba(0,212,170,0.15); }
+        .card:active { transform: scale(0.98); }
         .card h2 { color: #00d4aa; font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
         .card p { color: #888; font-size: 14px; line-height: 1.5; margin-bottom: 15px; }
         .card-meta { font-size: 12px; color: #666; display: flex; justify-content: space-between; }
@@ -28,10 +29,13 @@
         .footer { text-align: center; color: #444; font-size: 11px; margin-top: 40px; }
         a { color: #00d4aa; text-decoration: none; }
         a:hover { text-decoration: underline; }
+        .click-hint { font-size: 11px; color: #444; text-align: center; margin-top: 15px; }
     </style>
 </head>
 <body>
     <h1>🧠 BRAIN Dashboard</h1>
+    
+    <div class="click-hint">👆 Click en cualquier tarjeta para explorar</div>
     
     <div class="stats-row">
         <div class="stat">
@@ -52,70 +56,64 @@
         </div>
     </div>
     
-    <div class="section-title">📋 Tareas Pendientes</div>
+    <div class="section-title">📋 Tareas Pendientes — Click para ver</div>
     <div class="grid">
         <div class="card" onclick="window.location.href='tareas.html'">
             <h2>🔴 SSL estudiovirtual.es <span class="badge badge-red">CRÍTICO</span></h2>
             <p>Sin SSL — Chrome marca como "no seguro". Contactar Diewaves para instalar Let's Encrypt.</p>
             <div class="card-meta">
-                <span>Urgencia: Alta</span>
-                <span>Impacto: SEO + Confianza</span>
+                <span>⏱️ 30 min</span>
+                <span>📁 Docs: Web_Audit</span>
             </div>
-            <div class="card-link">Ver detalles →</div>
         </div>
         
         <div class="card" onclick="window.location.href='tareas.html'">
             <h2>🔴 Decidir multi-dominio MF3 <span class="badge badge-red">CRÍTICO</span></h2>
             <p>mf3.es vs mediterraneanfusion.es — confusión de SEO. Necesitamos decidir cuál priorizar.</p>
             <div class="card-meta">
-                <span>Urgencia: Alta</span>
-                <span>Impacto: SEO</span>
+                <span>⏱️ Decisión</span>
+                <span>📁 MVP_Monetization</span>
             </div>
-            <div class="card-link">Ver detalles →</div>
         </div>
         
         <div class="card" onclick="window.location.href='tareas.html'">
             <h2>🟠 Meta descriptions <span class="badge badge-orange">ALTA</span></h2>
             <p>8 webs sin meta descriptions. Listas para copiar/pegar en WordPress.</p>
             <div class="card-meta">
-                <span>Tiempo: 2 horas</span>
-                <span>Estado: Listas</span>
+                <span>⏱️ 2 horas</span>
+                <span>✅ Listas</span>
             </div>
-            <div class="card-link">Ver detalles →</div>
         </div>
         
         <div class="card" onclick="window.location.href='tareas.html'">
             <h2>🟠 Outreach coaches <span class="badge badge-orange">ALTA</span></h2>
             <p>10 mensajes para enviar. Templates listos en MVP_Coaches/.</p>
             <div class="card-meta">
-                <span>Tiempo: 1 hora</span>
-                <span>Estado: Listo</span>
+                <span>⏱️ 1 hora</span>
+                <span>✅ Listo</span>
             </div>
-            <div class="card-link">Ver detalles →</div>
         </div>
         
         <div class="card" onclick="window.location.href='tareas.html'">
             <h2>🟠 Landing page Coaches <span class="badge badge-orange">ALTA</span></h2>
             <p>Copy y templates listos. Falta crear en Carrd.</p>
             <div class="card-meta">
-                <span>Tiempo: 30 min</span>
-                <span>Estado: Listo</span>
+                <span>⏱️ 30 min</span>
+                <span>✅ Listo</span>
             </div>
-            <div class="card-link">Ver detalles →</div>
         </div>
         
         <div class="card" onclick="window.location.href='tareas.html'">
             <h2>🟡 Schema markup <span class="badge badge-green">MEDIA</span></h2>
             <p>Datos estructurados para las 8 webs. Mejorar SEO local.</p>
             <div class="card-meta">
-                <span>Tiempo: 3 horas</span>
-                <span>Estado: Pendiente</span>
+                <span>⏱️ 3 horas</span>
+                <span>⏳ Pendiente</span>
             </div>
-            <div class="card-link">Ver detalles →</div>
         </div>
     </div>
     
-    <div class="section-title">📁 Investigaciones</div>
+    <div class="section-title">📁 Investigaciones — Click para explorar</div>
     <div class="grid">
         <div class="card" onclick="window.location.href='investigaciones.html'">
             <h2>🌐 Auditoría Web</h2>
@@ -124,7 +122,6 @@
                 <span>📂 Web_Audit/</span>
                 <span>9 archivos</span>
             </div>
-            <div class="card-link">Explorar →</div>
         </div>
         
         <div class="card" onclick="window.location.href='investigaciones.html'">
@@ -134,7 +131,6 @@
                 <span>📂 MVP_Monetization/</span>
                 <span>11 archivos</span>
             </div>
-            <div class="card-link">Explorar →</div>
         </div>
         
         <div class="card" onclick="window.location.href='investigaciones.html'">
@@ -144,7 +140,6 @@
                 <span>📂 ROI_Agent_Optimization/</span>
                 <span>13 archivos</span>
             </div>
-            <div class="card-link">Explorar →</div>
         </div>
         
         <div class="card" onclick="window.location.href='investigaciones.html'">
@@ -154,7 +149,6 @@
                 <span>📂 MiniMax_M2.7_analysis/</span>
                 <span>17 archivos</span>
             </div>
-            <div class="card-link">Explorar →</div>
         </div>
         
         <div class="card" onclick="window.location.href='investigaciones.html'">
@@ -164,7 +158,6 @@
                 <span>📂 GitHub_BRAIN_Integration/</span>
                 <span>8 archivos</span>
             </div>
-            <div class="card-link">Explorar →</div>
         </div>
         
         <div class="card" onclick="window.location.href='investigaciones.html'">
@@ -174,7 +167,6 @@
                 <span>📂 OPENCLAW/</span>
                 <span>25 archivos</span>
             </div>
-            <div class="card-link">Explorar →</div>
         </div>
     </div>
     
