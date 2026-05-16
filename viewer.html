@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor — BRAIN</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui; background: #0f0f0f; color: #e0e0e0; }
+        .header { background: #1a1a1a; padding: 15px 20px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .back { color: #00d4aa; text-decoration: none; font-size: 14px; }
+        .back:hover { text-decoration: underline; }
+        .title { color: #888; font-size: 14px; }
+        .content { padding: 20px; max-width: 900px; margin: 0 auto; }
+        .loading { color: #888; text-align: center; padding: 50px; }
+        pre { background: #1a1a1a; padding: 20px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+        .error { background: #2a1a1a; padding: 20px; border-radius: 8px; color: #ff6b6b; }
+        .meta { color: #666; font-size: 12px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="investigaciones.html" class="back">← Volver a Investigaciones</a>
+        <span class="title" id="filename">Cargando...</span>
+    </div>
+    
+    <div class="content" id="content">
+        <div class="loading">Cargando archivo...</div>
+    </div>
+    
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const filepath = params.get('file') || '';
+        
+        document.getElementById('filename').textContent = filepath.split('/').pop();
+        
+        if (filepath) {
+            fetch('/files/' + encodeURIComponent(filepath))
+                .then(r => r.text())
+                .then(text => {
+                    document.getElementById('content').innerHTML = '<pre>' + escapeHtml(text) + '</pre><div class="meta">Archivo: ' + filepath + '</div>';
+                })
+                .catch(e => {
+                    document.getElementById('content').innerHTML = '<div class="error">Error cargando archivo: ' + e.message + '</div>';
+                });
+        }
+        
+        function escapeHtml(text) {
+            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+    </script>
+</body>
+</html>
