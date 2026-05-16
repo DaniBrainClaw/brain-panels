@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investigaciones — BRAIN</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui; background: #0f0f0f; color: #e0e0e0; padding: 20px; }
+        h1 { color: #00d4aa; margin-bottom: 30px; text-align: center; }
+        .back { color: #00d4aa; text-decoration: none; font-size: 14px; margin-bottom: 20px; display: inline-block; }
+        .back:hover { text-decoration: underline; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .card { background: #1a1a1a; border-radius: 12px; padding: 20px; border: 1px solid #333; cursor: pointer; transition: border-color 0.2s; }
+        .card:hover { border-color: #00d4aa; }
+        .card h2 { color: #00d4aa; font-size: 18px; margin-bottom: 10px; }
+        .card p { color: #888; font-size: 13px; margin-bottom: 15px; }
+        .meta { color: #666; font-size: 11px; }
+        .files { margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; }
+        .file { background: #222; padding: 8px 12px; border-radius: 4px; margin: 5px 0; font-size: 12px; cursor: pointer; display: flex; justify-content: space-between; }
+        .file:hover { background: #333; }
+        .file-name { color: #e0e0e0; }
+        .file-size { color: #666; font-size: 10px; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back">← Volver al Dashboard</a>
+    
+    <h1>📁 Investigaciones</h1>
+    
+    <div class="grid">
+        <div class="card" onclick="toggleFiles('web-audit')">
+            <h2>🌐 Auditoría Web</h2>
+            <p>8 webs analizadas — problemas, prioridades, plan de acción</p>
+            <div class="meta">📅 2026-05-16 | 📂 Web_Audit/</div>
+            <div class="files" id="web-audit" style="display:none;">
+                <div class="file" onclick="loadFile('Research/Web_Audit/INDEX.md', event)">
+                    <span class="file-name">📄 INDEX.md — Resumen auditoría</span>
+                </div>
+                <div class="file" onclick="loadFile('Research/Web_Audit/SUMMARY_DANI.md', event)">
+                    <span class="file-name">📄 SUMMARY_DANI.md</span>
+                </div>
+                <div class="file" onclick="loadFile('Research/Web_Audit/sources.md', event)">
+                    <span class="file-name">📄 sources.md</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" onclick="toggleFiles('mvp-monetization')">
+            <h2>💰 MVP Monetization</h2>
+            <p>8 pasos para €1,000/mes — landing page, outreach, pricing</p>
+            <div class="meta">📅 2026-05-15 | 📂 MVP_Monetization/</div>
+            <div class="files" id="mvp-monetization" style="display:none;">
+                <div class="file" onclick="loadFile('Research/MVP_Monetization/INDEX.md', event)">
+                    <span class="file-name">📄 INDEX.md</span>
+                </div>
+                <div class="file" onclick="loadFile('Research/MVP_Monetization/SUMMARY_DANI.md', event)">
+                    <span class="file-name">📄 SUMMARY_DANI.md</span>
+                </div>
+                <div class="file" onclick="loadFile('Research/MVP_Monetization/sources.md', event)">
+                    <span class="file-name">📄 sources.md</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" onclick="toggleFiles('roi-optimization')">
+            <h2>📈 ROI Agent Optimization</h2>
+            <p>Cómo rentabilizar BRAIN — 1,250-12,500% ROI potencial</p>
+            <div class="meta">📅 2026-05-15 | 📂 ROI_Agent_Optimization/</div>
+            <div class="files" id="roi-optimization" style="display:none;">
+                <div class="file" onclick="loadFile('Research/ROI_Agent_Optimization/INDEX.md', event)">
+                    <span class="file-name">📄 INDEX.md</span>
+                </div>
+                <div class="file" onclick="loadFile('Research/ROI_Agent_Optimization/SUMMARY_DANI.md', event)">
+                    <span class="file-name">📄 SUMMARY_DANI.md</span>
+                </div>
+                <div class="file" onclick="loadFile('Research/ROI_Agent_Optimization/sources.md', event)">
+                    <span class="file-name">📄 sources.md</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" onclick="toggleFiles('minimax-analysis')">
+            <h2>🧠 MiniMax M2.7 Analysis</h2>
+            <p>13 archivos de findings — coding, agentic, self-evolution</p>
+            <div class="meta">📅 2026-05-15 | 📂 MiniMax_M2.7_analysis/</div>
+            <div class="files" id="minimax-analysis" style="display:none;">
+                <div class="file" onclick="loadFile('Research/MiniMax_M2.7_analysis/INDEX.md', event)">
+                    <span class="file-name">📄 INDEX.md</span>
+                </div>
+                <div class="file" onclick="loadFile('Research/MiniMax_M2.7_analysis/SUMMARY_DANI.md', event)">
+                    <span class="file-name">📄 SUMMARY_DANI.md</span>
+                </div>
+                <div class="file" onclick="loadFile('Research/MiniMax_M2.7_analysis/sources.md', event)">
+                    <span class="file-name">📄 sources.md</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" onclick="toggleFiles('github-integration')">
+            <h2>🔗 GitHub BRAIN Integration</h2>
+            <p>Usos de GitHub — backup, panels, automatización</p>
+            <div class="meta">📅 2026-05-16 | 📂 GitHub_BRAIN_Integration/</div>
+            <div class="files" id="github-integration" style="display:none;">
+                <div class="file" onclick="loadFile('Research/GitHub_BRAIN_Integration/INDEX.md', event)">
+                    <span class="file-name">📄 INDEX.md</span>
+                </div>
+                <div class="file" onclick="loadFile('Research/GitHub_BRAIN_Integration/SUMMARY_DANI.md', event)">
+                    <span class="file-name">📄 SUMMARY_DANI.md</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" onclick="toggleFiles('openclaw-panels')">
+            <h2>📊 OpenClaw Panels & Avatares</h2>
+            <p>Canvas, dashboards, avatares — cómo crear interfaces</p>
+            <div class="meta">📅 2026-05-15 | 📂 OpenClaw_Panels/</div>
+            <div class="files" id="openclaw-panels" style="display:none;">
+                <div class="file" onclick="loadFile('Research/OpenClaw_Panels/INDEX.md', event)">
+                    <span class="file-name">📄 INDEX.md</span>
+                </div>
+                <div class="file" onclick="loadFile('Research/OpenClaw_Panels/SUMMARY_DANI.md', event)">
+                    <span class="file-name">📄 SUMMARY_DANI.md</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function toggleFiles(id) {
+            const el = document.getElementById(id);
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function loadFile(path, event) {
+            event.stopPropagation();
+            const filename = path.split('/').pop();
+            window.location.href = '/viewer.html?file=' + encodeURIComponent(path);
+        }
+    </script>
+</body>
+</html>
