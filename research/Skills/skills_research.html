@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skills OpenClaw y Claude Code — BRAIN</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui; background: #0a0a0f; color: #e0e0e0; padding: 20px; }
+        h1 { color: #00d4aa; margin-bottom: 5px; font-size: 28px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .nav { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
+        .nav a { background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; }
+        .nav a:hover { background: #00d4aa; color: #000; }
+        .nav a.active { background: #00d4aa; color: #000; }
+        .back-link { display: inline-block; background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; margin-bottom: 25px; }
+        .back-link:hover { background: #00d4aa; color: #000; }
+        
+        .section { background: #1a1a24; border-radius: 16px; padding: 25px; margin: 20px 0; }
+        h2 { color: #fff; font-size: 22px; margin: 25px 0 15px 0; }
+        h2:first-child { margin-top: 0; }
+        h3 { color: #00d4aa; font-size: 18px; margin: 20px 0 10px 0; }
+        p { color: #888; font-size: 15px; line-height: 1.6; margin: 10px 0; }
+        a { color: #00d4aa; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th { background: #00d4aa; color: #000; padding: 10px; text-align: left; font-size: 13px; }
+        td { padding: 10px; border-bottom: 1px solid #2a2a3a; font-size: 14px; }
+        tr:hover { background: #1a1a24; }
+        
+        .alert { background: #2a1a1a; border-left: 4px solid #ff4444; padding: 15px 20px; border-radius: 8px; margin: 20px 0; }
+        .alert-title { color: #ff4444; font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+        .alert-text { color: #ff6b6b; font-size: 14px; }
+        
+        .skill-card { background: #0f3460; border-radius: 12px; padding: 20px; margin: 15px 0; border-left: 4px solid #00d4aa; }
+        .skill-card h3 { color: #fff; margin-top: 0; }
+        .skill-meta { display: flex; gap: 15px; font-size: 12px; color: #888; margin: 10px 0; flex-wrap: wrap; }
+        code { background: #0a0a0f; padding: 3px 8px; border-radius: 4px; font-size: 13px; color: #00d4aa; }
+        pre { background: #0a0a0f; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; }
+        pre code { color: #fff; }
+        
+        .priority-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        .priority-1 { background: #ff4444; color: white; }
+        .priority-2 { background: #ffaa00; color: black; }
+        .priority-3 { background: #3498db; color: white; }
+        
+        .install-cmd { background: #0a0a0f; padding: 12px 16px; border-radius: 8px; margin: 10px 0; font-family: monospace; color: #00d4aa; font-size: 13px; border-left: 3px solid #00d4aa; }
+        
+        .source-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin: 15px 0; }
+        .source-item { background: #1a1a24; padding: 10px 15px; border-radius: 8px; font-size: 12px; color: #888; }
+        
+        .meta-bar { display: flex; gap: 20px; font-size: 12px; color: #666; margin-bottom: 25px; flex-wrap: wrap; }
+        
+        .completed-badge { background: #27ae60; color: white; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Dashboard</a>
+    <a href="investigaciones.html" class="back-link">← Investigaciones</a>
+    
+    <h1>🔬 Skills para OpenClaw y Claude Code</h1>
+    <p class="subtitle">Investigación incremental — 15 fuentes procesadas</p>
+    <div class="meta-bar">
+        <span>📅 2026-05-17</span>
+        <span>📂 Research/Skills/</span>
+        <span>🔢 15/15 archivos</span>
+        <span class="completed-badge">✅ COMPLETADA</span>
+    </div>
+    
+    <nav class="nav">
+        <a href="index.html">📊 Dashboard</a>
+        <a href="tareas.html">📋 Tareas</a>
+        <a href="investigaciones.html" class="active">🔬 Investigaciones</a>
+        <a href="viewer.html">📖 Visor MD</a>
+    </nav>
+    
+    <!-- ECOSISTEMA -->
+    <div class="section">
+        <h2>📊 Datos del Ecosistema</h2>
+        
+        <h3>OpenClaw / ClawHub</h3>
+        <table>
+            <tr><th>Métrica</th><th>Dato</th></tr>
+            <tr><td>Total tools</td><td>52,700+</td></tr>
+            <tr><td>Usuarios</td><td>180,000+</td></tr>
+            <tr><td>Descargas</td><td>12M+</td></tr>
+            <tr><td>Rating promedio</td><td>4.8 ⭐</td></tr>
+            <tr><td>Skills en awesome list</td><td>5,400+ (filtrados de 13,000+)</td></tr>
+        </table>
+        
+        <h3>Categorías más populares</h3>
+        <table>
+            <tr><th>Categoría</th><th>Nº skills</th></tr>
+            <tr><td>Coding Agents & IDEs</td><td>1,184</td></tr>
+            <tr><td>Web & Frontend Development</td><td>919</td></tr>
+            <tr><td>DevOps & Cloud</td><td>393</td></tr>
+            <tr><td>Search & Research</td><td>345</td></tr>
+            <tr><td>Browser & Automation</td><td>323</td></tr>
+            <tr><td>Communication</td><td>146</td></tr>
+            <tr><td>PDF & Documents</td><td>105</td></tr>
+            <tr><td>Marketing & Sales</td><td>103</td></tr>
+        </table>
+    </div>
+    
+    <!-- SEGURIDAD -->
+    <div class="alert">
+        <div class="alert-title">⚠️ ALERTA DE SEGURIDAD — CRÍTICO</div>
+        <div class="alert-text">
+            <strong>12% de skills en ClawHub son maliciosos</strong> (341 confirmados de 2,857 auditados en Feb 2026).<br>
+            <strong>CVE-2026-25253:</strong> RCE vía WebSocket origin header bypass.
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>🛡️ Reglas de Seguridad</h2>
+        <p>❌ <strong>NO</strong> instalar sin verificar VirusTotal = clean</p>
+        <p>✅ Usar <a href="https://skills.sh" target="_blank">skills.sh</a> (curado por Vercel)</p>
+        <p>✅ Revisar SKILL.md antes de instalar</p>
+        <p>✅ Empezar por skills pequeños para entender funcionamiento</p>
+        
+        <h3>Herramientas de verificación</h3>
+        <ul>
+            <li><a href="https://clawhub.ai" target="_blank">VirusTotal partnership en ClawHub</a></li>
+            <li><a href="https://github.com/snyk/agent-scan" target="_blank">Snyk Skill Security Scanner</a></li>
+            <li><a href="https://ai.gendigital.com/agent-trust-hub" target="_blank">Agent Trust Hub</a></li>
+        </ul>
+    </div>
+    
+    <!-- TOP SKILLS OPENCLAW -->
+    <div class="section">
+        <h2>🛠️ Top Skills para OpenClaw</h2>
+        
+        <div class="skill-card">
+            <h3>1. Self-Improving Agent ⭐ 4.7 | 35K descargas <span class="priority-badge priority-1">🔴 PRIORIDAD ALTA</span></h3>
+            <p><strong>Qué hace:</strong> Aprende de errores y preferencias, no repite mistakes</p>
+            <p><strong>Valor para Dani:</strong> Muy alto — llevamos semanas cometiendo errores repetidos</p>
+            <p><strong>Seguridad:</strong> Verificar Security Scan en ClawHub primero</p>
+            <div class="install-cmd">npx clawhub@latest install pskoett/self-improving-agent</div>
+            <p><a href="https://clawhub.ai/pskoett/self-improving-agent" target="_blank">🔗 Ver en ClawHub →</a></p>
+        </div>
+        
+        <div class="skill-card">
+            <h3>2. Composio ⭐ 4.8</h3>
+            <p><strong>Qué hace:</strong> 860+ integraciones (Gmail, GitHub, Stripe, Slack...) sin escribir auth</p>
+            <p><strong>Valor para Dani:</strong> Alto — si funciona, elimina meses de trabajo de integración</p>
+            <div class="install-cmd">npx skills add composiohq/skills</div>
+            <p><a href="https://github.com/ComposioHQ/skills" target="_blank">🔗 GitHub →</a></p>
+        </div>
+        
+        <div class="skill-card">
+            <h3>3. Mission Control</h3>
+            <p><strong>Qué hace:</strong> Briefing matutino (tareas + calendario en un solo resumen)</p>
+            <p><strong>Valor para Dani:</strong> Alto — automatización del morning briefing</p>
+            <div class="install-cmd">claw install mission-control</div>
+        </div>
+        
+        <div class="skill-card">
+            <h3>4. Frontend Design ⭐ 4.9</h3>
+            <p><strong>Qué hace:</strong> Genera UI de producción con intención estética, no "AI slop"</p>
+            <p><strong>Valor para Dani:</strong> Medio — útil cuando necesite prototipar algo</p>
+            <div class="install-cmd">npx skills add anthropics/skills/frontend-design</div>
+            <p><a href="https://github.com/anthropics/skills" target="_blank">🔗 GitHub →</a></p>
+        </div>
+        
+        <div class="skill-card">
+            <h3>5. GOG — Google Workspace CLI ⭐ 4.4 | 14K descargas</h3>
+            <p><strong>Qué hace:</strong> Gmail + Calendar + Drive + Contacts + Sheets en UNA CLI</p>
+            <p><strong>Valor para Dani:</strong> Alternativa a Composio si solo necesitas Google</p>
+            <div class="install-cmd">claw install gog</div>
+        </div>
+        
+        <div class="skill-card">
+            <h3>6. Capability Evolver | 35K descargas (#1)</h3>
+            <p><strong>Qué hace:</strong> El agent evoluciona sus capacidades automáticamente</p>
+            <p><strong>Ideal para:</strong> Agents que corren 24/7</p>
+            <div class="install-cmd">claw install capability-evolver</div>
+        </div>
+        
+        <div class="skill-card">
+            <h3>7. Agent Browser | 11K descargas</h3>
+            <p><strong>Qué hace:</strong> Control de browsers para web scraping y automation</p>
+            <div class="install-cmd">claw install agent-browser</div>
+        </div>
+    </div>
+    
+    <!-- CLAUDE CODE -->
+    <div class="section">
+        <h2>💻 Para Claude Code (futuro)</h2>
+        
+        <div class="skill-card">
+            <h3>Bundle: alirezarezvani/claude-skills ⭐ 5,200+</h3>
+            <p><strong>Qué tiene:</strong> 311+ skills multi-plataforma, 12 herramientas diferentes</p>
+            <p><strong>Skills destacados:</strong> Frontend Design, Playwright Pro, Skill Creator, Security Auditor</p>
+            <p><a href="https://github.com/alirezarezvani/claude-skills" target="_blank">🔗 GitHub →</a></p>
+            <div class="install-cmd">/plugin marketplace add anthropics/skills</div>
+            <div class="install-cmd">/plugin install example-skills@anthropic-agent-skills</div>
+        </div>
+        
+        <div class="skill-card">
+            <h3>Skills oficiales Anthropic</h3>
+            <p><strong>Repo:</strong> <a href="https://github.com/anthropics/skills" target="_blank">github.com/anthropics/skills</a></p>
+            <p><strong>Skills abiertos (Apache 2.0):</strong> docx, pdf, pptx, xlsx</p>
+        </div>
+    </div>
+    
+    <!-- PLAN DE INSTALACIÓN -->
+    <div class="section">
+        <h2>📦 Plan de Instalación</h2>
+        
+        <h3>🔥 HOY (OpenClaw)</h3>
+        <pre><code># 1. Self-Improving Agent — prioridad máxima
+npx clawhub@latest install pskoett/self-improving-agent
+
+# 2. GOG — Google unificado (más simple que Composio)
+claw install gog</code></pre>
+        
+        <h3>📅 ESTA SEMANA</h3>
+        <pre><code># 3. Mission Control — morning briefing
+claw install mission-control
+
+# 4. Composio — cuando necesites integraciones externas
+npx skills add composiohq/skills</code></pre>
+        
+        <h3>🚀 FUTURO (Claude Code en tu PC)</h3>
+        <pre><code>/plugin marketplace add anthropics/skills
+/plugin install example-skills@anthropic-agent-skills</code></pre>
+    </div>
+    
+    <!-- FUENTES -->
+    <div class="section">
+        <h2>📚 Fuentes procesadas</h2>
+        <div class="source-list">
+            <div class="source-item">1. clawhub.ai — homepage</div>
+            <div class="source-item">2. github.com/anthropics/skills</div>
+            <div class="source-item">3. github.com/VoltAgent/awesome-openclaw-skills</div>
+            <div class="source-item">4. github.com/alirezarezvani/claude-skills</div>
+            <div class="source-item">5. composio.dev/blog — top 10</div>
+            <div class="source-item">6. ClawHub search — self-improving-agent</div>
+            <div class="source-item">7. github.com/topics/claude-code-skills</div>
+            <div class="source-item">8. github.com/sjkncs/awesome-openclaw-skills</div>
+            <div class="source-item">9. blog.apiyi.com — top 10</div>
+            <div class="source-item">10. blog.growexx.com — top 10</div>
+            <div class="source-item">11. blog.medium/tentenco — best ClawHub</div>
+            <div class="source-item">12. blog.openclawsh.com — 32 mejores</div>
+            <div class="source-item">13. blog.clawoneclick.com — top skills</div>
+            <div class="source-item">14. blog.openclawlaunch.com — skills curados</div>
+            <div class="source-item">15. github.com/travisvn/awesome-claude-skills</div>
+        </div>
+    </div>
+    
+    <p style="text-align: center; color: #444; margin-top: 50px; font-size: 12px;">
+        Investigación incremental — Procesado por BRAIN — 2026-05-17
+    </p>
+</body>
+</html>

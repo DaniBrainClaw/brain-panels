@@ -10,7 +10,7 @@
         h1 { color: #00d4aa; margin-bottom: 5px; font-size: 28px; }
         .subtitle { color: #666; margin-bottom: 30px; }
         .nav { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
-        .nav a { background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: all 0.2s; }
+        .nav a { background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; }
         .nav a:hover { background: #00d4aa; color: #000; }
         .nav a.active { background: #00d4aa; color: #000; }
         .inv { background: #1a1a24; padding: 25px; margin: 15px 0; border-radius: 16px; border-left: 4px solid #00d4aa; }
@@ -21,6 +21,9 @@
         .inv a.btn:hover { opacity: 0.85; }
         .back-link { display: inline-block; background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; margin-bottom: 25px; }
         .back-link:hover { background: #00d4aa; color: #000; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        .badge-green { background: #27ae60; color: white; }
+        .badge-blue { background: #3498db; color: white; }
     </style>
 </head>
 <body>
@@ -37,10 +40,10 @@
     </nav>
     
     <div class="inv">
-        <h2>🔬 Skills para OpenClaw y Claude Code</h2>
-        <p>✅ <strong>Completada</strong> — 15 fuentes procesadas. Top 7 skills para Dani + plan de instalación + seguridad.</p>
-        <div class="inv-meta">📂 Research/Skills/ | 15 archivos | ✅ Completada</div>
-        <a href="research/Skills/SINTESIS_INCREMENTAL.md" class="btn">Ver síntesis →</a>
+        <h2>🔬 Skills para OpenClaw y Claude Code <span class="badge badge-green">✅ COMPLETADA</span></h2>
+        <p>15 fuentes procesadas. Top 7 skills para Dani + plan de instalación + alertas de seguridad.</p>
+        <div class="inv-meta">📂 Research/Skills/ | 15 archivos | 2026-05-17</div>
+        <a href="research/Skills/skills_research.html" class="btn">Ver investigación completa →</a>
     </div>
     
     <div class="inv">
@@ -58,43 +61,36 @@
     </div>
     
     <div class="inv">
-        <h2>💰 MVP Monetization</h2>
-        <p>8 pasos para €1,000/mes con coaches. Landing + outreach + pricing strategy.</p>
-        <div class="inv-meta">📂 research/MVP_Monetization/ | 11 archivos</div>
-        <a href="research/MVP_Monetization/index.html" class="btn">Ver investigación →</a>
+        <h2>🎯 MVP Coaches</h2>
+        <p>Plantillas y estrategia para monetize BRAIN como coach virtual.</p>
+        <div class="inv-meta">📂 MVP_Coaches/</div>
+        <a href="MVP_Coaches/index.html" class="btn">Ver investigación →</a>
     </div>
     
     <div class="inv">
-        <h2>🌐 Web Audit</h2>
-        <p>8 webs analizadas. Score: 5-7.5/10. Problemas críticos identificados.</p>
-        <div class="inv-meta">📂 research/Web_Audit/ | 9 archivos | SSL, multi-dominio, meta descriptions</div>
-        <a href="research/Web_Audit/index.html" class="btn">Ver investigación →</a>
+        <h2>🛠️ Web Audit</h2>
+        <p>Auditoría de 8 webs con métricas de rendimiento, SEO y propuesta de mejora.</p>
+        <div class="inv-meta">📂 research/Web_Audit/ | 9 archivos</div>
+        <a href="research/Web_Audit/index.html" class="btn">Ver auditoría →</a>
     </div>
     
     <div class="inv">
-        <h2>🧠 MiniMax M2.7 Analysis</h2>
-        <p>Coding 78% SWE-bench, Agentic ELO 1495. Mejor modelo para código. Text-only confirmado.</p>
-        <div class="inv-meta">📂 research/MiniMax_M2.7_analysis/ | 17 archivos</div>
-        <a href="research/MiniMax_M2.7_analysis/index.html" class="btn">Ver investigación →</a>
+        <h2>📊 Terracotta Business</h2>
+        <p>Análisis de modelo de negocio Terracotta Hostelería.</p>
+        <div class="inv-meta">📂 research/Terracotta/</div>
+        <a href="research/Terracotta/index.html" class="btn">Ver análisis →</a>
     </div>
     
     <div class="inv">
         <h2>🤖 Hermes Agent Analysis</h2>
-        <p>Agente de nudge periódico. Feature de reminder para tareas autônomas.</p>
-        <div class="inv-meta">📂 research/Hermes_Agent_Analysis/ | 5 archivos</div>
-        <a href="research/Hermes_Agent_Analysis/index.html" class="btn">Ver investigación →</a>
-    </div>
-    
-    <div class="inv">
-        <h2>🔗 GitHub BRAIN Integration</h2>
-        <p>Backup automático, panels públicos, automatización de documentación.</p>
-        <div class="inv-meta">📂 research/GitHub_BRAIN_Integration/ | 8 archivos</div>
-        <a href="research/GitHub_BRAIN_Integration/index.html" class="btn">Ver investigación →</a>
+        <p>Deep dive del agente Hermes.</p>
+        <div class="inv-meta">📂 research/Hermes_Agent_Analysis/</div>
+        <a href="research/Hermes_Agent_Analysis/index.html" class="btn">Ver análisis →</a>
     </div>
     
     <div class="inv">
         <h2>⚡ Tareas Autónomas</h2>
-        <p>Script para procesar 3905 filas sin preguntar. Ejecución autônoma.</p>
+        <p>Script para procesar 3905 filas sin preguntar. Ejecución autónoma.</p>
         <div class="inv-meta">📂 research/Tareas_Autonomas/ | 4 archivos</div>
         <a href="research/Tareas_Autonomas/index.html" class="btn">Ver investigación →</a>
     </div>
@@ -111,6 +107,13 @@
         <p>Cómo monetizar el sistema BRAIN para Dani.</p>
         <div class="inv-meta">📂 research/Monetization_BRAIN/</div>
         <a href="research/Monetization_BRAIN/index.html" class="btn">Ver investigación →</a>
+    </div>
+    
+    <div class="inv">
+        <h2>🔌 GitHub BRAIN Integration</h2>
+        <p>Integración de BRAIN con GitHub para workflow optimizado.</p>
+        <div class="inv-meta">📂 research/GitHub_BRAIN_Integration/ | 8 archivos</div>
+        <a href="research/GitHub_BRAIN_Integration/index.html" class="btn">Ver investigación →</a>
     </div>
     
     <p style="text-align: center; color: #444; margin-top: 50px; font-size: 12px;">
