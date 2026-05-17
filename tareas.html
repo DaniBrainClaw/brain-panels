@@ -7,40 +7,70 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui; background: #0a0a0f; color: #e0e0e0; padding: 20px; }
-        h1 { color: #00d4aa; margin-bottom: 10px; font-size: 24px; }
+        h1 { color: #00d4aa; margin-bottom: 5px; font-size: 28px; }
+        h1 span { font-size: 14px; color: #666; font-weight: normal; }
+        .subtitle { color: #666; margin-bottom: 30px; }
         .back { color: #00d4aa; text-decoration: none; font-size: 14px; }
         .meta { color: #666; font-size: 12px; margin-bottom: 30px; }
+        
+        nav { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+        nav a { background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; }
+        nav a:hover { background: #00d4aa; color: #000; }
+        nav a.active { background: #00d4aa; color: #000; }
+        
         .task { background: #1a1a24; border-radius: 12px; padding: 20px; margin: 15px 0; border-left: 4px solid; }
         .task.urgent { border-color: #ff4444; }
         .task.high { border-color: #ffaa00; }
         .task.medium { border-color: #44bb44; }
+        .task.low { border-color: #3498db; }
+        
         .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
         .task h2 { color: #fff; font-size: 18px; flex: 1; }
+        
         .badge { font-size: 11px; padding: 3px 10px; border-radius: 6px; font-weight: bold; }
         .badge-red { background: #ff4444; color: white; }
         .badge-orange { background: #ffaa00; color: black; }
         .badge-green { background: #44bb44; color: white; }
+        .badge-blue { background: #3498db; color: white; }
+        
+        .status-badge { font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin-left: 10px; }
+        .status-pending { background: #ffaa00; color: black; }
+        .status-progress { background: #00d4aa; color: black; }
+        .status-blocked { background: #ff4444; color: white; }
+        .status-waiting-dani { background: #9b59b6; color: white; }
+        .status-waiting-ext { background: #e67e22; color: white; }
+        .status-done { background: #27ae60; color: white; }
+        
         .task p { color: #888; font-size: 14px; line-height: 1.5; margin-bottom: 15px; }
-        .task-info { display: flex; gap: 20px; font-size: 12px; color: #666; flex-wrap: wrap; }
+        .task-info { display: flex; gap: 15px; font-size: 12px; color: #666; flex-wrap: wrap; margin-bottom: 10px; }
+        
+        .next-step { background: #0f3460; padding: 12px 16px; border-radius: 8px; margin: 10px 0; border-left: 3px solid #00d4aa; }
+        .next-step-label { color: #00d4aa; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .next-step-text { color: #fff; font-size: 14px; }
+        
+        .blocked { background: #2a1a1a; padding: 12px 16px; border-radius: 8px; margin: 10px 0; border-left: 3px solid #ff4444; }
+        .blocked-label { color: #ff4444; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .blocked-text { color: #ff6b6b; font-size: 14px; }
+        
         .action { display: inline-block; background: #00d4aa; color: #000; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: bold; margin-top: 10px; }
         .action:hover { opacity: 0.8; }
+        
         .section-title { color: #00d4aa; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin: 30px 0 15px 0; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        .status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
-        .status-pending { background: #ffaa00; color: black; }
-        .status-dani { background: #00d4aa; color: black; }
-        .status-ejecutor { background: #ff6b6b; color: white; }
+        
+        .progress-bar { background: #333; height: 4px; border-radius: 2px; margin: 10px 0; overflow: hidden; }
+        .progress-bar-fill { background: #00d4aa; height: 100%; border-radius: 2px; transition: width 0.3s; }
     </style>
 </head>
 <body>
-    <nav style="display:flex;gap:15px;margin-bottom:25px;flex-wrap:wrap;">
-        <a href="index.html" style="background:#1a1a24;color:#00d4aa;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:500;">📊 Dashboard</a>
-        <a href="tareas.html" style="background:#00d4aa;color:#000;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:500;">📋 Tareas</a>
-        <a href="investigaciones.html" style="background:#1a1a24;color:#00d4aa;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:500;">🔬 Investigaciones</a>
-        <a href="viewer.html" style="background:#1a1a24;color:#00d4aa;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:500;">📖 Visor MD</a>
+    <nav>
+        <a href="index.html">📊 Dashboard</a>
+        <a href="tareas.html" class="active">📋 Tareas</a>
+        <a href="investigaciones.html">🔬 Investigaciones</a>
+        <a href="viewer.html">📖 Visor MD</a>
     </nav>
-    <a href="index.html" class="back">← Dashboard</a>
-    <h1>📋 Tareas Pendientes</h1>
-    <div class="meta">9 tareas priorizadas por Dani | 20 total identificadas</div>
+    
+    <h1>📋 Tareas Pendientes <span>| Panel de seguimiento</span></h1>
+    <p class="subtitle">9 tareas priorizadas | Última actualización: 2026-05-17</p>
     
     <div class="section-title">🔴 Críticas</div>
     
@@ -48,45 +78,66 @@
         <div class="task-header">
             <h2>1. SSL estudiovirtual.es</h2>
             <span class="badge badge-red">CRÍTICO</span>
+            <span class="status-badge status-waiting-dani">⏳ Esperando Dani</span>
         </div>
-        <p>La web está en HTTP puro — Chrome marca como "no seguro". Impacto en SEO y conversión. Necesitas contactar a Diewaves para instalar Let's Encrypt (gratis).</p>
+        <p>La web está en HTTP puro — Chrome marca como "no seguro". Impacto en SEO y conversión.</p>
         <div class="task-info">
             <span>⏱️ Tiempo: 30 min</span>
-            <span>👤 Responsable: <span class="status status-dani">Dani + Diewaves</span></span>
-            <span>📁 Docs: Web_Audit/findings/web_estudiovirtual.md</span>
+            <span>👤 Responsable: <span class="badge badge-orange">Dani + Diewaves</span></span>
         </div>
-        <a href="https://danibrainclaw.github.io/brain-panels/research/Web_Audit/findings/web_estudiovirtual.md" target="_blank" class="action">Ver auditoría →</a>
+        <div class="blocked">
+            <div class="blocked-label">⬅️ Bloqueado por</div>
+            <div class="blocked-text">Dani necesita contactar a Diewaves para instalar Let's Encrypt</div>
+        </div>
+        <div class="next-step">
+            <div class="next-step-label">→ Siguiente paso</div>
+            <div class="next-step-text">Dani: enviar email/whatsapp a Diewaves solicitando SSL</div>
+        </div>
+        <a href="https://danibrainclaw.github.io/brain-panels/research/Web_Audit/findings/web_estudiovirtual.html" target="_blank" class="action">Ver auditoría →</a>
     </div>
     
     <div class="section-title">🟠 Altas</div>
     
     <div class="task high">
         <div class="task-header">
-            <h2>2. organize-day — 3 bugs</h2>
+            <h2>2. Arreglar organize-day (3 bugs)</h2>
             <span class="badge badge-orange">BUGS</span>
+            <span class="status-badge status-blocked">⛔ Bloqueado</span>
         </div>
         <p>Bugs identificados en el flujo de organizar día:<br>
-        1. review_date no pasa de step3 a step4 (step4 usa "ayer" hardcoded)<br>
+        1. review_date no pasa de step3 a step4<br>
         2. Declined events incluidos como movibles<br>
-        3. step5 usa fecha equivocada (ayer en vez de review_date)</p>
+        3. step5 usa fecha equivocada</p>
         <div class="task-info">
             <span>⏱️ Prioridad: Alta</span>
-            <span>👤 Responsable: <span class="status status-ejecutor">Ejecutor</span></span>
+            <span>👤 Responsable: <span class="badge badge-blue">Ejecutor</span></span>
             <span>📁 Scripts: organize-step3.py, organize-step4.py, organize_step5.py</span>
+        </div>
+        <div class="blocked">
+            <div class="blocked-label">⬅️ Bloqueado por</div>
+            <div class="blocked-text">Necesito entender cómo investigar los bugs — necesito acceso a los scripts</div>
+        </div>
+        <div class="next-step">
+            <div class="next-step-label">→ Siguiente paso</div>
+            <div class="next-step-text">Yo: investigar los scripts de organize-day y proponer fix</div>
         </div>
         <a href="https://danibrainclaw.github.io/brain-panels/research/OpenClaw_Panels/index.html" target="_blank" class="action">Ver contexto →</a>
     </div>
     
     <div class="task high">
         <div class="task-header">
-            <h2>3. OPENCLAW_EXPERT.html completo</h2>
+            <h2>3. OPENCLAW_EXPERT.md más depth</h2>
             <span class="badge badge-orange">ALTA</span>
+            <span class="status-badge status-progress">🔄 En progreso</span>
         </div>
-        <p>El archivo tiene 6,609 líneas y 90 secciones, pero Dani quiere más depth. Necesita análisis de las 487 sesiones para extraer patterns avanzados.</p>
+        <p>El archivo tiene 6,609 líneas. Necesita más depth en patrones avanzados.</p>
         <div class="task-info">
-            <span>⏱️ Tiempo: Continuo</span>
-            <span>👤 Responsable: <span class="status status-ejecutor">BRAIN</span></span>
-            <span>📁 Archivo: /workspace/OPENCLAW_EXPERT.html</span>
+            <span>⏱️ Tipo: Continuo</span>
+            <span>👤 Responsable: <span class="badge badge-blue">BRAIN</span></span>
+        </div>
+        <div class="next-step">
+            <div class="next-step-label">→ Siguiente paso</div>
+            <div class="next-step-text">Yo: analizar las 487 sesiones para extraer patterns avanzados</div>
         </div>
         <a href="https://danibrainclaw.github.io/brain-panels/OPENCLAW_EXPERT.html" target="_blank" class="action">Ver actual →</a>
     </div>
@@ -95,115 +146,78 @@
         <div class="task-header">
             <h2>4. Plan mejora webs (completo)</h2>
             <span class="badge badge-orange">ALTA</span>
+            <span class="status-badge status-pending">📋 Pendiente</span>
         </div>
-        <p>Auditoría de 8 webs completada. Investigación hecha pero falta escribir el plan completo con prioridades, tiempos y dificultad por semana.</p>
+        <p>Auditoría de 8 webs completada. Falta escribir plan con prioridades, tiempos, dificultad.</p>
         <div class="task-info">
             <span>⏱️ Tiempo: 1 hora</span>
-            <span>👤 Responsable: <span class="status status-ejecutor">BRAIN</span></span>
-            <span>📁 Docs: research/overnight/WEB_IMPLEMENTATION_PLAN.md</span>
+            <span>👤 Responsable: <span class="badge badge-blue">BRAIN</span></span>
+        </div>
+        <div class="next-step">
+            <div class="next-step-label">→ Siguiente paso</div>
+            <div class="next-step-text">Yo: generar plan completo de 4 semanas con priorities</div>
         </div>
         <a href="https://danibrainclaw.github.io/brain-panels/research/Web_Audit/index.html" target="_blank" class="action">Ver auditoría →</a>
     </div>
+    
+    <div class="section-title">🟡 Medias</div>
     
     <div class="task medium">
         <div class="task-header">
             <h2>5. Meta descriptions (8 webs)</h2>
             <span class="badge badge-green">SEO</span>
+            <span class="status-badge status-waiting-dani">⏳ Esperando Dani</span>
         </div>
-        <p>Todas las webs carecen de meta descriptions. Tengo las 8 listas para copiar/pegar en WordPress.</p>
+        <p>Todas las webs carecen de meta descriptions. Textos listos para copiar/pegar.</p>
         <div class="task-info">
-            <span>⏱️ Tiempo: 2 horas (Dani copy/paste)</span>
-            <span>👤 Responsable: <span class="status status-dani">Dani</span></span>
-            <span>📁 Docs: research/overnight/META_DESCRIPTIONS.html</span>
+            <span>⏱️ Tiempo: 2 horas (copy/paste)</span>
+            <span>👤 Responsable: <span class="badge badge-orange">Dani</span></span>
+        </div>
+        <div class="blocked">
+            <div class="blocked-label">⬅️ Bloqueado por</div>
+            <div class="blocked-text">Dani necesita hacer copy/paste en WordPress</div>
+        </div>
+        <div class="next-step">
+            <div class="next-step-label">→ Siguiente paso</div>
+            <div class="next-step-text">Dani: abrir cada web en WordPress → Settings → SEO → Meta description → pegar</div>
         </div>
         <a href="https://danibrainclaw.github.io/brain-panels/research/overnight/META_DESCRIPTIONS.html" target="_blank" class="action">Ver meta descriptions →</a>
     </div>
     
-    <div class="section-title">🟡 Sistema — Automejora BRAIN</div>
+    <div class="section-title">🔵 Baja prioridad</div>
     
-    <div class="task high">
+    <div class="task low">
         <div class="task-header">
-            <h2>6. BRAIN Periodic Nudge (self-improvement)</h2>
-            <span class="badge badge-orange">HERMES</span>
+            <h2>6. Indexar sesiones en ChromaDB</h2>
+            <span class="badge badge-blue">AUTOMÁTICO</span>
+            <span class="status-badge status-progress">🔄 En progreso</span>
         </div>
-        <p>Inspirado en Hermes Agent. Cada ciertos intervalos, BRAIN pregunta "¿hay algo que guardar?" y hace auto-curation de memory. Más info en Research/Hermes_Agent_Analysis/</p>
+        <p>Todas las sesiones de BRAIN y Director se indexan cada noche a las 2:00 AM.</p>
         <div class="task-info">
-            <span>⏱️ Tiempo: 2-3 horas</span>
-            <span>👤 Responsable: <span class="status status-ejecutor">Ejecutor</span></span>
-            <span>📁 Docs: research/Hermes_Agent_Analysis/</span>
+            <span>⏱️ Frecuencia: Nocturna</span>
+            <span>👤 Responsable: <span class="badge badge-blue">Automático</span></span>
         </div>
-        <a href="https://danibrainclaw.github.io/brain-panels/research/Hermes_Agent_Analysis/SUMMARY_DANI.md" target="_blank" class="action">Ver análisis Hermes →</a>
+        <div class="next-step">
+            <div class="next-step-label">→ Siguiente paso</div>
+            <div class="next-step-text">Esperar a las 2:00 AM → script ejecuta automáticamente</div>
+        </div>
     </div>
     
-    <div class="task medium">
+    <div class="task low">
         <div class="task-header">
-            <h2>7. Auto-skill creation</h2>
-            <span class="badge badge-green">HERMES</span>
+            <h2>7. Dashboard actualizado</h2>
+            <span class="badge badge-blue">DONE</span>
+            <span class="status-badge status-done">✅ Completado</span>
         </div>
-        <p>Después de 5+ tool calls repetitivos, crear skill automáticamente. BRAIN crea sus propias herramientas.</p>
+        <p>Panel de GitHub Pages con 105+ archivos HTML, navegación consistente.</p>
         <div class="task-info">
-            <span>⏱️ Complejidad: Media</span>
-            <span>👤 Responsable: <span class="status status-ejecutor">Ejecutor</span></span>
+            <span>✅ Completado: 2026-05-17</span>
         </div>
-        <a href="https://danibrainclaw.github.io/brain-panels/research/Hermes_Agent_Analysis/INDEX.md" target="_blank" class="action">Ver docs →</a>
+        <a href="https://danibrainclaw.github.io/brain-panels/" target="_blank" class="action">Ver panel →</a>
     </div>
     
-    <div class="task medium">
-        <div class="task-header">
-            <h2>8. BRAIN Voice / TTS</h2>
-            <span class="badge badge-green">NUEVO</span>
-        </div>
-        <p>BRAIN tenía pendiente buscar una voz propia para comunicarse por voz. Opciones: ElevenLabs, Coqui TTS, RVC,XTTS. Dani podría hablar con BRAIN y BRAIN responder con voz.</p>
-        <div class="task-info">
-            <span>⏱️ Investigación: 1 hora</span>
-            <span>👤 Responsable: <span class="status status-ejecutor">Investigador</span></span>
-            <span>📁 Skills: TTS tool disponible</span>
-        </div>
-        <a href="https://danibrainclaw.github.io/brain-panels/research/MiniMax_M2.7_analysis/INDEX.md" target="_blank" class="action">Ver análisis modelo →</a>
-    </div>
-    
-    <div class="task medium">
-        <div class="task-header">
-            <h2>9. OpenClaw Office / Avatares</h2>
-            <span class="badge badge-green">VISUAL</span>
-        </div>
-        <p>Oficina simulada con avatares representando agentes trabajando en tiempo real. Repo: iOfficeAI/AionUi (25K stars). Dani's quería ver esto.</p>
-        <div class="task-info">
-            <span>⏱️ Complejidad: Media</span>
-            <span>👤 Responsable: <span class="status status-ejecutor">Investigador</span></span>
-            <span>📁 Docs: research/OpenClaw_Panels/</span>
-        </div>
-        <a href="https://danibrainclaw.github.io/brain-panels/research/OpenClaw_Panels/index.html" target="_blank" class="action">Ver investigación →</a>
-    </div>
-    
-    <div class="section-title">🟡 Investigación Automática</div>
-    
-    <div class="task medium">
-        <div class="task-header">
-            <h2>10. IMP-01 a IMP-12 — Investigación automática</h2>
-            <span class="badge badge-green">AUTOMÁTICO</span>
-        </div>
-        <p> Sistema de investigación automática cada 30 min. BRAIN sería más autónomo. Lista completa en Research/OpenClaw/TAREAS_PENDIENTES.md</p>
-        <div class="task-info">
-            <span>⏱️ Implementación gradual</span>
-            <span>👤 Responsable: <span class="status status-ejecutor">Ejecutor</span></span>
-            <span>📁 Docs: Research/OpenClaw/TAREAS_PENDIENTES.md</span>
-        </div>
-        <a href="https://github.com/DaniBrainClaw/brain-panels/tree/main/research/OPENCLAW" target="_blank" class="action">Ver docs →</a>
-    </div>
-    
-    <div class="task medium">
-        <div class="task-header">
-            <h2>11. 4-Layer Memory System</h2>
-            <span class="badge badge-green">HERMES</span>
-        </div>
-        <p>Implementar capa adicional de memoria tipo Hermes (FTS5 session search). Mejora búsqueda semántica en sesiones.</p>
-        <div class="task-info">
-            <span>⏱️ Complejidad: Media-Alta</span>
-            <span>👤 Responsable: <span class="status status-ejecutor">Ejecutor</span></span>
-        </div>
-        <a href="https://danibrainclaw.github.io/brain-panels/research/Hermes_Agent_Analysis/findings/step_3.md" target="_blank" class="action">Ver detalles →</a>
-    </div>
-    
+    <p style="text-align: center; color: #444; margin-top: 50px; font-size: 12px;">
+        Generado automáticamente por BRAIN — Sistema de gestión de tareas
+    </p>
 </body>
 </html>
