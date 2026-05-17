@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Canvas & Panels — Query 1: Canvas Dashboard Tutorial</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_1.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<strong>Query:</strong> "openclaw canvas dashboard interactive panel tutorial"
+<strong>Resultados:</strong> 18 found
+<hr>
+<h2>Fuentes Principales</h2>
+<ul><li><strong>Documentación oficial Canvas</strong> — docs.openclaw.ai/platforms/mac/canvas</li>
+<li><strong>SKILL.md Canvas</strong> — github.com/openclaw/openclaw/blob/main/skills/canvas/SKILL.md</li>
+<li><strong>Web UI Guide</strong> — ququ123.top/en/2026/02/openclaw-web-ui/</li>
+<li><strong>Goldie Agency Dashboard</strong> — goldie.agency/openclaw-dashboard/</li>
+<li><strong>GitHub mudrii/openclaw-dashboard</strong> — zero-dependency command center</li>
+</ul>
+<hr>
+<h2>Arquitectura Canvas (del SKILL.md)</h2>
+<pre><code>┌─────────────────┐     ┌──────────────────┐     ┌─────────────┐
+│  Canvas Host    │────▶│   Node Bridge     │────▶│  Node App   │
+│  (HTTP Server)  │     │  (TCP Server)     │     │ (Mac/iOS/   │
+│  Port 18793     │     │  Port 18790       │     │  Android)   │
+└─────────────────┘     └──────────────────┘     └─────────────┘
+</code></pre>
+<h3>Componentes:</h3>
+<ul><li><strong>Canvas Host Server</strong> — Serve static HTML/CSS/JS files</li>
+<li><strong>Node Bridge</strong> — Communica canvas URLs a nodes</li>
+<li><strong>Node Apps</strong> — Render content en WebView</li>
+</ul>
+<hr>
+<h2>Cómo Funciona Canvas</h2>
+<h3>1. Crear HTML content</h3>
+<pre><code><h1>En canvas root directory (~/.openclaw/canvas/<session>/)</h1>
+cat > ~/.openclaw/canvas/my-dashboard.html << 'HTML'
+<!DOCTYPE html>
+<html>
+<head><title>My Dashboard</title></head>
+<body>
+  <h1>Hello Canvas!</h1>
+</body>
+</html>
+HTML
+</code></pre>
+<h3>2. Presentar content</h3>
+<pre><code>canvas action:present node:<node-id> target:<url>
+</code></pre>
+<h3>3. Acciones disponibles</h3>
+<ul><li><code>present</code> — Show canvas</li>
+<li><code>hide</code> — Hide canvas</li>
+<li><code>navigate</code> — Navigate a URL</li>
+<li><code>eval</code> — Execute JavaScript</li>
+<li><code>snapshot</code> — Capture screenshot</li>
+</ul>
+<hr>
+<h2>A2UI Protocol (Advanced)</h2>
+<p>Canvas supports <strong>A2UI v0.8</strong> commands:
+<ul><li><code>beginRendering</code></li>
+<li><code>surfaceUpdate</code></li>
+<li><code>dataModelUpdate</code></li>
+<li><code>deleteSurface</code></li>
+</ul>
+<pre><code><h1>Ejemplo A2UI push</h1>
+openclaw nodes canvas a2ui push --node <id> --text "Hello from A2UI"
+</code></pre></p>
+<hr>
+<h2>Canvas Commands desde CLI</h2>
+<pre><code><h1>Listar nodes</h1>
+openclaw nodes list
+<h1>Presentar dashboard</h1>
+openclaw nodes canvas present --node <id>
+<h1>Navigate</h1>
+openclaw nodes canvas navigate --node <id> --url "/"
+<h1>Eval JS</h1>
+openclaw nodes canvas eval --node <id> --js "document.title"
+<h1>Snapshot</h1>
+openclaw nodes canvas snapshot --node <id>
+</code></pre>
+<hr>
+<h2>URL Path Structure</h2>
+<pre><code>http://<host>:18793/__openclaw__/canvas/index.html
+  → ~/.openclaw/canvas/index.html
+<p>http://<host>:18793/__openclaw__/canvas/dashboard/metrics.html
+  → ~/.openclaw/canvas/dashboard/metrics.html
+</code></pre></p>
+<hr>
+<h2>Live Reload</h2>
+<p>Cuando <code>liveReload: true</code>:
+<ul><li>Watcher monitorea cambios en archivos</li>
+<li>Inyecta WebSocket client en HTML</li>
+<li>Auto-reload en canvas conectadas</li>
+</ul>
+<strong>Perfecto para desarrollo!</strong></p>
+<hr>
+<h2>Configuración</h2>
+<pre><code>{
+  "canvasHost": {
+    "enabled": true,
+    "port": 18793,
+    "root": "/Users/tú/.openclaw/canvas",
+    "liveReload": true
+  },
+  "gateway": {
+    "bind": "auto"
+  }
+}
+</code></pre>
+<hr>
+<h2>Bind Modes (Tailscale/LAN)</h2>
+| Bind | Server binds to | Canvas URL uses |
+|------|-----------------|-----------------|
+| loopback | 127.0.0.1 | localhost |
+| lan | LAN interface | LAN IP |
+| tailnet | Tailscale interface | Tailscale hostname |
+| auto | Best available | Tailscale > LAN > loopback |
+<strong>Key insight:</strong> Cuando usas Tailscale, el node recibe el hostname de Tailscale, no localhost!
+<hr>
+<h2>Control UI vs Canvas</h2>
+| Característica | Control UI | Canvas |
+|----------------|------------|--------|
+| Propósito | Dashboard de gestión | Visual workspace |
+| Contenido | Stats, config, logs | HTML/CSS/JS apps |
+|Quién controla | Gateway | Agent |
+| Acceso | Browser → :18789 | macOS/iOS/Android apps |
+<hr>
+<h2>Tips del SKILL.md</h2>
+<ul><li>Mantener HTML self-contained (inline CSS/JS)</li>
+<li>Usar default index.html como test page</li>
+<li>Canvas persiste hasta <code>hide</code></li>
+<li>Live reload = desarrollo rápido</li>
+<li>A2UI JSON push es WIP — usar HTML por ahora</li>
+</ul>
+<hr>
+<h2>Dashboard con OpenClaw</h2>
+<p>GitHub: <strong>mudrii/openclaw-dashboard</strong>
+<ul><li>Zero dependencies</li>
+<li>Muestra models, skills, git commits</li>
+<li>Command center para agentes</li>
+</ul>
+<hr></p>
+<em>Investigador — Query 1 completada.</em>
+</body>
+</html>

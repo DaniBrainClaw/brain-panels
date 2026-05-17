@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Panels & Avatares — Resumen para Dani</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 SUMMARY_DANI.md</p>
+    <strong>Última actualización:</strong> 2026-05-16
+<hr>
+<h2>tl;dr</h2>
+<p>Dani, OpenClaw tiene VARIAS formas de crear paneles:</p>
+| Qué quieres | Herramienta | Tiempo |
+|-------------|-------------|--------|
+| BRAIN muestre un dashboard HTML | Canvas tool | 10 min |
+| Ver avatares de agentes trabajando | OpenClaw Office | 5 min |
+| Dashboard de métricas del sistema | openclaw-dashboard | 5 min |
+| Reemplazar WebChat con UI mejor | PinchChat | 5 min |
+| Acceso remoto desde cualquier lugar | Tailscale | 15 min |
+<hr>
+<h2>1. Canvas — Cómo BRAIN presenta paneles</h2>
+<p>Canvas es el sistema para que BRAIN muestre paneles en tu Mac/iPhone/Android.</p>
+<h3>Arquitectura:</h3>
+<pre><code>BRAIN → Gateway → Canvas Host (:18793) → Node Bridge → Tu Mac/iPhone (WebView)
+</code></pre>
+<h3>Cómo funciona:</h3>
+<ul><li><strong>Crear HTML</strong> — cualquier archivo HTML/CSS/JS</li>
+<li><strong>BRAIN lo presenta</strong> — usa <code>canvas action:present node:<id> target:<url></code></li>
+<li><strong>Tu dispositivo lo muestra</strong> — en el canvas panel</li>
+</ul>
+<h3>Ejemplo rápido:</h3>
+<pre><code><h1>1. Crear archivo</h1>
+mkdir -p ~/.openclaw/canvas/mi-panel
+cat > ~/.openclaw/canvas/mi-panel/index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head><title>Dashboard</title></head>
+<body>
+  <h1>Ventas del día</h1>
+  <p id="ventas">Cargando...</p>
+  <script>
+    document.getElementById('ventas').innerText = '€1,234';
+  </script>
+</body>
+</html>
+EOF
+<h1>2. BRAIN lo presenta ( automática)</h1>
+canvas action:present node:<tu-node-id> target:http://tu-host:18793/__openclaw__/canvas/mi-panel/index.html
+</code></pre>
+<hr>
+<h2>2. OpenClaw Office — Avatares animados ⭐</h2>
+<strong>Esto es lo que has visto con avatares moviéndose por oficina simulada.</strong>
+<h3>Instalar:</h3>
+<pre><code>npx @ww-ai-lab/openclaw-office
+<h1>Abre http://localhost:5180</h1>
+</code></pre>
+<h3>Qué incluye:</h3>
+<ul><li><strong>Virtual Office 2D</strong> — avatares SVG animados (idle, working, speaking, error)</li>
+<li><strong>Agent collaboration lines</strong> — líneas visuales mostrando flujo de mensajes</li>
+<li><strong>Chat workspace</strong> — streaming en tiempo real</li>
+<li><strong>Console completo</strong> — Dashboard, Agents, Channels, Skills, Cron, Settings</li>
+<li><strong>Skill Workbench</strong> — crear skills con AI assistance</li>
+</ul>
+<h3>Avatares:</h3>
+<ul><li>Cada agente tiene avatar único (generado desde su ID)</li>
+<li>Se mueven por la oficina, se sienta en desks</li>
+<li>Muestran status en tiempo real</li>
+</ul>
+<hr>
+<h2>3. openclaw-dashboard — Métricas del sistema</h2>
+<h3>Instalar:</h3>
+<pre><code>brew install mudrii/tap/openclaw-dashboard
+openclaw-dashboard --refresh
+openclaw-dashboard
+<h1>Abre http://localhost:8080</h1>
+</code></pre>
+<h3>12 paneles:</h3>
+<ul><li><strong>Top Metrics Bar</strong> — CPU, RAM, disco</li>
+<li><strong>Alerts Banner</strong> — costos altos, crons fallidos</li>
+<li><strong>System Health</strong> — gateway status, uptime</li>
+<li><strong>Cost Cards</strong> — hoy, total, proyectado</li>
+<li><strong>Cron Jobs</strong> — todos los jobs programados</li>
+<li><strong>Active Sessions</strong> — sesiones activas</li>
+<li><strong>Token Usage</strong> — desglose por modelo</li>
+<li><strong>Sub-Agent Activity</strong> — actividad de sub-agentes</li>
+<li><strong>Charts & Trends</strong> — gráficos de costo</li>
+<li><strong>Models</strong> — modelos disponibles</li>
+<li><strong>Skills</strong> — lista de skills</li>
+<li><strong>Git log</strong> — commits recientes</li>
+</ul>
+<hr>
+<h2>4. PinchChat — Mejor WebChat</h2>
+<strong>Reemplaza la UI de chat por algo mucho mejor.</strong>
+<h3>Instalar:</h3>
+<pre><code>docker run -p 3000:80 ghcr.io/marlburrow/pinchchat:latest
+<h1>Abre http://localhost:3000</h1>
+</code></pre>
+<h3>Características:</h3>
+<ul><li><strong>Tool call visualization</strong> — ves exactamente qué herramientas usa BRAIN</li>
+<li><strong>Live streaming</strong> — token por token</li>
+<li><strong>Token usage</strong> — barras de progreso</li>
+<li><strong>Split view</strong> — 2 sesiones lado a lado</li>
+<li><strong>Themes</strong> — Dark, Light, OLED Black</li>
+<li><strong>Search</strong> — Ctrl+F para buscar</li>
+</ul>
+<hr>
+<h2>5. Acceso remoto con Tailscale</h2>
+<h3>Setup:</h3>
+<pre><code><h1>Instalar Tailscale en el servidor</h1>
+curl -fsSL https://tailscale.com/install.sh | sh
+tailscale up
+<h1>Configurar gateway</h1>
+{
+  "gateway": {
+    "tailscale": { "mode": "serve" }
+  }
+}
+</code></pre>
+<h3>Luego accedes desde cualquier lugar:</h3>
+<ul><li><strong>Control UI:</strong> https://tu-host.ts.net/</li>
+<li><strong>Dashboard:</strong> https://tu-host.ts.net:8080/</li>
+<li><strong>PinchChat:</strong> https://tu-host.ts.net:3000/</li>
+</ul>
+<hr>
+<h2>Canvas Tool — Comandos</h2>
+<p>BRAIN puede usar estas acciones:</p>
+| Acción | Para qué |
+|--------|----------|
+| <code>canvas.present</code> | Mostrar un panel HTML |
+| <code>canvas.hide</code> | Ocultar el panel |
+| <code>canvas.navigate</code> | Ir a otra URL |
+| <code>canvas.eval</code> | Ejecutar JavaScript |
+| <code>canvas.snapshot</code> | Tomar screenshot → imagen |
+| <code>canvas.a2ui_push</code> | Enviar mensaje A2UI |
+<hr>
+<h2>Live Reload — Desarrollo rápido</h2>
+<p>Si pones <code>liveReload: true</code> en config:
+<ul><li>Cada vez que guardas el HTML, el canvas se actualiza solo</li>
+<li>No necesitas reiniciar nada</li>
+<li>Perfecto para desarrollo iterativo</li>
+</ul>
+<pre><code>{
+  "canvasHost": {
+    "enabled": true,
+    "port": 18793,
+    "root": "/Users/tú/.openclaw/canvas",
+    "liveReload": true
+  }
+}
+</code></pre></p>
+<hr>
+<h2>Quick reference — URLs</h2>
+| Servicio | URL local | Puerto |
+|----------|----------|--------|
+| Control UI | http://localhost:18789/ | 18789 |
+| Canvas Host | http://localhost:18793/ | 18793 |
+| openclaw-dashboard | http://localhost:8080/ | 8080 |
+| OpenClaw Office | http://localhost:5180/ | 5180 |
+| PinchChat | http://localhost:3000/ | 3000 |
+<hr>
+<h2>Para qué sirve cada cosa</h2>
+| Uso | Herramienta recomendada |
+|-----|----------------------|
+| <strong>Ver cómo BRAIN trabaja</strong> | OpenClaw Office |
+| <strong>Saber costos y métricas</strong> | openclaw-dashboard |
+| <strong>Chat con visualización de tools</strong> | PinchChat |
+| <strong>BRAIN muestra resultados visuales</strong> | Canvas tool |
+| <strong>Acceder desde fuera de casa</strong> | Tailscale |
+<hr>
+<em>Dani: ¿Cuál quieres probar primero?</em>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Canvas & Panels — Query 3: Control UI, Panels & Embed HTML</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_3.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<strong>Query:</strong> "openclaw control UI panels embed HTML"
+<strong>Resultados:</strong> 19 found
+<hr>
+<h2>Fuentes</h2>
+<ul><li><strong>Control UI Official Docs</strong> — docs.openclaw.ai/web/control-ui</li>
+<li><strong>Web UI Guide (ququ123)</strong> — ququ123.top/en/2026/02/openclaw-web-ui/</li>
+<li><strong>GitHub openclaw/ui</strong> — github.com/openclaw/openclaw/blob/main/ui/index.html</li>
+<li><strong>GitHub mudrii/openclaw-dashboard</strong> — zero-dependency command center</li>
+<li><strong>GitHub TianyiDataScience/openclaw-control-center</strong> — local control center</li>
+</ul>
+<hr>
+<h2>Control UI — Official</h2>
+<strong>URL:</strong> docs.openclaw.ai/web/control-ui
+<strong>Puerto default:</strong> http://127.0.0.1:18789/
+<h3>Pages/Features:</h3>
+| Feature | Description |
+|---------|-------------|
+| <strong>Chat</strong> | Message input, Markdown, code blocks |
+| <strong>Sessions</strong> | List, details, reset, delete, export |
+| <strong>Config</strong> | Edit config online, validation, hot reload |
+| <strong>Nodes</strong> | List connected devices, status, pairing |
+| <strong>Logs</strong> | Real-time streaming, filter, search, export |
+| <strong>Skills</strong> | Install from ClawHub, configure, toggle |
+<h3>Config options:</h3>
+<pre><code>{
+  "web": {
+    "enabled": true,
+    "port": 18789,
+    "bind": "loopback",
+    "auth": {
+      "mode": "password",
+      "password": "your-secure-password"
+    },
+    "theme": "dark"
+  }
+}
+</code></pre>
+<h3>Auth modes:</h3>
+<ul><li><strong>Token</strong> — via <code>connect.params.auth.token</code></li>
+<li><strong>Password</strong> — <code>gateway.auth.mode: "password"</code></li>
+<li><strong>Tailscale</strong> — identity headers when <code>gateway.auth.allowTailscale: true</code></li>
+<li><strong>Trusted-proxy</strong> — identity headers from proxy</li>
+</ul>
+<h3>Remote access:</h3>
+<ul><li><strong>Tailscale:</strong> https://your-tailnet-name.ts.net</li>
+<li><strong>SSH tunnel:</strong> <code>ssh -L 18789:localhost:18789 user@remote-server</code></li>
+<li><strong>Reverse proxy:</strong> Caddy/Nginx con <code>reverse_proxy localhost:18789</code></li>
+</ul>
+<hr>
+<h2>Dashboards Alternativos</h2>
+<h3>1. openclaw-dashboard ⭐⭐⭐</h3>
+<strong>GitHub:</strong> github.com/mudrii/openclaw-dashboard
+<strong>Autor:</strong> mudrii
+<p>#### 12 Paneles:
+<ul><li><strong>Top Metrics Bar</strong> — CPU, RAM, swap, disk + OpenClaw version</li>
+<li><strong>Header Bar</strong> — Bot name, online/offline, auto-refresh countdown</li>
+<li><strong>Alerts Banner</strong> — High costs, failed crons, gateway offline</li>
+<li><strong>System Health</strong> — Gateway status, PID, uptime, memory, sessions</li>
+<li><strong>Cost Cards</strong> — Today's cost, all-time, projected monthly, breakdown</li>
+<li><strong>Cron Jobs</strong> — All scheduled jobs with status/schedule/last-next</li>
+<li><strong>Active Sessions</strong> — Recent sessions con model, type badges</li>
+<li><strong>Token Usage & Cost</strong> — Per-model breakdown, 7d/30d/all-time</li>
+<li><strong>Sub-Agent Activity</strong> — Runs con cost, duration, status</li>
+<li><strong>Charts & Trends</strong> — Cost trend line, model breakdown</li>
+<li><strong>Bottom Row</strong> — Available models, skills list, git log</li>
+<li><strong>AI Chat</strong> — Natural language queries sobre dashboard</li>
+</ul>
+#### Características:
+<ul><li>6 built-in themes (3 dark + 3 light)</li>
+<li>Glass Morphism UI</li>
+<li>Responsive (desktop/tablet/mobile)</li>
+<li>Local only — no external deps</li>
+<li>Rate limiting en <code>/api/chat</code></li>
+<li>Go backend + pure HTML/CSS/JS frontend</li>
+</ul>
+#### Install:
+<pre><code><h1>Homebrew</h1>
+brew install mudrii/tap/openclaw-dashboard
+openclaw-dashboard --refresh
+openclaw-dashboard</p>
+<h1>Pre-built binary</h1>
+curl -L https://github.com/mudrii/openclaw-dashboard/releases/latest/download/openclaw-dashboard-darwin-arm64.tar.gz | tar xz
+./openclaw-dashboard --port 8080
+</code></pre>
+<hr>
+<h3>2. openclaw-control-center</h3>
+<strong>GitHub:</strong> github.com/TianyiDataScience/openclaw-control-center
+<strong>Descripción:</strong> "Turn OpenClaw from a black box into a local control center you can see, trust, and control."
+<hr>
+<h3>3. OpenClaw Office (de Query 2)</h3>
+<strong>GitHub:</strong> github.com/WW-AI-Lab/openclaw-office
+<p>Ya documentado en step_2.md — incluye console completo + virtual office.</p>
+<hr>
+<h2>Embed HTML en Control UI</h2>
+<h3>Building the UI</h3>
+La documentación menciona que el Gateway sirve static files desde <code>dist/control-ui</code>.
+<p>Para hacer embed de contenido custom en el Control UI:</p>
+<ul><li><strong>Crear archivo HTML</strong> en el canvas root</li>
+<li><strong>Presentar via Canvas tool</strong> — <code>canvas.present</code></li>
+<li><strong>O navegar</strong> — <code>canvas.navigate</code></li>
+</ul>
+<h3>Hosted Embeds</h3>
+Desde docs.openclaw.ai:
+<pre><code>El Control UI soporta hosted embeds vía:
+<ul><li>/__openclaw__/canvas/<file>.html</li>
+<li>Custom URL scheme: openclaw-canvas://<session>/<path></li>
+</ul></code></pre>
+<hr>
+<h2>URLs de Interés</h2>
+| URL | Descripción |
+|-----|-------------|
+| http://127.0.0.1:18789/ | Control UI default |
+| http://127.0.0.1:18793/__openclaw__/canvas/ | Canvas host |
+| ws://127.0.0.1:18789 | Gateway WebSocket |
+<hr>
+<h2>Resumen: Cómo Añadir Paneles a OpenClaw</h2>
+<h3>Opción 1: Canvas (para agentes)</h3>
+<pre><code>// El agente crea HTML y lo presenta
+canvas action:present node:<node-id> target:<url>
+// El agente puede hacer eval, snapshot, navigate
+</code></pre>
+<h3>Opción 2: Dashboard externo (para Dani)</h3>
+<pre><code><h1>Instalar dashboard alternativas</h1>
+brew install mudrii/tap/openclaw-dashboard
+openclaw-dashboard --port 8080
+<h1>Abrir http://localhost:8080</h1>
+</code></pre>
+<h3>Opción 3: OpenClaw Office (visual completo)</h3>
+<pre><code>npx @ww-ai-lab/openclaw-office
+<h1>Abre http://localhost:5180</h1>
+<h1>Incluye virtual office + console</h1>
+</code></pre>
+<hr>
+<em>Investigador — Query 3 completada.</em>
+</body>
+</html>

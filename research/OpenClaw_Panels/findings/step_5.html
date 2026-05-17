@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Canvas & Panels — Query 5: A2UI Protocol & Advanced Canvas Features</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_5.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<strong>Query:</strong> "openclaw a2ui surface components protocol" + "openclaw canvas node present hide"
+<strong>Resultados:</strong> ~15 found
+<hr>
+<h2>A2UI Protocol (Advanced User Interface)</h2>
+<strong>Documentación:</strong> docs.openclaw.ai/platforms/mac/canvas#a2ui-in-canvas
+<h3>Qué es A2UI:</h3>
+Es un protocolo para que el Gateway envíe comandos a la Canvas panel en nodes. Actualmente v0.8.
+<h3>Comandos A2UI v0.8:</h3>
+| Comando | Descripción |
+|---------|-------------|
+| <code>beginRendering</code> | Inicia renderizado de surface |
+| <code>surfaceUpdate</code> | Actualiza componentes en surface |
+| <code>dataModelUpdate</code> | Actualiza modelo de datos |
+| <code>deleteSurface</code> | Elimina surface |
+<strong>NO soporado aún:</strong> <code>createSurface</code> (v0.9)
+<h3>Ejemplo A2UI push:</h3>
+<pre><code>cat > /tmp/a2ui-v0.8.jsonl <<'EOFA2'
+{"surfaceUpdate":{"surfaceId":"main","components":[
+  {"id":"root","component":{"Column":{"children":{"explicitList":["title","content"]}}}},
+  {"id":"title","component":{"Text":{"text":{"literalString":"Canvas (A2UI v0.8)"},"usageHint":"h1"}}},
+  {"id":"content","component":{"Text":{"text":{"literalString":"If you can read this, A2UI push works."},"usageHint":"body"}}}
+]}}
+{"beginRendering":{"surfaceId":"main","root":"root"}}
+EOFA2
+<p>openclaw nodes canvas a2ui push --jsonl /tmp/a2ui-v0.8.jsonl --node <id>
+</code></pre></p>
+<h3>Quick smoke test:</h3>
+<pre><code>openclaw nodes canvas a2ui push --node <id> --text "Hello from A2UI"
+</code></pre>
+<hr>
+<h2>Canvas Node Commands</h2>
+<h3>Desde CLI:</h3>
+<pre><code><h1>Listar nodes</h1>
+openclaw nodes list
+<h1>Presentar content</h1>
+openclaw nodes canvas present --node <id>
+<h1>Navigate (local path, http(s), file://)</h1>
+openclaw nodes canvas navigate --node <id> --url "/"
+openclaw nodes canvas navigate --node <id> --url "http://example.com"
+<h1>Eval JavaScript</h1>
+openclaw nodes canvas eval --node <id> --js "document.title"
+<h1>Snapshot</h1>
+openclaw nodes canvas snapshot --node <id>
+<h1>A2UI push</h1>
+openclaw nodes canvas a2ui push --node <id> --text "Hello"
+</code></pre>
+<h3>Desde Herramienta (agente):</h3>
+<pre><code>canvas action:present node:<node-id> target:<url>
+canvas action:hide node:<node-id>
+canvas action:navigate node:<node-id> url:<url>
+canvas action:eval node:<node-id> js:<javascript>
+canvas action:snapshot node:<node-id>
+canvas action:a2ui_push node:<node-id> text:<text>
+canvas action:a2ui_reset node:<node-id>
+</code></pre>
+<hr>
+<h2>Canvas — Security Notes</h2>
+<h3>Desde docs.openclaw.ai:</h3>
+<ul><li><strong>Canvas scheme blocks directory traversal</strong></li>
+</ul>   - Files deben vivir bajo session root
+   - No puedes acceder a archivos fuera del canvas root
+<ul><li><strong>Local Canvas content usa custom scheme</strong></li>
+</ul>   - No requiere loopback server
+<ul><li><strong>External http(s) URLs</strong></li>
+</ul>   - Solo permitido cuando explícitamente navegas
+<h3>Bind modes:</h3>
+| Mode | Server binds to | Canvas URL uses |
+|------|-----------------|-----------------|
+| <code>loopback</code> | 127.0.0.1 | localhost |
+| <code>lan</code> | LAN interface | LAN IP |
+| <code>tailnet</code> | Tailscale interface | Tailscale hostname |
+| <code>auto</code> | Best available | Tailscale > LAN > loopback |
+<hr>
+<h2>Live Reload</h2>
+<h3>Config:</h3>
+<pre><code>{
+  "canvasHost": {
+    "enabled": true,
+    "port": 18793,
+    "root": "/path/to/canvas",
+    "liveReload": true
+  }
+}
+</code></pre>
+<h3>Cómo funciona:</h3>
+<ul><li>Canvas host watcher monitorea cambios en archivos (usa chokidar)</li>
+<li>Inyecta WebSocket client en HTML files</li>
+<li>Auto-reload en canvases conectadas</li>
+</ul>
+<strong>Perfecto para desarrollo!</strong>
+<hr>
+<h2>URL Path Structure</h2>
+<pre><code>Canvas Host: http://<host>:18793/__openclaw__/canvas/
+<p>index.html → ~/.openclaw/canvas/index.html
+dashboard.html → ~/.openclaw/canvas/dashboard.html
+games/snake.html → ~/.openclaw/canvas/games/snake.html
+</code></pre></p>
+<hr>
+<h2>Canvas Components desde la guía ququ123</h2>
+<h3>Text Component:</h3>
+<pre><code>canvas.text({
+  content: "Hello, World!",
+  style: { fontSize: "24px", color: "#333", fontWeight: "bold" }
+})
+</code></pre>
+<h3>Button Component:</h3>
+<pre><code>canvas.button({
+  label: "Click Me",
+  onClick: () => { console.log("Button clicked!"); },
+  style: { background: "#3b82f6", color: "white" }
+})
+</code></pre>
+<h3>List Component:</h3>
+<pre><code>canvas.list({
+  items: ["Item 1", "Item 2", "Item 3"],
+  onSelect: (item) => { console.log(<code>Selected: ${item}</code>); }
+})
+</code></pre>
+<h3>Chart Component:</h3>
+<pre><code>canvas.chart({
+  type: "bar",
+  data: {
+    labels: ["Jan", "Feb", "Mar"],
+    datasets: [{ label: "Revenue", data: [100, 200, 150] }]
+  }
+})
+</code></pre>
+<h3>Form Component:</h3>
+<pre><code>canvas.form({
+  fields: [
+    { name: "username", type: "text", label: "Username" },
+    { name: "email", type: "email", label: "Email" },
+    { name: "submit", type: "submit", label: "Submit" }
+  ],
+  onSubmit: (data) => { console.log("Form submitted:", data); }
+})
+</code></pre>
+<hr>
+<h2>Ejemplo: Dashboard Renderizado</h2>
+<pre><code>canvas.render(<code>
+  <Dashboard>
+    <Header title="Sales Dashboard" />
+    <Row>
+      <Card title="Total Revenue" value="$125,430" trend="+12%" />
+      <Card title="Active Users" value="3,245" trend="+5%" />
+      <Card title="Conversion Rate" value="4.2%" trend="-1%" />
+    </Row>
+    <Row>
+      <Chart type="line" data={revenueData} title="Revenue Trend" />
+      <Chart type="bar" data={usersData} title="User Growth" />
+    </Row>
+  </Dashboard>
+</code>)
+</code></pre>
+<hr>
+<h2>Ejemplo: Interactive Calculator</h2>
+<pre><code>canvas.render(<code>
+  <Calculator>
+    <Display value={display} />
+    <Keypad>
+      <Button onClick={() => input('7')}>7</Button>
+      <Button onClick={() => input('8')}>8</Button>
+      <Button onClick={() => input('9')}>9</Button>
+      <Button onClick={() => input('/')}>/</Button>
+    </Keypad>
+  </Calculator>
+</code>)
+<p>const state = { display: '0' }
+function input(value) {
+  state.display = calculate(state.display, value)
+  canvas.update()
+}
+</code></pre></p>
+<hr>
+<h2>Ejemplo: System Monitor</h2>
+<pre><code>canvas.render(<code>
+  <Monitor>
+    <Header title="System Monitor" />
+    <Metrics>
+      <Metric label="CPU Usage" value={cpuUsage} threshold={80} unit="%" />
+      <Metric label="Memory" value={memoryUsed} threshold={90} unit="GB" />
+      <Metric label="Disk I/O" value={diskIO} unit="MB/s" />
+    </Metrics>
+    <Chart type="line" data={historyData} realtime />
+  </Monitor>
+</code>)
+<p>// Update data periodically
+setInterval(() => {
+  cpuUsage = getCpuUsage()
+  memoryUsed = getMemoryUsed()
+  diskIO = getDiskIO()
+  canvas.update()
+}, 1000)
+</code></pre></p>
+<hr>
+<h2>Canvas Skill en Skills Marketplace</h2>
+<strong>URL:</strong> lobehub.com/skills/openclaw-openclaw-canvas
+<h3>Ejemplo de uso:</h3>
+<pre><code>canvas action:present node:mac-63599bc4-b54d-4392-9048-b97abd58343a target:http://peters-mac-studio-1.sheep-coho.ts.net:18793/__openclaw__/canvas/snake.html
+</code></pre>
+<hr>
+<h2>OpenClaw Canvas: Real-Time HTML Preview Skill</h2>
+<strong>URL:</strong> mcpmarket.com/tools/skills/openclaw-canvas-1
+<h3>Features:</h3>
+<ul><li>Interactive control via JavaScript evaluation</li>
+<li>Visual debugging con automated canvas snapshot</li>
+<li>Real-time HTML preview</li>
+</ul>
+<hr>
+<h2>Troubleshooting Canvas</h2>
+<h3>White screen / content no carga:</h3>
+<strong>Causa:</strong> URL mismatch entre server bind y node expectation
+<strong>Debug:</strong>
+<pre><code><h1>Check server bind</h1>
+cat ~/.openclaw/openclaw.json | jq '.gateway.bind'
+<h1>Check port</h1>
+lsof -i :18793
+<h1>Test URL directly</h1>
+curl http://<hostname>:18793/__openclaw__/canvas/<file>.html
+</code></pre>
+<h3>"node required" error:</h3>
+Siempre especificar <code>node:<node-id></code>
+<h3>"node not connected" error:</h3>
+Node offline. Usar <code>openclaw nodes list</code> para ver nodes online.
+<h3>Content not updating:</h3>
+<ul><li>Check <code>liveReload: true</code> en config</li>
+<li>Asegurar que file está en canvas root directory</li>
+<li>Check for watcher errors in logs</li>
+</ul>
+<hr>
+<h2>Canales - OpenClaw Docs</h2>
+<strong>URL:</strong> openclaw-ai.com/en/docs/tools/index
+<h3>Canvas tool summary:</h3>
+| Action | Returns |
+|--------|---------|
+| <code>present</code> | Canvas shown |
+| <code>hide</code> | Canvas hidden |
+| <code>navigate</code> | Canvas navigated |
+| <code>eval</code> | JavaScript executed |
+| <code>snapshot</code> | IMAGE: + MEDIA:<path> |
+| <code>a2ui_push</code> | A2UI message sent |
+| <code>a2ui_reset</code> | A2UI reset |
+<strong>Usa:</strong> <code>gateway node.invoke</code> por debajo
+<hr>
+<h2>Resumen: Canvas Architecture</h2>
+<pre><code>┌─────────────────┐     ┌──────────────────┐     ┌─────────────┐
+│  Canvas Host    │────▶│   Node Bridge     │────▶│  Node App   │
+│  (HTTP Server)  │     │  (TCP Server)     │     │ (Mac/iOS/   │
+│  Port 18793     │     │  Port 18790       │     │  Android)   │
+└─────────────────┘     └──────────────────┘     └─────────────┘
+</code></pre>
+<ul><li>Canvas Host sirve static files</li>
+<li>Node Bridge comunica URLs a nodes</li>
+<li>Node Apps renderizan en WebView</li>
+</ul>
+<hr>
+<em>Investigador — Query 5 completada.</em>
+</body>
+</html>

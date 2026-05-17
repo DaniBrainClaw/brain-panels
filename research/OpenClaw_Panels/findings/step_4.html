@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Canvas & Panels — Query 4: Canvas Actions (present, eval, snapshot) + WebChat Custom</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 step_4.md</p>
+    <strong>Fecha:</strong> 2026-05-16
+<strong>Query:</strong> "openclaw canvas present eval snapshot features" + "openclaw webchat panel custom embed"
+<strong>Resultados:</strong> 15 + 17 found
+<hr>
+<h2>Canvas Actions — Documentación Oficial</h2>
+<h3>SKILL.md Canvas (source of truth)</h3>
+<strong>URL:</strong> github.com/openclaw/openclaw/blob/main/skills/canvas/SKILL.md
+<h3>5 Acciones disponibles:</h3>
+| Action | Descripción |
+|--------|-------------|
+| <code>present</code> | Show canvas con target URL opcional |
+| <code>hide</code> | Hide canvas |
+| <code>navigate</code> | Navigate a URL (local, http(s), file://) |
+| <code>eval</code> | Execute JavaScript en el canvas |
+| <code>snapshot</code> | Capture screenshot → returns MEDIA: + image |
+<h3>Comandos CLI:</h3>
+<pre><code><h1>Presentar dashboard</h1>
+openclaw nodes canvas present --node <id>
+<h1>Navigate</h1>
+openclaw nodes canvas navigate --node <id> --url "/"
+<h1>Eval JS</h1>
+openclaw nodes canvas eval --node <id> --js "document.title"
+<h1>Snapshot</h1>
+openclaw nodes canvas snapshot --node <id>
+<h1>A2UI push (WIP)</h1>
+openclaw nodes canvas a2ui push --node <id> --text "Hello"
+</code></pre>
+<hr>
+<h2>Canvas Tool en Agentes</h2>
+<pre><code>// Sintaxis:
+canvas action:present node:<node-id> target:<url>
+canvas action:hide node:<node-id>
+canvas action:navigate node:<node-id> url:<url>
+canvas action:eval node:<node-id> js:<javascript>
+canvas action:snapshot node:<node-id>
+</code></pre>
+<h3>Ejemplo práctico — Dashboard interactivo:</h3>
+<pre><code>canvas action:present node:mac-63599bc4-b54d-4392-9048-b97abd58343a target:http://peters-mac-studio-1.sheep-coho.ts.net:18793/__openclaw__/canvas/dashboard.html
+</code></pre>
+<hr>
+<h2>WebChat — Official Docs</h2>
+<strong>URL:</strong> docs.openclaw.ai/web/webchat
+<h3>Características:</h3>
+<ul><li>Native chat UI — no embedded browser</li>
+<li>Usa WebSocket del Gateway</li>
+<li><code>chat.history</code>, <code>chat.send</code>, <code>chat.inject</code></li>
+<li>Deterministic routing — replies siempre vuelven a WebChat</li>
+<li>Bounded history para estabilidad</li>
+</ul>
+<h3>Quick Start:</h3>
+<ul><li>Start gateway</li>
+<li>Open WebChat UI (macOS/iOS) o Control UI chat tab</li>
+<li>Valid gateway auth configurado</li>
+</ul>
+<hr>
+<h2>Custom WebChat UIs</h2>
+<h3>1. PinchChat ⭐⭐⭐</h3>
+<strong>GitHub:</strong> github.com/MarlBurroW/pinchchat
+<strong>Demo:</strong> marlburrow.github.io/pinchchat/
+<strong>Docker:</strong> <code>docker run -p 3000:80 ghcr.io/marlburrow/pinchchat:latest</code>
+<p>#### Características TOP:
+<ul><li><strong>Tool call visualization</strong> — colored badges, parameters, expandable results</li>
+<li><strong>GPT-like interface</strong> — sessions sidebar</li>
+<li><strong>Live streaming</strong> — token by token</li>
+<li><strong>Token usage tracking</strong> — progress bars</li>
+<li><strong>Inline images</strong> — render con lightbox</li>
+<li><strong>Thinking/reasoning display</strong> — collapsible blocks</li>
+<li><strong>Split view</strong> — 2 sessions side by side</li>
+<li><strong>Message search</strong> — Ctrl+F</li>
+<li><strong>PWA support</strong> — installable</li>
+<li><strong>6 accent colors + 3 themes</strong> — Dark, Light, OLED Black</li>
+<li>i18n (English + French)</li>
+</ul>
+#### Install Docker:
+<pre><code>docker run -p 3000:80 ghcr.io/marlburrow/pinchchat:latest
+<h1>Abrir http://localhost:3000</h1>
+</code></pre></p>
+<p>#### Install Source:
+<pre><code>git clone https://github.com/MarlBurroW/pinchchat.git
+cd pinchchat
+npm install
+cp .env.example .env
+npm run dev
+</code></pre></p>
+<hr>
+<h3>2. Reddit User Builds (Issue #6050)</h3>
+<strong>Feature request:</strong> Add custom links to webchat control panel sidebar
+<strong>Config example:</strong>
+<pre><code>{
+  "webchat": {
+    "customLinks": [
+      { "label": "Dashboard", "url": "http://localhost:8080" },
+      { "label": "OpenClaw Office", "url": "http://localhost:5180" }
+    ]
+  }
+}
+</code></pre>
+<hr>
+<h3>3. Open WebUI Integration</h3>
+<strong>URL:</strong> docs.openwebui.com/getting-started/quick-start/connect-an-agent/openclaw/
+<p>Permite usar OpenClaw agentes en Open WebUI como bot user.</p>
+<hr>
+<h2>Embed OpenClaw en otras plataformas</h2>
+<h3>Localtonet Blog — Self-Host + Remote Access</h3>
+<strong>URL:</strong> localtonet.com/blog/how-to-self-host-openclaw
+<strong>Features:</strong>
+<ul><li>Multi-User access</li>
+<li>WebChat embedding</li>
+<li>Remote access</li>
+</ul>
+<h3>Ejemplo embed iframe:</h3>
+<pre><code><iframe 
+  src="http://localhost:18789/webchat"
+  width="100%" 
+  height="600px"
+  frameborder="0"
+></iframe>
+</code></pre>
+<hr>
+<h2>Canales soportados (del README)</h2>
+<ul><li>WhatsApp, Telegram, Slack, Discord</li>
+<li>Google Chat, Signal, iMessage, IRC</li>
+<li>Microsoft Teams, Matrix, Feishu, LINE</li>
+<li>Mattermost, Nostr, Twitch, WebChat</li>
+</ul>
+<hr>
+<h2>Resumen: Opciones de Customización</h2>
+| Nivel | Opción | Complexity |
+|-------|--------|------------|
+| <strong>1. Tool</strong> | Canvas actions (present/eval/snapshot) | Baja |
+| <strong>2. UI</strong> | PinchChat (reemplaza WebChat) | Baja |
+| <strong>3. Dashboard</strong> | openclaw-dashboard (12 panels) | Baja |
+| <strong>4. Office</strong> | OpenClaw Office (virtual office) | Media |
+| <strong>5. Full control</strong> | Custom build sobre WebSocket API | Alta |
+<hr>
+<em>Investigador — Query 4 completada.</em>
+</body>
+</html>

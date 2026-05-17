@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Panels & Avatares — INDEX</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0f0f23; color: #eee; }
+        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        h2 { color: #e94560; margin-top: 30px; }
+        h3 { color: #0f3460; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; }
+        pre { background: #1a1a2e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #e94560; color: white; }
+        tr:nth-child(even) { background: #1a1a2e; }
+        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { background: #fff; color: #e94560; }
+        .filename { color: #888; font-size: 0.9em; margin-bottom: 20px; }
+        blockquote { border-left: 4px solid #e94560; margin: 0; padding-left: 20px; color: #aaa; }
+        img { max-width: 100%; height: auto; }
+        a { color: #e94560; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Panel Principal</a>
+    <p class="filename">📄 INDEX.md</p>
+    <strong>Guía para crear paneles interactivos con BRAIN/OpenClaw</strong>
+<strong>Última actualización:</strong> 2026-05-16
+<hr>
+<h2>Tabla de Contenidos</h2>
+<ul><li><a href="#1-arquitectura-general">Arquitectura general</a></li>
+<li><a href="#2-canvas--cómo-brain-presenta-paneles">Canvas — Cómo BRAIN presenta paneles</a></li>
+<li><a href="#3-acciones-del-canvas-tool">Acciones del Canvas tool</a></li>
+<li><a href="#4-crear-html-para-canvas">Crear HTML para Canvas</a></li>
+<li><a href="#5-dashboard-externo-vs-canvas">Dashboard externo vs Canvas</a></li>
+<li><a href="#6-virtual-office--openclaw-office">Virtual Office — OpenClaw Office</a></li>
+<li><a href="#7-webchat-personalizado--pinchchat">WebChat personalizado — PinchChat</a></li>
+<li><a href="#8-esquemas-de-bind-y-acceso-remoto">Esquemas de bind y acceso remoto</a></li>
+<li><a href="#9-a2ui-protocol-avanzado">A2UI Protocol (avanzado)</a></li>
+<li><a href="#10-solución-de-problemas">Solución de problemas</a></li>
+</ul>
+<hr>
+<h2>1. Arquitectura General</h2>
+<p>OpenClaw tiene DOS tipos de paneles:</p>
+<h3>Type A: Canvas (para agentes)</h3>
+<ul><li>El agente genera HTML/CSS/JS y lo presenta en nodes (Mac/iOS/Android)</li>
+<li>Communication: Canvas Host → Node Bridge → Node App (WebView)</li>
+<li>Puerto: 18793</li>
+</ul>
+<h3>Type B: Dashboard/Control UI (para operadores)</h3>
+<ul><li>Dashboards externos que se conectan al Gateway WebSocket</li>
+<li>No requieren que el agente genere contenido</li>
+<li>Puerto default: 18789</li>
+</ul>
+<pre><code>┌──────────────────────────────────────────────────────┐
+│              OpenClaw Gateway (:18789)                │
+├────────────────────────┬─────────────────────────────┤
+│  Control UI / WebChat  │  WebSocket API               │
+│  (Browser UI)          │  (Dashboards externos)      │
+└────────────────────────┴─────────────────────────────┘
+         │                          │
+         ▼                          ▼
+┌─────────────────┐       ┌─────────────────┐
+│   Canvas Host    │       │  openclaw-       │
+│   (:18793)       │       │  dashboard       │
+│   (Node Bridge) │       │  (puerto 8080)   │
+└─────────────────┘       └─────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Node Apps      │
+│  Mac/iOS/Android│
+│  (WebView)      │
+└─────────────────┘
+</code></pre>
+<hr>
+<h2>2. Canvas — Cómo BRAIN presenta paneles</h2>
+<h3>Paso 1: Crear archivo HTML</h3>
+<pre><code>mkdir -p ~/.openclaw/canvas/mi-panel
+cat > ~/.openclaw/canvas/mi-panel/index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mi Dashboard</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .card { border: 1px solid #ccc; padding: 16px; margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <h1>Dashboard de Ventas</h1>
+  <div id="content">Cargando...</div>
+  <script>
+    // Tu JavaScript aquí
+    document.getElementById('content').innerText = '¡Listo!';
+  </script>
+</body>
+</html>
+EOF
+</code></pre>
+<h3>Paso 2: Encontrar el node ID</h3>
+<pre><code>openclaw nodes list
+<h1>Anotar el node ID (ej: mac-63599bc4-b54d-4392-9048-b97abd58343a)</h1>
+</code></pre>
+<h3>Paso 3: Presentar desde BRAIN</h3>
+<pre><code>canvas action:present node:<node-id> target:http://<hostname>:18793/__openclaw__/canvas/mi-panel/index.html
+</code></pre>
+<hr>
+<h2>3. Acciones del Canvas tool</h2>
+| Acción | Ejemplo | Retorna |
+|--------|---------|---------|
+| <code>present</code> | <code>canvas action:present node:<id> target:<url></code> | Panel visible |
+| <code>hide</code> | <code>canvas action:hide node:<id></code> | Panel ocultado |
+| <code>navigate</code> | <code>canvas action:navigate node:<id> url:<url></code> | Navega a URL |
+| <code>eval</code> | <code>canvas action:eval node:<id> js:<js></code> | Resultado JS |
+| <code>snapshot</code> | <code>canvas action:snapshot node:<id></code> | IMAGE: + MEDIA: |
+| <code>a2ui_push</code> | <code>canvas action:a2ui_push node:<id> text:<msg></code> | A2UI message |
+| <code>a2ui_reset</code> | <code>canvas action:a2ui_reset node:<id></code> | Reset A2UI |
+<hr>
+<h2>4. Crear HTML para Canvas</h2>
+<h3>Estructura básica self-contained:</h3>
+<pre><code><!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mi Panel</title>
+  <style>
+    <em> { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, sans-serif; background: #1a1a2e; color: #fff; padding: 20px; }
+    .card { background: #16213e; border-radius: 8px; padding: 16px; margin: 8px 0; }
+    h1 { color: #e94560; }
+  </style>
+</head>
+<body>
+  <h1>Ventas</h1>
+  <div class="card">
+    <div id="counter">0</div>
+  </div>
+  <script>
+    let count = 0;
+    setInterval(() => {
+      count++;
+      document.getElementById('counter').innerText = count;
+    }, 1000);
+  </script>
+</body>
+</html>
+</code></pre>
+<h3>Live Reload:</h3>
+Con <code>liveReload: true</code> en config, cada vez que guardes el archivo el canvas se actualiza automáticamente.
+<hr>
+<h2>5. Dashboard externo vs Canvas</h2>
+<h3>Para qué sirve cada uno:</h3>
+| Característica | Canvas | Dashboard externo |
+|----------------|--------|-------------------|
+| <strong>Quién crea contenido</strong> | Agente | Tú/dashboards |
+| <strong>Interactividad</strong> | HTML/JS generado por IA | Dashboards pre-hechos |
+| <strong>Ideal para</strong> | Mostrar resultados, visualizaciones | Monitorizar sistema |
+| <strong>Requiere node</strong> | Sí (Mac/iOS/Android) | No |
+| <strong>Puerto</strong> | 18793 | 8080 o custom |
+<h3>Instalar dashboard externo:</h3>
+<pre><code><h1>opcionales</h1>
+brew install mudrii/tap/openclaw-dashboard  # 12 panels
+npx @ww-ai-lab/openclaw-office              # virtual office
+docker run -p 3000:80 ghcr.io/marlburrow/pinchchat  # webchat custom
+</code></pre>
+<hr>
+<h2>6. Virtual Office — OpenClaw Office</h2>
+<h3>Quick start:</h3>
+<pre><code>npx @ww-ai-lab/openclaw-office
+<h1>Abre http://localhost:5180</h1>
+</code></pre>
+<h3>Qué incluye:</h3>
+<ul><li><strong>Virtual Office</strong> — 2D SVG office con agent avatars animados</li>
+<li><strong>Chat Workspace</strong> — Session management + streaming</li>
+<li><strong>Console</strong> — Dashboard, Agents, Channels, Skills, Cron, Settings</li>
+<li><strong>Skill Workbench</strong> — AI-assisted skills development</li>
+</ul>
+<h3>Avatars de agentes:</h3>
+<ul><li>Generados determinísticamente desde agent ID</li>
+<li>Animaciones: idle, working, speaking, tool calling, error</li>
+<li>Collaboration lines muestran flujo de mensajes</li>
+</ul>
+<hr>
+<h2>7. WebChat personalizado — PinchChat</h2>
+<h3>Install Docker:</h3>
+<pre><code>docker run -p 3000:80 ghcr.io/marlburrow/pinchchat:latest
+<h1>Abrir http://localhost:3000</h1>
+</code></pre>
+<h3>Características principales:</h3>
+<ul><li>Tool call visualization (colored badges + expandable)</li>
+<li>GPT-like interface con sessions sidebar</li>
+<li>Live streaming token by token</li>
+<li>Token usage tracking con progress bars</li>
+<li>Split view (2 sesiones lado a lado)</li>
+<li>Themes: Dark, Light, OLED Black</li>
+</ul>
+<hr>
+<h2>8. Esquemas de bind y acceso remoto</h2>
+<h3>Configuración de bind:</h3>
+<pre><code>{
+  "gateway": { "bind": "auto" },
+  "canvasHost": {
+    "enabled": true,
+    "port": 18793,
+    "root": "~/.openclaw/canvas",
+    "liveReload": true
+  }
+}
+</code></pre>
+<h3>Bind modes:</h3>
+| Mode | binds a | Canvas URL |
+|------|---------|------------|
+| <code>loopback</code> | 127.0.0.1 | localhost |
+| <code>lan</code> | LAN IP | LAN IP |
+| <code>tailnet</code> | Tailscale | Tailscale hostname |
+| <code>auto</code> | mejor disponible | varies |
+<h3>Acceso remoto:</h3>
+<strong>Tailscale (recomendado):</strong>
+<pre><code><h1>Config en gateway</h1>
+{ "gateway": { "tailscale": { "mode": "serve" } } }
+<h1>Acceder via https://your-tailnet-name.ts.net</h1>
+</code></pre>
+<strong>SSH tunnel:</strong>
+<pre><code>ssh -L 18789:localhost:18789 user@remote
+<h1>Luego http://localhost:18789</h1>
+</code></pre>
+<strong>Reverse proxy (Caddy):</strong>
+<pre><code>your-domain.com {
+  reverse_proxy localhost:18789
+}
+</code></pre>
+<hr>
+<h2>9. A2UI Protocol (avanzado)</h2>
+<h3>Qué es:</h3>
+Protocolo para que el Gateway envíe commands a la Canvas panel directamente.
+<h3>Versión actual: v0.8</h3>
+<h3>Comandos:</h3>
+<pre><code><h1>Enviar mensaje simple</h1>
+openclaw nodes canvas a2ui push --node <id> --text "Hello"
+<h1>Enviar JSON estructurado</h1>
+openclaw nodes canvas a2ui push --jsonl /tmp/a2ui.jsonl --node <id>
+</code></pre>
+<h3>Formato JSON:</h3>
+<pre><code>{"surfaceUpdate":{"surfaceId":"main","components":[
+  {"id":"root","component":{"Column":{"children":{"explicitList":["title"]}}}},
+  {"id":"title","component":{"Text":{"text":{"literalString":"Title"},"usageHint":"h1"}}}
+]}}
+{"beginRendering":{"surfaceId":"main","root":"root"}}
+</code></pre>
+<strong>Nota:</strong> <code>createSurface</code> (v0.9) no está soportado aún.
+<hr>
+<h2>10. Solución de problemas</h2>
+<h3>Pantalla en blanco / No carga contenido:</h3>
+<strong>Causa:</strong> URL mismatch entre server bind y expectativa del node
+<strong>Debug:</strong>
+<pre><code><h1>1. Ver bind mode</h1>
+cat ~/.openclaw/openclaw.json | jq '.gateway.bind'
+<h1>2. Ver puerto</h1>
+lsof -i :18793
+<h1>3. Test URL</h1>
+curl http://<hostname>:18793/__openclaw__/canvas/<file>.html
+</code></pre>
+<strong>Solución:</strong> Usar el hostname completo que corresponda al bind mode.
+<hr>
+<h3>"node required" error:</h3>
+ Siempre especifica <code>node:<node-id></code>
+<hr>
+<h3>"node not connected" error:</h3>
+ Node offline. Verificar con <code>openclaw nodes list</code>
+<hr>
+<h3>Content no actualiza:</h3>
+<ul><li>Verificar <code>liveReload: true</code> en config</li>
+<li>Asegurar que el archivo está en canvas root</li>
+<li>Revisar logs por watcher errors</li>
+</ul>
+<hr>
+<h2>Resumen rápido — Cómo hacer cada cosa</h2>
+| Qué quieres | Cómo hacerlo |
+|-------------|---------------|
+| Crear panel HTML para BRAIN | Crear HTML en <code>~/.openclaw/canvas/<session>/</code> |
+| BRAIN muestre dashboard | <code>canvas action:present node:<id> target:<url></code> |
+| Ver BRAIN trabajando en tiempo real | Instalar OpenClaw Office (<code>npx @ww-ai-lab/openclaw-office</code>) |
+| Dashboard de métricas del sistema | Instalar openclaw-dashboard |
+| Reemplazar WebChat con UI mejor | Usar PinchChat (Docker) |
+| Ver avatares de agentes | OpenClaw Office o Clawfice |
+| Acceso remoto | Tailscale o SSH tunnel |
+<hr>
+</em>Investigador — INDEX.md creado.*
+</body>
+</html>
