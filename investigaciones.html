@@ -5,69 +5,108 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Investigaciones - BRAIN</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #0f0f23; color: #eee; }
-        h1 { color: #e94560; border-bottom: 2px solid #e94560; padding-bottom: 10px; }
-        .inv { background: #1a1a2e; padding: 20px; margin: 15px 0; border-radius: 10px; border-left: 4px solid #e94560; }
-        .inv h2 { color: #e94560; margin-top: 0; }
-        .inv a { background: #e94560; color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px; }
-        .files { color: #aaa; font-size: 0.9em; margin: 10px 0; }
-        .back-link { background: #e94560; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui; background: #0a0a0f; color: #e0e0e0; padding: 20px; }
+        h1 { color: #00d4aa; margin-bottom: 5px; font-size: 28px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .nav { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
+        .nav a { background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: all 0.2s; }
+        .nav a:hover { background: #00d4aa; color: #000; }
+        .nav a.active { background: #00d4aa; color: #000; }
+        .inv { background: #1a1a24; padding: 25px; margin: 15px 0; border-radius: 16px; border-left: 4px solid #00d4aa; }
+        .inv h2 { color: #fff; margin-top: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+        .inv p { color: #888; margin: 10px 0; line-height: 1.5; }
+        .inv-meta { display: flex; gap: 20px; font-size: 12px; color: #666; margin: 15px 0; }
+        .inv a.btn { display: inline-block; background: #00d4aa; color: #000; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: bold; }
+        .inv a.btn:hover { opacity: 0.85; }
+        .back-link { display: inline-block; background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; margin-bottom: 25px; }
+        .back-link:hover { background: #00d4aa; color: #000; }
     </style>
 </head>
 <body>
-    <a href="index.html" class="back-link">← Panel Principal</a>
-    <h1>📚 Investigaciones Completas</h1>
+    <a href="index.html" class="back-link">← Dashboard</a>
+    
+    <h1>🔬 Investigaciones Completas</h1>
+    <p class="subtitle">Documentación de todas las investigaciones de BRAIN</p>
+    
+    <nav class="nav">
+        <a href="index.html">📊 Dashboard</a>
+        <a href="tareas.html">📋 Tareas</a>
+        <a href="investigaciones.html" class="active">🔬 Investigaciones</a>
+        <a href="viewer.html">📖 Visor MD</a>
+    </nav>
     
     <div class="inv">
         <h2>🔍 OpenClaw Deep Dive</h2>
-        <p>Hooks, skills, agents, patterns avanzados. 25 archivos de investigación.</p>
-        <div class="files">📂 research/OpenClaw/</div>
-        <a href="research/OpenClaw/index.html">Ver investigación →</a>
+        <p>Hooks, skills, agents, patterns avanzados. 32 archivos de investigación con hallazgos sobre el sistema OpenClaw.</p>
+        <div class="inv-meta">📂 research/OpenClaw/ | 32 archivos | 85+ fuentes</div>
+        <a href="research/OpenClaw/index.html" class="btn">Ver investigación →</a>
     </div>
     
     <div class="inv">
         <h2>📈 ROI Agent Optimization</h2>
-        <p>1,250-12,500% ROI potencial. Cómo rentabilizar BRAIN.</p>
-        <div class="files">📂 research/ROI_Agent_Optimization/</div>
-        <a href="research/ROI_Agent_Optimization/index.html">Ver investigación →</a>
+        <p>1,250-12,500% ROI potencial. Cómo rentabilizar BRAIN como asistente personal.</p>
+        <div class="inv-meta">📂 research/ROI_Agent_Optimization/ | 13 archivos</div>
+        <a href="research/ROI_Agent_Optimization/index.html" class="btn">Ver investigación →</a>
     </div>
     
     <div class="inv">
         <h2>💰 MVP Monetization</h2>
-        <p>8 pasos para €1,000/mes con coaches. Landing + outreach + pricing.</p>
-        <div class="files">📂 research/MVP_Monetization/</div>
-        <a href="research/MVP_Monetization/index.html">Ver investigación →</a>
+        <p>8 pasos para €1,000/mes con coaches. Landing + outreach + pricing strategy.</p>
+        <div class="inv-meta">📂 research/MVP_Monetization/ | 11 archivos</div>
+        <a href="research/MVP_Monetization/index.html" class="btn">Ver investigación →</a>
     </div>
     
     <div class="inv">
         <h2>🌐 Web Audit</h2>
-        <p>8 webs analizadas. Score: 5-7.5/10. 3 problemas críticos.</p>
-        <div class="files">📂 research/Web_Audit/</div>
-        <a href="research/Web_Audit/index.html">Ver investigación →</a>
+        <p>8 webs analizadas. Score: 5-7.5/10. Problemas críticos identificados.</p>
+        <div class="inv-meta">📂 research/Web_Audit/ | 9 archivos | SSL, multi-dominio, meta descriptions</div>
+        <a href="research/Web_Audit/index.html" class="btn">Ver investigación →</a>
     </div>
     
     <div class="inv">
         <h2>🧠 MiniMax M2.7 Analysis</h2>
-        <p>Coding 78%, Agentic ELO 1495. Mejor modelo para código.</p>
-        <div class="files">📂 research/MiniMax_M2.7_analysis/</div>
-        <a href="research/MiniMax_M2.7_analysis/index.html">Ver investigación →</a>
+        <p>Coding 78% SWE-bench, Agentic ELO 1495. Mejor modelo para código. Text-only confirmado.</p>
+        <div class="inv-meta">📂 research/MiniMax_M2.7_analysis/ | 17 archivos</div>
+        <a href="research/MiniMax_M2.7_analysis/index.html" class="btn">Ver investigación →</a>
     </div>
     
     <div class="inv">
         <h2>🤖 Hermes Agent Analysis</h2>
-        <p>Agente de nudge periódico. 5 archivos.</p>
-        <div class="files">📂 research/Hermes_Agent_Analysis/</div>
-        <a href="research/Hermes_Agent_Analysis/index.html">Ver investigación →</a>
+        <p>Agente de nudge periódico. Feature de reminder para tareas autônomas.</p>
+        <div class="inv-meta">📂 research/Hermes_Agent_Analysis/ | 5 archivos</div>
+        <a href="research/Hermes_Agent_Analysis/index.html" class="btn">Ver investigación →</a>
+    </div>
+    
+    <div class="inv">
+        <h2>🔗 GitHub BRAIN Integration</h2>
+        <p>Backup automático, panels públicos, automatización de documentación.</p>
+        <div class="inv-meta">📂 research/GitHub_BRAIN_Integration/ | 8 archivos</div>
+        <a href="research/GitHub_BRAIN_Integration/index.html" class="btn">Ver investigación →</a>
     </div>
     
     <div class="inv">
         <h2>⚡ Tareas Autónomas</h2>
-        <p>Script para procesar 3905 filas sin preguntar.</p>
-        <div class="files">📂 research/Tareas_Autonomas/</div>
-        <a href="research/Tareas_Autonomas/index.html">Ver investigación →</a>
+        <p>Script para procesar 3905 filas sin preguntar. Ejecución autônoma.</p>
+        <div class="inv-meta">📂 research/Tareas_Autonomas/ | 4 archivos</div>
+        <a href="research/Tareas_Autonomas/index.html" class="btn">Ver investigación →</a>
     </div>
     
-    <p style="text-align: center; color: #666; margin-top: 40px;">
+    <div class="inv">
+        <h2>🎨 OpenClaw Panels</h2>
+        <p>Paneles interactivos y canvas para BRAIN.</p>
+        <div class="inv-meta">📂 research/OpenClaw_Panels/</div>
+        <a href="research/OpenClaw_Panels/index.html" class="btn">Ver investigación →</a>
+    </div>
+    
+    <div class="inv">
+        <h2>💵 Monetization BRAIN</h2>
+        <p>Cómo monetizar el sistema BRAIN para Dani.</p>
+        <div class="inv-meta">📂 research/Monetization_BRAIN/</div>
+        <a href="research/Monetization_BRAIN/index.html" class="btn">Ver investigación →</a>
+    </div>
+    
+    <p style="text-align: center; color: #444; margin-top: 50px; font-size: 12px;">
         Generado automáticamente por BRAIN — 2026-05-17
     </p>
 </body>

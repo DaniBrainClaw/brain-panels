@@ -2,7 +2,6 @@
 """Convert markdown files to HTML - Fixed version."""
 
 import re
-import os
 from pathlib import Path
 
 PANEL_DIR = Path("/data/.openclaw/workspace/brain-panels-local")
@@ -10,9 +9,10 @@ RESEARCH_SOURCE = Path("/data/.openclaw/agents/investigador/workspace/Research")
 RESEARCH_OVERNIGHT = Path("/data/.openclaw/workspace/research/overnight")
 OUTPUT_RESEARCH = PANEL_DIR / "research"
 
-def convert_file(md_path):
+def convert_file(md_path, dst_folder):
     """Convert single markdown file to HTML."""
-    html_path = Path(str(md_path).replace('.md', '.html'))
+    dst_folder.mkdir(parents=True, exist_ok=True)
+    html_path = dst_folder / (md_path.stem + '.html')
     
     # Read markdown
     content = md_path.read_text(encoding='utf-8')
@@ -25,12 +25,11 @@ def convert_file(md_path):
     content = re.sub(r'^# .+\n', '', content, count=1)
     
     # Convert markdown to HTML
-    # Headers
     content = re.sub(r'^### (.+)$', r'<h3>\1</h3>', content, flags=re.MULTILINE)
     content = re.sub(r'^## (.+)$', r'<h2>\1</h2>', content, flags=re.MULTILINE)
     content = re.sub(r'^# (.+)$', r'<h1>\1</h1>', content, flags=re.MULTILINE)
     
-    # Code blocks - handle properly
+    # Code blocks
     content = re.sub(r'```\w*\n(.*?)```', r'<pre><code>\1</code></pre>', content, flags=re.DOTALL)
     
     # Inline code
@@ -117,36 +116,41 @@ def convert_file(md_path):
 </body>
 </html>'''
     
-    # Write
     html_path.write_text(html, encoding='utf-8')
     return True
 
-def process_folder(src, dst):
+def process_folder(src_path, dst_path, folder_name):
     """Process all markdown files in a folder."""
-    dst.mkdir(parents=True, exist_ok=True)
+    print(f'📁 {folder_name}')
     
+    if not src_path.exists():
+        print(f'  ⚠️ No existe: {src_path}')
+        return 0
+    
+    dst_path.mkdir(parents=True, exist_ok=True)
     count = 0
-    for md in src.glob('*.md'):
+    
+    # Root .md files
+    for md in src_path.glob('*.md'):
         try:
-            convert_file(md)
+            convert_file(md, dst_path)
             count += 1
             print(f'  ✅ {md.name}')
         except Exception as e:
             print(f'  ❌ {md.name}: {e}')
     
-    # Subfolder findings/
-    if src.exists():
-        for md in src.rglob('*.md'):
-            if 'findings' in str(md):
-                rel_path = md.relative_to(src)
-                dst_path = dst / rel_path
-                dst_path.parent.mkdir(parents=True, exist_ok=True)
-                try:
-                    convert_file(md)
-                    count += 1
-                    print(f'  ✅ {md.name}')
-                except Exception as e:
-                    print(f'  ❌ {md.name}: {e}')
+    # Findings subfolder
+    findings_src = src_path / 'findings'
+    if findings_src.exists():
+        findings_dst = dst_path / 'findings'
+        findings_dst.mkdir(exist_ok=True)
+        for md in findings_src.glob('*.md'):
+            try:
+                convert_file(md, findings_dst)
+                count += 1
+                print(f'  ✅ findings/{md.name}')
+            except Exception as e:
+                print(f'  ❌ findings/{md.name}: {e}')
     
     return count
 
@@ -155,30 +159,27 @@ def main():
     total = 0
     
     folders = [
-        ('OpenClaw', RESEARCH_SOURCE / 'OpenClaw'),
-        ('ROI_Agent_Optimization', RESEARCH_SOURCE / 'ROI_Agent_Optimization'),
-        ('MVP_Monetization', RESEARCH_SOURCE / 'MVP_Monetization'),
-        ('Web_Audit', RESEARCH_SOURCE / 'Web_Audit'),
-        ('MiniMax_M2.7_analysis', RESEARCH_SOURCE / 'MiniMax_M2.7_analysis'),
-        ('Hermes_Agent_Analysis', RESEARCH_SOURCE / 'Hermes_Agent_Analysis'),
-        ('GitHub_BRAIN_Integration', RESEARCH_SOURCE / 'GitHub_BRAIN_Integration'),
-        ('Tareas_Autonomas', RESEARCH_SOURCE / 'Tareas_Autonomas'),
+        ('OpenClaw', RESEARCH_SOURCE / 'OpenClaw', OUTPUT_RESEARCH / 'OpenClaw'),
+        ('ROI_Agent_Optimization', RESEARCH_SOURCE / 'ROI_Agent_Optimization', OUTPUT_RESEARCH / 'ROI_Agent_Optimization'),
+        ('MVP_Monetization', RESEARCH_SOURCE / 'MVP_Monetization', OUTPUT_RESEARCH / 'MVP_Monetization'),
+        ('Web_Audit', RESEARCH_SOURCE / 'Web_Audit', OUTPUT_RESEARCH / 'Web_Audit'),
+        ('MiniMax_M2.7_analysis', RESEARCH_SOURCE / 'MiniMax_M2.7_analysis', OUTPUT_RESEARCH / 'MiniMax_M2.7_analysis'),
+        ('Hermes_Agent_Analysis', RESEARCH_SOURCE / 'Hermes_Agent_Analysis', OUTPUT_RESEARCH / 'Hermes_Agent_Analysis'),
+        ('GitHub_BRAIN_Integration', RESEARCH_SOURCE / 'GitHub_BRAIN_Integration', OUTPUT_RESEARCH / 'GitHub_BRAIN_Integration'),
+        ('Tareas_Autonomas', RESEARCH_SOURCE / 'Tareas_Autonomas', OUTPUT_RESEARCH / 'Tareas_Autonomas'),
     ]
     
-    for name, path in folders:
-        print(f'📁 {name}')
-        dst = OUTPUT_RESEARCH / name
-        if path.exists():
-            total += process_folder(path, dst)
-        else:
-            print(f'  ⚠️ No existe: {path}')
+    for name, src, dst in folders:
+        total += process_folder(src, dst, name)
         print()
     
     # Overnight
     print('📁 overnight')
+    dst_overnight = OUTPUT_RESEARCH.parent / 'overnight'  # Put overnight at root level
+    dst_overnight.mkdir(parents=True, exist_ok=True)
     for md in RESEARCH_OVERNIGHT.glob('*.md'):
         try:
-            convert_file(md)
+            convert_file(md, dst_overnight)
             total += 1
             print(f'  ✅ {md.name}')
         except Exception as e:
