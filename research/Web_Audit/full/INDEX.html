@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría Web Completa — BRAIN</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui; background: #0a0a0f; color: #e0e0e0; padding: 20px; }
+        h1 { color: #00d4aa; margin-bottom: 5px; font-size: 28px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .nav { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
+        .nav a { background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; }
+        .nav a:hover { background: #00d4aa; color: #000; }
+        .back-link { display: inline-block; background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; margin-bottom: 25px; }
+        .back-link:hover { background: #00d4aa; color: #000; }
+        
+        .web-card { background: #1a1a24; border-radius: 16px; padding: 25px; margin: 20px 0; border-left: 4px solid #00d4aa; }
+        .web-card.critical { border-color: #ff4444; }
+        .web-card.warning { border-color: #ffaa00; }
+        .web-card h2 { color: #fff; font-size: 22px; margin-bottom: 10px; }
+        .web-card .score { font-size: 32px; font-weight: bold; color: #00d4aa; }
+        .web-card .type { color: #888; font-size: 14px; margin-bottom: 15px; }
+        .web-card .summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin: 15px 0; }
+        .web-card .stat { background: #0a0a0f; padding: 12px; border-radius: 8px; text-align: center; }
+        .web-card .stat-label { font-size: 11px; color: #666; text-transform: uppercase; }
+        .web-card .stat-value { font-size: 18px; font-weight: bold; }
+        .web-card .stat-value.good { color: #27ae60; }
+        .web-card .stat-value.warn { color: #ffaa00; }
+        .web-card .stat-value.bad { color: #ff4444; }
+        .web-card .issues { margin-top: 15px; }
+        .web-card .issue { padding: 8px 12px; margin: 5px 0; border-radius: 6px; font-size: 13px; }
+        .web-card .issue.critical { background: #2a1a1a; color: #ff4444; }
+        .web-card .issue.high { background: #2a2a1a; color: #ffaa00; }
+        .web-card .issue.medium { background: #1a2a1a; color: #27ae60; }
+        .web-card a.btn { display: inline-block; background: #00d4aa; color: #000; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th { background: #00d4aa; color: #000; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #2a2a3a; }
+        
+        .meta-bar { display: flex; gap: 20px; font-size: 12px; color: #666; margin-bottom: 25px; }
+        .completed-badge { background: #27ae60; color: white; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Dashboard</a>
+    
+    <h1>🔍 Auditoría Web Completa — 7 Marcas</h1>
+    <p class="subtitle">Datos crus: 28 archivos scrape | Informes: BRAIN</p>
+    <div class="meta-bar">
+        <span>📅 2026-05-18</span>
+        <span>📂 Research/Web_Audit/full/</span>
+        <span>🔢 7 marcas</span>
+        <span class="completed-badge">✅ COMPLETADA</span>
+    </div>
+    
+    <nav class="nav">
+        <a href="../index.html">📊 Dashboard</a>
+        <a href="tareas.html">📋 Tareas</a>
+        <a href="investigaciones.html">🔬 Investigaciones</a>
+        <a href="viewer.html">📖 Visor MD</a>
+    </nav>
+    
+    <!-- GREEN AXIS -->
+    <div class="web-card">
+        <h2>🌿 Green Axis — greenaxis.es</h2>
+        <p class="type">Ingeniería y Mantenimiento Integral | Valladolid</p>
+        <div class="score">6.5/10</div>
+        <div class="summary">
+            <div class="stat">
+                <div class="stat-label">SEO</div>
+                <div class="stat-value good">7/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Presencia</div>
+                <div class="stat-value warn">4/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Contenido</div>
+                <div class="stat-value good">8/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">SSL</div>
+                <div class="stat-value good">✅</div>
+            </div>
+        </div>
+        <div class="issues">
+            <div class="issue high">⚠️ Sin Google Business</div>
+            <div class="issue high">⚠️ Sin redes sociales</div>
+            <div class="issue medium">→ Crear perfil Google Business</div>
+            <div class="issue medium">→ Activar LinkedIn</div>
+        </div>
+        <a href="AUDITORIA_greenaxis.md" class="btn">Ver informe completo →</a>
+    </div>
+    
+    <!-- LIV-ING -->
+    <div class="web-card warning">
+        <h2>🏠 Liv-In — liv-ing.com</h2>
+        <p class="type">Consultora de hogar | Valladolid</p>
+        <div class="score">4.5/10</div>
+        <div class="summary">
+            <div class="stat">
+                <div class="stat-label">SEO</div>
+                <div class="stat-value warn">5/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Presencia</div>
+                <div class="stat-value bad">4/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Contenido</div>
+                <div class="stat-value bad">4/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">SSL</div>
+                <div class="stat-value good">✅</div>
+            </div>
+        </div>
+        <div class="issues">
+            <div class="issue critical">🔴 Homepage muy básica (1,910 caracteres)</div>
+            <div class="issue high">⚠️ Sin Google Business</div>
+            <div class="issue high">⚠️ Sin "Quiénes somos"</div>
+            <div class="issue medium">→ Expandir contenido homepage</div>
+        </div>
+        <a href="AUDITORIA_liv-ing.md" class="btn">Ver informe completo →</a>
+    </div>
+    
+    <!-- DINDONLIVING -->
+    <div class="web-card">
+        <h2>🪑 Din Don Living — dindonliving.com</h2>
+        <p class="type">E-commerce muebles | Valladolid</p>
+        <div class="score">7/10</div>
+        <div class="summary">
+            <div class="stat">
+                <div class="stat-label">SEO</div>
+                <div class="stat-value warn">6/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Presencia</div>
+                <div class="stat-value good">8/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Contenido</div>
+                <div class="stat-value good">7/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">SSL</div>
+                <div class="stat-value good">✅</div>
+            </div>
+        </div>
+        <div class="issues">
+            <div class="issue medium">✅ Google Business: 5 reseñas 5★</div>
+            <div class="issue high">⚠️ Sin Instagram activo</div>
+            <div class="issue high">⚠️ Sin LinkedIn</div>
+            <div class="issue medium">→ Activar Instagram (e-commerce)</div>
+        </div>
+        <a href="AUDITORIA_dindonliving.md" class="btn">Ver informe completo →</a>
+    </div>
+    
+    <!-- TERRACOTTA -->
+    <div class="web-card">
+        <h2>🍽️ Terracotta — terracottavalladolid.com</h2>
+        <p class="type">Restaurante | Teresa Gil 25, Valladolid</p>
+        <div class="score">7/10</div>
+        <div class="summary">
+            <div class="stat">
+                <div class="stat-label">SEO</div>
+                <div class="stat-value warn">5/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Presencia</div>
+                <div class="stat-value good">9/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Contenido</div>
+                <div class="stat-value good">7/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">SSL</div>
+                <div class="stat-value good">✅</div>
+            </div>
+        </div>
+        <div class="issues">
+            <div class="issue medium">✅ Instagram: 2,397 seguidores</div>
+            <div class="issue medium">✅ Glovo + Just Eat</div>
+            <div class="issue high">⚠️ Title genérico ("Inicio - Terracotta")</div>
+        </div>
+        <a href="AUDITORIA_terracotta.md" class="btn">Ver informe completo →</a>
+    </div>
+    
+    <!-- GP3 -->
+    <div class="web-card warning">
+        <h2>🏗️ Green Path — gp3.es</h2>
+        <p class="type">Construcción y Reforma + Energía Solar | Valladolid</p>
+        <div class="score">3.5/10</div>
+        <div class="summary">
+            <div class="stat">
+                <div class="stat-label">SEO</div>
+                <div class="stat-value warn">5/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Presencia</div>
+                <div class="stat-value bad">2/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Contenido</div>
+                <div class="stat-value bad">3/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">SSL</div>
+                <div class="stat-value good">✅</div>
+            </div>
+        </div>
+        <div class="issues">
+            <div class="issue critical">🔴 Homepage casi vacía (239 caracteres)</div>
+            <div class="issue critical">🔴 Sin Google Business</div>
+            <div class="issue critical">🔴 Sin redes sociales</div>
+            <div class="issue high">⚠️ Portfolio sin actualizar desde 2020</div>
+        </div>
+        <a href="AUDITORIA_gp3.md" class="btn">Ver informe completo →</a>
+    </div>
+    
+    <!-- MF3 -->
+    <div class="web-card">
+        <h2>🏛️ Mediterranean Fusion — mf3.es</h2>
+        <p class="type">Arquitectura, Interiorismo y Diseño | Valladolid</p>
+        <div class="score">6.5/10</div>
+        <div class="summary">
+            <div class="stat">
+                <div class="stat-label">SEO</div>
+                <div class="stat-value good">7/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Presencia</div>
+                <div class="stat-value warn">5/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Contenido</div>
+                <div class="stat-value good">7/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">SSL</div>
+                <div class="stat-value good">✅</div>
+            </div>
+        </div>
+        <div class="issues">
+            <div class="issue medium">✅ Sitemap: 62 URLs (el más completo)</div>
+            <div class="issue high">⚠️ Velocidad lenta (3,274ms)</div>
+            <div class="issue high">⚠️ Sin Google Business</div>
+            <div class="issue medium">→ Meta description missing</div>
+        </div>
+        <a href="AUDITORIA_mf3.md" class="btn">Ver informe completo →</a>
+    </div>
+    
+    <!-- ESTUDIOVIRTUAL -->
+    <div class="web-card critical">
+        <h2>🎨 Estudio Virtual — estudiovirtual.es</h2>
+        <p class="type">Renderizado 3D | Valladolid</p>
+        <div class="score">2.5/10</div>
+        <div class="summary">
+            <div class="stat">
+                <div class="stat-label">SEO</div>
+                <div class="stat-value warn">5/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Presencia</div>
+                <div class="stat-value bad">1/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Contenido</div>
+                <div class="stat-value bad">4/10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">SSL</div>
+                <div class="stat-value bad">❌ HTTP</div>
+            </div>
+        </div>
+        <div class="issues">
+            <div class="issue critical">🔴 SSL CRÍTICO — HTTP sin cifrar</div>
+            <div class="issue critical">🔴 Robots.txt bloquea bots de SEO</div>
+            <div class="issue critical">🔴 Sin redes sociales</div>
+            <div class="issue critical">🔴 Sin Behance (clave para 3D)</div>
+        </div>
+        <a href="AUDITORIA_estudiovirtual.md" class="btn">Ver informe completo →</a>
+    </div>
+    
+    <p style="text-align: center; color: #444; margin-top: 50px; font-size: 12px;">
+        Auditoría completa — 28 archivos scrape + 7 informes BRAIN — 2026-05-18
+    </p>
+</body>
+</html>
