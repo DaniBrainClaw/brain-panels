@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investigación Agentes GitHub — BRAIN</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui; background: #0a0a0f; color: #e0e0e0; padding: 20px; }
+        h1 { color: #00d4aa; margin-bottom: 5px; font-size: 28px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .back-link { display: inline-block; background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; margin-bottom: 25px; }
+        .back-link:hover { background: #00d4aa; color: #000; }
+        .nav { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
+        .nav a { background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; }
+        .nav a:hover { background: #00d4aa; color: #000; }
+        
+        .card { background: #1a1a24; border-radius: 16px; padding: 25px; margin: 20px 0; border-left: 4px solid #00d4aa; }
+        .card.highlight { border-color: #ff6b6b; }
+        .card h2 { color: #fff; font-size: 20px; margin-bottom: 10px; }
+        .card h3 { color: #00d4aa; font-size: 14px; margin: 15px 0 8px; text-transform: uppercase; }
+        .card p { color: #aaa; line-height: 1.6; }
+        .card ul { margin: 10px 0; padding-left: 20px; }
+        .card li { color: #aaa; margin: 5px 0; }
+        .card .tag { display: inline-block; background: #00d4aa; color: #000; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-right: 8px; }
+        .card .tag.high { background: #ff6b6b; color: #fff; }
+        .card .tag.medium { background: #ffd93d; color: #000; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th { background: #00d4aa; color: #000; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #2a2a3a; }
+        tr:hover td { background: #1a1a24; }
+        
+        .file-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-top: 15px; }
+        .file-item { background: #0a0a0f; padding: 10px 15px; border-radius: 8px; font-size: 13px; color: #888; }
+        .file-item a { color: #00d4aa; text-decoration: none; }
+        .file-item a:hover { text-decoration: underline; }
+        
+        .meta-bar { display: flex; gap: 20px; font-size: 12px; color: #666; margin-bottom: 25px; }
+        .completed-badge { background: #27ae60; color: white; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Dashboard</a>
+    
+    <h1>🔬 Investigación: Agentes GitHub para Empresas</h1>
+    <p class="subtitle">15 archivos crudos + informe de síntesis</p>
+    <div class="meta-bar">
+        <span>📅 2026-05-20</span>
+        <span>📂 investigaciones/claude-business-agents/</span>
+        <span>🔢 15 archivos scrape</span>
+        <span class="completed-badge">✅ COMPLETADA</span>
+    </div>
+    
+    <nav class="nav">
+        <a href="../index.html">📊 Dashboard</a>
+        <a href="../investigaciones.html">🔬 Investigaciones</a>
+        <a href="scrape/index.html">📁 Ver archivos crudos</a>
+    </nav>
+    
+    <!-- HALAZON -->
+    <div class="card highlight">
+        <h2>⚠️ Optimización Tokens — CRÍTICO PARA BRAIN</h2>
+        <span class="tag high">Prioridad ALTA</span>
+        <p style="margin-top: 15px;">Guía para reducir costes 40-70%</p>
+        
+        <h3>Reglas clave</h3>
+        <ul>
+            <li><strong>Nueva conversación cada 15-20 mensajes</strong> — Message 30 puede costar 50,000+ tokens</li>
+            <li><strong>Modelo correcto por tarea:</strong> Haiku ($1/M) vs Sonnet ($3/M) vs Opus ($15/M)</li>
+            <li><strong>Phased approach:</strong> Architecture (Opus) → Core (Sonnet) → Module (Sonnet, new chat) → Review (Opus)</li>
+            <li><strong>Desactivar tools no usadas</strong> — cada MCP carga en cada mensaje</li>
+        </ul>
+        
+        <h3>Regla #1 más importante</h3>
+        <p>Claude re-envía toda la conversación cada mensaje. Message 1 = 500 tokens. Message 30 = 50,000+ tokens.</p>
+        <p><strong>Ahorro potencial: 40-70% en tokens</strong></p>
+        
+        <a href="scrape/016_token_optimization_guide.md" class="back-link" style="margin-top:15px;">Ver guía completa →</a>
+    </div>
+    
+    <!-- WSHOBSON -->
+    <div class="card">
+        <h2>🔧 wshobson/agents — 185 Agentes Especializados</h2>
+        <span class="tag">Alta relevancia</span>
+        
+        <h3>Arquitectura</h3>
+        <ul>
+            <li>185 agentes domain experts (arquitectura, lenguajes, infra, QA, datos)</li>
+            <li>80 plugins single-purpose optimizados para mínimo token</li>
+            <li>153 agent skills modular knowledge packages</li>
+            <li>16 workflow orchestrators multi-agente</li>
+        </ul>
+        
+        <h3>Modelo 3 tiers</h3>
+        <table>
+            <tr><th>Tier</th><th>Modelo</th><th># Agentes</th><th>Uso</th></tr>
+            <tr><td>Tier 1</td><td>Opus 4.7</td><td>42</td><td>Arquitectura crítica, security, code review</td></tr>
+            <tr><td>Tier 2</td><td>User choice</td><td>42</td><td>Tareas complejas</td></tr>
+            <tr><td>Tier 3</td><td>Sonnet</td><td>51</td><td>Soporte inteligente</td></tr>
+            <tr><td>Tier 4</td><td>Haiku</td><td>18</td><td>Tareas operativas rápidas</td></tr>
+        </table>
+        
+        <h3>Workflow ejemplo</h3>
+        <p><code>full-stack-feature "user auth with OAuth2"</code> → 7+ agentes en paralelo</p>
+        
+        <a href="scrape/022_wshobson_agents.md" class="back-link" style="margin-top:15px;">Ver repo →</a>
+    </div>
+    
+    <!-- MARKETING -->
+    <div class="card">
+        <h2>📊 ai-marketing-claude — Marketing Automation Suite</h2>
+        <span class="tag medium">Media prioridad</span>
+        
+        <h3>Comandos disponibles</h3>
+        <div class="file-list">
+            <div class="file-item">/market audit &lt;url&gt; — Full marketing audit (5 agentes)</div>
+            <div class="file-item">/market quick &lt;url&gt; — 60-second snapshot</div>
+            <div class="file-item">/market copy &lt;url&gt; — Generate optimized copy</div>
+            <div class="file-item">/market emails &lt;topic&gt; — Email sequences</div>
+            <div class="file-item">/market social &lt;topic&gt; — 30-day content calendar</div>
+            <div class="file-item">/market ads &lt;url&gt; — Ad creatives</div>
+            <div class="file-item">/market competitors &lt;url&gt; — Competitive intelligence</div>
+            <div class="file-item">/market seo &lt;url&gt; — SEO content audit</div>
+        </div>
+        
+        <h3>Scoring weights</h3>
+        <p>Content & Messaging (25%), Conversion (20%), SEO (20%), Competitive (15%), Brand (10%), Growth (10%)</p>
+        
+        <a href="scrape/015_ai_marketing_claude.md" class="back-link" style="margin-top:15px;">Ver repo →</a>
+    </div>
+    
+    <!-- VOLTAGENT -->
+    <div class="card">
+        <h2>🛠️ VoltAgent/awesome-claude-code-subagents — 100+ Subagents</h2>
+        <span class="tag">Baja prioridad</span>
+        
+        <p>Muy desarrollo-software-centric, menos útil para BRAIN como asistente personal.</p>
+        
+        <h3>Categorías</h3>
+        <ul>
+            <li><strong>voltagent-core-dev:</strong> api-designer, backend-developer, frontend, fullstack</li>
+            <li><strong>voltagent-lang:</strong> typescript-pro, python-pro, golang-pro, rust-engineer</li>
+            <li><strong>voltagent-infra:</strong> azure, kubernetes, terraform, security</li>
+            <li><strong>voltagent-qa-sec:</strong> accessibility-tester, security-auditor, code-reviewer</li>
+        </ul>
+        
+        <a href="scrape/024_awesome_claude_subagents.md" class="back-link" style="margin-top:15px;">Ver repo →</a>
+    </div>
+    
+    <!-- CLAUDE PYME -->
+    <div class="card">
+        <h2>🏢 Claude para Pequeña Empresa — Weekend Guide</h2>
+        
+        <h3>Lo que realmente necesita una pyme</h3>
+        <ul>
+            <li>Menos tabs abiertos</li>
+            <li>Menos tareas repetitivas</li>
+            <li>Menos "Can you quickly draft this?" en Slack</li>
+        </ul>
+        
+        <h3>Capas de implementación</h3>
+        <ol style="color:#aaa; padding-left:20px;">
+            <li><strong>Cero código</strong> — Web app, Team/Pro plans</li>
+            <li><strong>API básico</strong> — Integraciones simples</li>
+            <li><strong>API automation</strong> — Cuando realmente hace falta</li>
+        </ol>
+        
+        <a href="scrape/013_claude_small_business_weekend.md" class="back-link" style="margin-top:15px;">Ver guía →</a>
+    </div>
+    
+    <!-- ARCHIVOS CRUDOS -->
+    <div class="card">
+        <h2>📁 Archivos crudos (15)</h2>
+        <div class="file-list">
+            <div class="file-item"><a href="scrape/011_claude_code_pricing_optimization.md">011_claude_code_pricing_optimization.md</a></div>
+            <div class="file-item"><a href="scrape/012_claude_code_costs_docs.md">012_claude_code_costs_docs.md</a></div>
+            <div class="file-item"><a href="scrape/013_claude_small_business_weekend.md">013_claude_small_business_weekend.md</a></div>
+            <div class="file-item"><a href="scrape/014_claude_code_business_guide.md">014_claude_code_business_guide.md</a></div>
+            <div class="file-item"><a href="scrape/015_ai_marketing_claude.md">015_ai_marketing_claude.md</a></div>
+            <div class="file-item"><a href="scrape/016_token_optimization_guide.md">016_token_optimization_guide.md</a></div>
+            <div class="file-item"><a href="scrape/017_claude_code_token_optimization.md">017_claude_code_token_optimization.md</a></div>
+            <div class="file-item"><a href="scrape/018_agent_social_marketing.md">018_agent_social_marketing.md</a></div>
+            <div class="file-item"><a href="scrape/019_github_topics_ai_marketing.md">019_github_topics_ai_marketing.md</a></div>
+            <div class="file-item"><a href="scrape/020_claude_service_business_automation.md">020_claude_service_business_automation.md</a></div>
+            <div class="file-item"><a href="scrape/021_claude_small_business_smb.md">021_claude_small_business_smb.md</a></div>
+            <div class="file-item"><a href="scrape/022_wshobson_agents.md">022_wshobson_agents.md</a></div>
+            <div class="file-item"><a href="scrape/023_claude_token_costs_superpowers.md">023_claude_token_costs_superpowers.md</a></div>
+            <div class="file-item"><a href="scrape/024_awesome_claude_subagents.md">024_awesome_claude_subagents.md</a></div>
+            <div class="file-item"><a href="scrape/025_claude_skills_313.md">025_claude_skills_313.md</a></div>
+        </div>
+    </div>
+    
+    <p style="text-align: center; color: #444; margin-top: 50px; font-size: 12px;">
+        Investigación completada — subagent sesión nueva — 2026-05-20
+    </p>
+</body>
+</html>
