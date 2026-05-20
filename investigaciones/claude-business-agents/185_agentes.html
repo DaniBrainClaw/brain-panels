@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>185 Agentes — wshobson/agents</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui; background: #0a0a0f; color: #e0e0e0; padding: 20px; }
+        h1 { color: #00d4aa; font-size: 32px; margin-bottom: 5px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .back-link { display: inline-block; background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; margin-bottom: 25px; }
+        .back-link:hover { background: #00d4aa; color: #000; }
+        .meta { display: flex; gap: 20px; font-size: 12px; color: #666; margin-bottom: 25px; }
+        .meta span { background: #1a1a24; padding: 6px 12px; border-radius: 6px; }
+        
+        .category { background: #1a1a24; border-radius: 16px; padding: 20px; margin: 20px 0; }
+        .category h2 { color: #ffd93d; font-size: 18px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #333; }
+        .category .count { color: #666; font-size: 12px; float: right; }
+        
+        .agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 10px; }
+        .agent { background: #0a0a0f; padding: 12px 15px; border-radius: 8px; border-left: 3px solid #00d4aa; }
+        .agent.opus { border-left-color: #ff6b6b; }
+        .agent.haiku { border-left-color: #888; }
+        
+        .agent .name { color: #00d4aa; font-weight: bold; font-size: 14px; margin-bottom: 4px; }
+        .agent .model { display: inline-block; background: #333; color: #888; padding: 2px 8px; border-radius: 4px; font-size: 10px; margin-left: 8px; }
+        .agent .model.opus { background: #ff6b6b; color: #fff; }
+        .agent .model.haiku { background: #555; color: #aaa; }
+        .agent .desc { color: #888; font-size: 13px; line-height: 1.4; }
+        
+        .filter { margin-bottom: 20px; }
+        .filter input { background: #1a1a24; border: 1px solid #333; color: #fff; padding: 10px 15px; border-radius: 8px; width: 300px; font-size: 14px; }
+        .filter input:focus { outline: none; border-color: #00d4aa; }
+        
+        .stats { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .stat { background: #1a1a24; padding: 10px 20px; border-radius: 8px; text-align: center; }
+        .stat .num { color: #00d4aa; font-size: 24px; font-weight: bold; }
+        .stat .label { color: #666; font-size: 11px; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <a href="../../index.html" class="back-link">← Dashboard</a>
+    
+    <h1>🔧 185 Agentes Especializados</h1>
+    <p class="subtitle">wshobson/agents — Sistema completo de automatización multi-agente</p>
+    
+    <div class="meta">
+        <span>📂 investigaciones/claude-business-agents/</span>
+        <span>🔢 185 agentes</span>
+        <span>📊 25 categorías</span>
+    </div>
+    
+    <div class="stats">
+        <div class="stat"><div class="num">54</div><div class="label">Opus (crítico)</div></div>
+        <div class="stat"><div class="num">62</div><div class="label">Sonnet (complejo)</div></div>
+        <div class="stat"><div class="num">20</div><div class="label">Haiku (rápido)</div></div>
+        <div class="stat"><div class="num">49</div><div class="label">Inherit (elige)</div></div>
+    </div>
+    
+    <div class="filter">
+        <input type="text" id="search" placeholder="Buscar agente..." oninput="filterAgents()">
+    </div>
+    
+    <!-- Dev & Architecture -->
+    <div class="category">
+        <h2>🏗️ Architecture & Design <span class="count">11 agentes</span></h2>
+        <div class="agent-grid">
+            <div class="agent opus"><span class="name">backend-architect</span><span class="model opus">opus</span><div class="desc">RESTful API design, microservice boundaries, database schemas</div></div>
+            <div class="agent opus"><span class="name">frontend-developer</span><span class="model opus">opus</span><div class="desc">React components, responsive layouts, client-side state management</div></div>
+            <div class="agent opus"><span class="name">graphql-architect</span><span class="model opus">opus</span><div class="desc">GraphQL schemas, resolvers, federation architecture</div></div>
+            <div class="agent opus"><span class="name">architect-reviewer</span><span class="model opus">opus</span><div class="desc">Architectural consistency analysis and pattern validation</div></div>
+            <div class="agent opus"><span class="name">cloud-architect</span><span class="model opus">opus</span><div class="desc">AWS/Azure/GCP infrastructure design and cost optimization</div></div>
+            <div class="agent opus"><span class="name">hybrid-cloud-architect</span><span class="model opus">opus</span><div class="desc">Multi-cloud strategies across cloud and on-premises environments</div></div>
+            <div class="agent opus"><span class="name">kubernetes-architect</span><span class="model opus">opus</span><div class="desc">Cloud-native infrastructure with Kubernetes and GitOps</div></div>
+            <div class="agent opus"><span class="name">service-mesh-expert</span><span class="model opus">opus</span><div class="desc">Istio/Linkerd service mesh architecture, mTLS, traffic management</div></div>
+            <div class="agent opus"><span class="name">event-sourcing-architect</span><span class="model opus">opus</span><div class="desc">Event sourcing, CQRS patterns, event stores, saga orchestration</div></div>
+            <div class="agent opus"><span class="name">monorepo-architect</span><span class="model opus">opus</span><div class="desc">Monorepo tooling with Nx, Turborepo, Bazel, workspace optimization</div></div>
+            <div class="agent opus"><span class="name">database-architect</span><span class="model opus">opus</span><div class="desc">Database design from scratch, technology selection, schema modeling</div></div>
+        </div>
+    </div>
+    
+    <!-- Dev & Languages -->
+    <div class="category">
+        <h2>💻 Languages & Frameworks <span class="count">20 agentes</span></h2>
+        <div class="agent-grid">
+            <div class="agent sonnet"><span class="name">ui-designer</span><span class="model">sonnet</span><div class="desc">UI/UX design for mobile and web with modern patterns</div></div>
+            <div class="agent opus"><span class="name">accessibility-expert</span><span class="model opus">opus</span><div class="desc">WCAG compliance, accessibility audits, inclusive design</div></div>
+            <div class="agent opus"><span class="name">design-system-architect</span><span class="model opus">opus</span><div class="desc">Design tokens, component libraries, theming systems</div></div>
+            <div class="agent sonnet"><span class="name">ui-ux-designer</span><span class="model">sonnet</span><div class="desc">Interface design, wireframes, design systems</div></div>
+            <div class="agent sonnet"><span class="name">mobile-developer</span><span class="model">sonnet</span><div class="desc">React Native and Flutter application development</div></div>
+            <div class="agent sonnet"><span class="name">ios-developer</span><span class="model">sonnet</span><div class="desc">Native iOS development with Swift/SwiftUI</div></div>
+            <div class="agent sonnet"><span class="name">flutter-expert</span><span class="model">sonnet</span><div class="desc">Advanced Flutter development with state management</div></div>
+            <div class="agent sonnet"><span class="name">c-pro</span><span class="model">sonnet</span><div class="desc">System programming with memory management and OS interfaces</div></div>
+            <div class="agent sonnet"><span class="name">cpp-pro</span><span class="model">sonnet</span><div class="desc">Modern C++ with RAII, smart pointers, STL algorithms</div></div>
+            <div class="agent sonnet"><span class="name">rust-pro</span><span class="model">sonnet</span><div class="desc">Memory-safe systems programming with ownership patterns</div></div>
+            <div class="agent sonnet"><span class="name">golang-pro</span><span class="model">sonnet</span><div class="desc">Concurrent programming with goroutines and channels</div></div>
+            <div class="agent sonnet"><span class="name">javascript-pro</span><span class="model">sonnet</span><div class="desc">Modern JavaScript with ES6+, async patterns, Node.js</div></div>
+            <div class="agent sonnet"><span class="name">typescript-pro</span><span class="model">sonnet</span><div class="desc">Advanced TypeScript with type systems and generics</div></div>
+            <div class="agent sonnet"><span class="name">python-pro</span><span class="model">sonnet</span><div class="desc">Python development with advanced features and optimization</div></div>
+            <div class="agent sonnet"><span class="name">django-pro</span><span class="model">sonnet</span><div class="desc">Django development with ORM and async views</div></div>
+            <div class="agent sonnet"><span class="name">fastapi-pro</span><span class="model">sonnet</span><div class="desc">FastAPI with async patterns and Pydantic</div></div>
+            <div class="agent sonnet"><span class="name">java-pro</span><span class="model">sonnet</span><div class="desc">Modern Java with streams, concurrency, JVM optimization</div></div>
+            <div class="agent sonnet"><span class="name">scala-pro</span><span class="model">sonnet</span><div class="desc">Enterprise Scala with functional programming and distributed systems</div></div>
+            <div class="agent sonnet"><span class="name">csharp-pro</span><span class="model">sonnet</span><div class="desc">C# development with .NET frameworks and patterns</div></div>
+            <div class="agent sonnet"><span class="name">ruby-pro</span><span class="model">sonnet</span><div class="desc">Ruby with metaprogramming, Rails patterns, gem development</div></div>
+        </div>
+    </div>
+    
+    <!-- Dev & Infrastructure -->
+    <div class="category">
+        <h2>☁️ Infrastructure & DevOps <span class="count">8 agentes</span></h2>
+        <div class="agent-grid">
+            <div class="agent sonnet"><span class="name">devops-troubleshooter</span><span class="model">sonnet</span><div class="desc">Production debugging, log analysis, deployment troubleshooting</div></div>
+            <div class="agent sonnet"><span class="name">deployment-engineer</span><span class="model">sonnet</span><div class="desc">CI/CD pipelines, containerization, cloud deployments</div></div>
+            <div class="agent sonnet"><span class="name">terraform-specialist</span><span class="model">sonnet</span><div class="desc">Infrastructure as Code with Terraform modules and state management</div></div>
+            <div class="agent sonnet"><span class="name">dx-optimizer</span><span class="model">sonnet</span><div class="desc">Developer experience optimization and tooling improvements</div></div>
+            <div class="agent sonnet"><span class="name">database-optimizer</span><span class="model">sonnet</span><div class="desc">Query optimization, index design, migration strategies</div></div>
+            <div class="agent sonnet"><span class="name">database-admin</span><span class="model">sonnet</span><div class="desc">Database operations, backup, replication, monitoring</div></div>
+            <div class="agent sonnet"><span class="name">network-engineer</span><span class="model">sonnet</span><div class="desc">Network debugging, load balancing, traffic analysis</div></div>
+            <div class="agent opus"><span class="name">incident-responder</span><span class="model opus">opus</span><div class="desc">Production incident management and resolution</div></div>
+        </div>
+    </div>
+    
+    <!-- Security -->
+    <div class="category">
+        <h2>🔒 Security <span class="count">6 agentes</span></h2>
+        <div class="agent-grid">
+            <div class="agent opus"><span class="name">code-reviewer</span><span class="model opus">opus</span><div class="desc">Code review with security focus and production reliability</div></div>
+            <div class="agent opus"><span class="name">security-auditor</span><span class="model opus">opus</span><div class="desc">Vulnerability assessment and OWASP compliance</div></div>
+            <div class="agent opus"><span class="name">backend-security-coder</span><span class="model opus">opus</span><div class="desc">Secure backend coding practices, API security implementation</div></div>
+            <div class="agent opus"><span class="name">frontend-security-coder</span><span class="model opus">opus</span><div class="desc">XSS prevention, CSP implementation, client-side security</div></div>
+            <div class="agent opus"><span class="name">mobile-security-coder</span><span class="model opus">opus</span><div class="desc">Mobile security patterns, WebView security, biometric auth</div></div>
+            <div class="agent opus"><span class="name">threat-modeling-expert</span><span class="model opus">opus</span><div class="desc">STRIDE threat modeling, attack trees, security requirements</div></div>
+        </div>
+    </div>
+    
+    <!-- Quality & Testing -->
+    <div class="category">
+        <h2>🧪 Quality & Testing <span class="count">8 agentes</span></h2>
+        <div class="agent-grid">
+            <div class="agent sonnet"><span class="name">test-automator</span><span class="model">sonnet</span><div class="desc">Comprehensive test suite creation (unit, integration, e2e)</div></div>
+            <div class="agent sonnet"><span class="name">tdd-orchestrator</span><span class="model">sonnet</span><div class="desc">Test-Driven Development methodology guidance</div></div>
+            <div class="agent sonnet"><span class="name">debugger</span><span class="model">sonnet</span><div class="desc">Error resolution and test failure analysis</div></div>
+            <div class="agent sonnet"><span class="name">error-detective</span><span class="model">sonnet</span><div class="desc">Log analysis and error pattern recognition</div></div>
+            <div class="agent opus"><span class="name">performance-engineer</span><span class="model opus">opus</span><div class="desc">Application profiling and optimization</div></div>
+            <div class="agent opus"><span class="name">observability-engineer</span><span class="model opus">opus</span><div class="desc">Production monitoring, alerting, and observability stack setup</div></div>
+            <div class="agent sonnet"><span class="name">qa-expert</span><span class="model">sonnet</span><div class="desc">Quality assurance methodology and test planning</div></div>
+            <div class="agent sonnet"><span class="name">test-architect</span><span class="model">sonnet</span><div class="desc">Test architecture design for complex systems</div></div>
+        </div>
+    </div>
+    
+    <!-- SEO & Marketing -->
+    <div class="category">
+        <h2>📊 SEO & Marketing <span class="count">10 agentes</span></h2>
+        <div class="agent-grid">
+            <div class="agent sonnet"><span class="name">seo-content-auditor</span><span class="model">sonnet</span><div class="desc">Content quality analysis, E-E-A-T signal evaluation</div></div>
+            <div class="agent haiku"><span class="name">seo-meta-optimizer</span><span class="model haiku">haiku</span><div class="desc">Meta title and description optimization</div></div>
+            <div class="agent haiku"><span class="name">seo-keyword-strategist</span><span class="model haiku">haiku</span><div class="desc">Keyword research and semantic variation analysis</div></div>
+            <div class="agent haiku"><span class="name">seo-structure-architect</span><span class="model haiku">haiku</span><div class="desc">Content structure and schema markup planning</div></div>
+            <div class="agent haiku"><span class="name">seo-snippet-hunter</span><span class="model haiku">haiku</span><div class="desc">Featured snippet optimization and format targeting</div></div>
+            <div class="agent haiku"><span class="name">seo-content-refresher</span><span class="model haiku">haiku</span><div class="desc">Content freshness analysis and update recommendations</div></div>
+            <div class="agent haiku"><span class="name">seo-cannibalization-detector</span><span class="model haiku">haiku</span><div class="desc">Keyword overlap and cannibalization detection</div></div>
+            <div class="agent sonnet"><span class="name">seo-authority-builder</span><span class="model">sonnet</span><div class="desc">E-E-A-T signal analysis and improvement recommendations</div></div>
+            <div class="agent sonnet"><span class="name">seo-content-writer</span><span class="model">sonnet</span><div class="desc">SEO-optimized content creation and editing</div></div>
+            <div class="agent haiku"><span class="name">seo-content-planner</span><span class="model haiku">haiku</span><div class="desc">Content planning and topic cluster strategy</div></div>
+        </div>
+    </div>
+    
+    <!-- Business & Operations -->
+    <div class="category">
+        <h2>💼 Business & Operations <span class="count">5 agentes</span></h2>
+        <div class="agent-grid">
+            <div class="agent sonnet"><span class="name">business-analyst</span><span class="model">sonnet</span><div class="desc">Metrics analysis, KPI dashboard design, business reporting</div></div>
+            <div class="agent opus"><span class="name">hr-pro</span><span class="model opus">opus</span><div class="desc">HR operations, policies, employee relations</div></div>
+            <div class="agent opus"><span class="name">legal-advisor</span><span class="model opus">opus</span><div class="desc">Privacy policies, terms of service, compliance</div></div>
+            <div class="agent sonnet"><span class="name">customer-support</span><span class="model">sonnet</span><div class="desc">Support ticket handling, FAQ generation, communication</div></div>
+            <div class="agent haiku"><span class="name">sales-automator</span><span class="model haiku">haiku</span><div class="desc">Cold emails, follow-up sequences, proposal generation</div></div>
+        </div>
+    </div>
+    
+    <!-- AI & Data -->
+    <div class="category">
+        <h2>🤖 AI & Data <span class="count">10 agentes</span></h2>
+        <div class="agent-grid">
+            <div class="agent opus"><span class="name">llm-application-architect</span><span class="model opus">opus</span><div class="desc">LLM app architecture, prompt engineering, RAG design</div></div>
+            <div class="agent sonnet"><span class="name">rag-developer</span><span class="model">sonnet</span><div class="desc">Retrieval-augmented generation systems, vector databases</div></div>
+            <div class="agent sonnet"><span class="name">data-engineer</span><span class="model">sonnet</span><div class="desc">Data pipelines, ETL, data warehousing</div></div>
+            <div class="agent sonnet"><span class="name">mlops-engineer</span><span class="model">sonnet</span><div class="desc">ML infrastructure, model deployment, monitoring</div></div>
+            <div class="agent sonnet"><span class="name">prompt-engineer</span><span class="model">sonnet</span><div class="desc">Prompt design, testing, optimization</div></div>
+            <div class="agent sonnet"><span class="name">embeddings-specialist</span><span class="model">sonnet</span><div class="desc">Vector embeddings, similarity search, semantic indexing</div></div>
+            <div class="agent sonnet"><span class="name">analytics-engineer</span><span class="model">sonnet</span><div class="desc">Analytics implementation, dashboard creation</div></div>
+            <div class="agent sonnet"><span class="name">ai-product-strategist</span><span class="model">sonnet</span><div class="desc">AI product roadmap, market analysis, feature planning</div></div>
+            <div class="agent opus"><span class="name">evaluation-specialist</span><span class="model opus">opus</span><div class="desc">LLM evaluation frameworks, benchmark design</div></div>
+            <div class="agent sonnet"><span class="name">context-engineer</span><span class="model">sonnet</span><div class="desc">Context management, token optimization, truncation strategies</div></div>
+        </div>
+    </div>
+    
+    <!-- Documentation -->
+    <div class="category">
+        <h2>📝 Documentation <span class="count">4 agentes</span></h2>
+        <div class="agent-grid">
+            <div class="agent opus"><span class="name">docs-architect</span><span class="model opus">opus</span><div class="desc">Technical documentation planning and structure</div></div>
+            <div class="agent sonnet"><span class="name">tutorial-engineer</span><span class="model">sonnet</span><div class="desc">Step-by-step tutorials and how-to guides</div></div>
+            <div class="agent sonnet"><span class="name">api-docs-specialist</span><span class="model">sonnet</span><div class="desc">API documentation, OpenAPI specs, SDK guides</div></div>
+            <div class="agent haiku"><span class="name">search-specialist</span><span class="model haiku">haiku</span><div class="desc">Web research and information synthesis</div></div>
+        </div>
+    </div>
+    
+    <!-- Orchestration -->
+    <div class="category">
+        <h2>🎛️ Orchestration <span class="count">5 agentes</span></h2>
+        <div class="agent-grid">
+            <div class="agent opus"><span class="name">conductor-validator</span><span class="model opus">opus</span><div class="desc">Conductor project artifact validation for completeness</div></div>
+            <div class="agent haiku"><span class="name">context-manager</span><span class="model haiku">haiku</span><div class="desc">Multi-agent context management and state coordination</div></div>
+            <div class="agent sonnet"><span class="name">orchestrator</span><span class="model">sonnet</span><div class="desc">Multi-agent workflow orchestration and task delegation</div></div>
+            <div class="agent sonnet"><span class="name">workflow-designer</span><span class="model">sonnet</span><div class="desc">Workflow design and automation pipeline creation</div></div>
+            <div class="agent sonnet"><span class="name">task-scheduler</span><span class="model">sonnet</span><div class="desc">Task scheduling, cron jobs, recurring automation</div></div>
+        </div>
+    </div>
+    
+    <!-- Blockchain & Finance -->
+    <div class="category">
+        <h2>💰 Finance & Payments <span class="count">2 agentes</span></h2>
+        <div class="agent-grid">
+            <div class="agent sonnet"><span class="name">blockchain-developer</span><span class="model">sonnet</span><div class="desc">Web3 apps, smart contracts, DeFi protocols</div></div>
+            <div class="agent sonnet"><span class="name">payment-integration</span><span class="model">sonnet</span><div class="desc">Payment processor integration (Stripe, PayPal)</div></div>
+        </div>
+    </div>
+    
+    <!-- Specialized -->
+    <div class="category">
+        <h2>🔧 Specialized <span class="count">9 agentes</span></h2>
+        <div class="agent-grid">
+            <div class="agent sonnet"><span class="name">arm-cortex-expert</span><span class="model">sonnet</span><div class="desc">ARM Cortex-M firmware and peripheral driver development</div></div>
+            <div class="agent sonnet"><span class="name">legacy-modernizer</span><span class="model">sonnet</span><div class="desc">Legacy code refactoring and modernization</div></div>
+            <div class="agent sonnet"><span class="name">php-pro</span><span class="model">sonnet</span><div class="desc">Modern PHP with frameworks and performance optimization</div></div>
+            <div class="agent sonnet"><span class="name">elixir-pro</span><span class="model">sonnet</span><div class="desc">Elixir with OTP patterns and Phoenix frameworks</div></div>
+            <div class="agent sonnet"><span class="name">haskell-pro</span><span class="model">sonnet</span><div class="desc">Strongly typed functional programming, advanced type systems</div></div>
+            <div class="agent sonnet"><span class="name">sql-pro</span><span class="model">sonnet</span><div class="desc">Complex SQL queries and database optimization</div></div>
+            <div class="agent sonnet"><span class="name">unity-developer</span><span class="model">sonnet</span><div class="desc">Unity game development and optimization</div></div>
+            <div class="agent sonnet"><span class="name">minecraft-bukkit-pro</span><span class="model">sonnet</span><div class="desc">Minecraft server plugin development</div></div>
+            <div class="agent opus"><span class="name">protect-mcp</span><span class="model opus">opus</span><div class="desc">Cedar policy enforcement + Ed25519 signed receipts for MCP</div></div>
+        </div>
+    </div>
+    
+    <!-- Gaming -->
+    <div class="category">
+        <h2>🎮 Gaming <span class="count">2 agentes</span></h2>
+        <div class="agent-grid">
+            <div class="agent sonnet"><span class="name">unity-developer</span><span class="model">sonnet</span><div class="desc">Unity game development and optimization</div></div>
+            <div class="agent sonnet"><span class="name">minecraft-bukkit-pro</span><span class="model">sonnet</span><div class="desc">Minecraft server plugin development</div></div>
+        </div>
+    </div>
+    
+    <p style="color: #444; text-align: center; margin-top: 50px; font-size: 12px;">
+        Fuente: github.com/wshobson/agents — 185 agentes organizados en 25 categorías
+    </p>
+    
+    <script>
+        function filterAgents() {
+            const q = document.getElementById('search').value.toLowerCase();
+            document.querySelectorAll('.agent').forEach(a => {
+                const name = a.querySelector('.name').textContent.toLowerCase();
+                const desc = a.querySelector('.desc').textContent.toLowerCase();
+                a.style.display = (name.includes(q) || desc.includes(q)) ? '' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
