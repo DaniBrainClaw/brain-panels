@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRAIN — Lo Más Importante</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui; background: #0a0a0f; color: #e0e0e0; padding: 20px; }
+        h1 { color: #00d4aa; font-size: 32px; margin-bottom: 5px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .back-link { display: inline-block; background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; margin-bottom: 25px; }
+        .back-link:hover { background: #00d4aa; color: #000; }
+        
+        .card { background: #1a1a24; border-radius: 16px; padding: 25px; margin: 20px 0; border-left: 4px solid #00d4aa; }
+        .card.highlight { border-color: #ff6b6b; }
+        .card.orange { border-color: #ffd93d; }
+        .card h2 { color: #fff; font-size: 22px; margin-bottom: 15px; }
+        .card h3 { color: #00d4aa; font-size: 14px; margin: 20px 0 10px; text-transform: uppercase; }
+        .card p { color: #aaa; line-height: 1.6; }
+        .card ul { margin: 10px 0; padding-left: 20px; }
+        .card li { color: #aaa; margin: 8px 0; line-height: 1.5; }
+        .card .tag { display: inline-block; background: #00d4aa; color: #000; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-right: 8px; }
+        .card .tag.high { background: #ff6b6b; color: #fff; }
+        .card .tag.medium { background: #ffd93d; color: #000; }
+        
+        .cmd { background: #0a0a0f; padding: 10px 15px; border-radius: 6px; font-family: monospace; color: #00d4aa; margin: 8px 0; display: block; }
+        .cmd .desc { color: #888; font-size: 12px; margin-top: 4px; display: block; font-family: system-ui; }
+        
+        .rule { background: #0a0a0f; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .rule h4 { color: #ffd93d; font-size: 14px; margin-bottom: 8px; }
+        .rule p { color: #888; font-size: 13px; }
+        .rule .highlight { color: #ff6b6b; font-weight: bold; }
+        
+        .stats { display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap; }
+        .stat { background: #1a1a24; padding: 15px 25px; border-radius: 8px; text-align: center; }
+        .stat .num { color: #00d4aa; font-size: 28px; font-weight: bold; }
+        .stat .label { color: #666; font-size: 11px; margin-top: 5px; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th { background: #00d4aa; color: #000; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #333; }
+        tr:hover td { background: #1a1a24; }
+        
+        .masonry { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 15px; }
+        .item { background: #0a0a0f; padding: 15px; border-radius: 8px; }
+        .item h4 { color: #00d4aa; font-size: 14px; margin-bottom: 8px; }
+        .item p { color: #666; font-size: 13px; line-height: 1.5; }
+        .item .price { color: #ffd93d; font-size: 12px; font-weight: bold; margin-top: 8px; display: block; }
+        
+        .source { color: #444; font-size: 12px; margin-top: 10px; }
+        .source a { color: #00d4aa; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Dashboard</a>
+    
+    <h1>⭐ Lo Más Relevante para BRAIN</h1>
+    <p class="subtitle">3 herramientas extraídas de la investigación sobre agentes GitHub</p>
+    
+    <nav style="margin-bottom:25px;">
+        <a href="index.html" class="back-link">← Investigación completa</a>
+        <a href="185_agentes.html" class="back-link">185 Agentes →</a>
+        <a href="scrape/index.html" class="back-link">Archivos crudos →</a>
+    </nav>
+    
+    <!-- TOKEN OPTIMIZATION -->
+    <div class="card highlight">
+        <h2>⚡ Optimización de Tokens — ⭐ CRÍTICO PARA BRAIN</h2>
+        <span class="tag high">Ahorro 40-70%</span>
+        <span class="tag">Prioridad ALTA</span>
+        
+        <div class="stats">
+            <div class="stat"><div class="num">15-20</div><div class="label">msj por sesión</div></div>
+            <div class="stat"><div class="num">40-70%</div><div class="label">ahorro tokens</div></div>
+            <div class="stat"><div class="num">5x</div><div class="label">Opus vs Haiku</div></div>
+        </div>
+        
+        <h3>El problema oculto</h3>
+        <p>Claude re-envía TODA la conversación en cada mensaje. Cada mensaje acumula el histórico completo.</p>
+        <table>
+            <tr><th>Mensaje</th><th>Tokens procesados</th><th>Coste real</th></tr>
+            <tr><td>1</td><td>~500</td><td>500 tokens</td></tr>
+            <tr><td>5</td><td>~3,000</td><td>3x más</td></tr>
+            <tr><td>15</td><td>~15,000-25,000</td><td>30x más</td></div></tr>
+            <tr><td>30</td><td>~50,000+</td><td>100x más</td></tr>
+        </table>
+        
+        <h3>Las 7 reglas de oro</h3>
+        
+        <div class="rule">
+            <h4>Regla 1: Nueva conversación cada 15-20 mensajes</h4>
+            <p>El impacto más alto. Reinicia el contexto a cero. "fix the bug on line 42" en mensaje 30 puede costar 50,000+ tokens.</p>
+        </div>
+        
+        <div class="rule">
+            <h4>Regla 2: Modelo correcto por tarea</h4>
+            <table>
+                <tr><th>Modelo</th><th>Precio/M</th><th>Uso</th></tr>
+                <tr><td>Haiku 4.5</td><td>$1 in / $5 out</td><td>Clasificar, extracción, fixes rápidos, boilerplate</td></tr>
+                <tr><td>Sonnet 4.6</td><td>$3 in / $15 out</td><td>80% del trabajo: código, multi-archivo, APIs</td></tr>
+                <tr><td>Opus 4.6</td><td>$15 in / $75 out</td><td>Arquitectura compleja, debugging profundo, reviews</td></tr>
+            </table>
+        </div>
+        
+        <div class="rule">
+            <h4>Regla 3: Contexto estructurado con XML</h4>
+            <p>Claude responde mejor a contexto estructurado que a contexto largo.</p>
+            <code style="background:#0a0a0f;color:#ffd93d;padding:10px;display:block;border-radius:6px;margin-top:8px;">
+&lt;task&gt;Fix race condition in token refresh&lt;/task&gt;<br>
+&lt;relevant_code&gt;...solo código relevante...&lt;/relevant_code&gt;<br>
+&lt;error&gt;...solo el error...&lt;/error&gt;
+            </code>
+        </div>
+        
+        <div class="rule">
+            <h4>Regla 4: Desactivar tools no usadas</h4>
+            <p>Cada MCP connector carga su full definition en cada mensaje. 5 conectores sin usar = miles de tokens desperdiciados.</p>
+        </div>
+        
+        <div class="rule">
+            <h4>Regla 5: Enfoque por fases para proyectos grandes</h4>
+            <p>Architecture (Opus) → Core (Sonnet, chat nuevo) → Modules (Sonnet, chat nuevo por módulo) → Review (Opus)</p>
+        </div>
+        
+        <div class="rule">
+            <h4>Regla 6: Prompt caching (API)</h4>
+            <p>Cache read tokens cuestan 0.1x — <span class="highlight">ahorro de hasta 90%</span> en contexto repetido.</p>
+        </div>
+        
+        <div class="rule">
+            <h4>Regla 7: Batch API para trabajo no urgente</h4>
+            <p>50% descuento en todos los modelos. Para procesar archivos grandes o code reviews en batch.</p>
+        </div>
+        
+        <p class="source">Fuente: <a href="https://levelup.gitconnected.com/stop-burning-tokens-a-developers-guide-to-claude-ai-token-optimization-4c70c7c52ffb">Stop Burning Tokens — Level Up Coding</a></p>
+    </div>
+    
+    <!-- AI MARKETING SUITE -->
+    <div class="card orange">
+        <h2>📊 AI Marketing Suite — ai-marketing-claude</h2>
+        <span class="tag medium">Marketing automation</span>
+        <span class="tag">15 comandos</span>
+        
+        <h3>Qué hace</h3>
+        <p>Sistema de marketing completo para auditar webs, generar copy, emails, campañas, calendarios de contenido, inteligencia competitiva y reports en PDF — todo desde terminal.</p>
+        
+        <h3>Los 14 comandos</h3>
+        <div class="masonry">
+            <div class="item">
+                <h4>/market audit &lt;url&gt;</h4>
+                <p>Auditoría completa con 5 agentes en paralelo</p>
+            </div>
+            <div class="item">
+                <h4>/market quick &lt;url&gt;</h4>
+                <p>Snapshot de marketing en 60 segundos</p>
+            </div>
+            <div class="item">
+                <h4>/market copy &lt;url&gt;</h4>
+                <p>Genera copy optimizado con ejemplos before/after</p>
+            </div>
+            <div class="item">
+                <h4>/market emails &lt;tema&gt;</h4>
+                <p>Secuencia completa de emails (bienvenida, nurturing, lanzamiento)</p>
+            </div>
+            <div class="item">
+                <h4>/market social &lt;tema&gt;</h4>
+                <p>Calendario de contenido para 30 días en redes sociales</p>
+            </div>
+            <div class="item">
+                <h4>/market ads &lt;url&gt;</h4>
+                <p>Creativos y copy para ads en todas las plataformas</p>
+            </div>
+            <div class="item">
+                <h4>/market funnel &lt;url&gt;</h4>
+                <p>Análisis del funnel de ventas y optimización</p>
+            </div>
+            <div class="item">
+                <h4>/market competitors &lt;url&gt;</h4>
+                <p>Informe de inteligencia competitiva</p>
+            </div>
+            <div class="item">
+                <h4>/market landing &lt;url&gt;</h4>
+                <p>Análisis CRO de landing pages</p>
+            </div>
+            <div class="item">
+                <h4>/market launch &lt;producto&gt;</h4>
+                <p>Playbook para lanzamiento de producto</p>
+            </div>
+            <div class="item">
+                <h4>/market proposal &lt;cliente&gt;</h4>
+                <p>Generador de propuestas para clientes</p>
+            </div>
+            <div class="item">
+                <h4>/market report &lt;url&gt;</h4>
+                <p>Informe completo (Markdown)</p>
+            </div>
+            <div class="item">
+                <h4>/market report-pdf &lt;url&gt;</h4>
+                <p>Informe profesional (PDF)</p>
+            </div>
+            <div class="item">
+                <h4>/market seo &lt;url&gt;</h4>
+                <p>Auditoría de contenido SEO</p>
+            </div>
+            <div class="item">
+                <h4>/market brand &lt;url&gt;</h4>
+                <p>Análisis de voz de marca y guías</p>
+            </div>
+        </div>
+        
+        <h3>Cómo funciona el audit (5 agentes en paralelo)</h3>
+        <table>
+            <tr><th>Categoría</th><th>Peso</th><th>Qué analiza</th></tr>
+            <tr><td>Content & Messaging</td><td>25%</td><td>Calidad copy, propuestas de valor, headlines, CTAs</td></tr>
+            <tr><td>Conversion Optimization</td><td>20%</td><td>Funnels, formularios, social proof, fricción</td></tr>
+            <tr><td>SEO & Discoverability</td><td>20%</td><td>SEO on-page, SEO técnico, estructura contenido</td></tr>
+            <tr><td>Competitive Positioning</td><td>15%</td><td>Diferenciación, awareness de mercado, alternativas</td></tr>
+            <tr><td>Brand & Trust</td><td>10%</td><td>Calidad diseño, señales de confianza, autoridad</td></tr>
+            <tr><td>Growth & Strategy</td><td>10%</td><td>Precios, canales de adquisición, retención</td></tr>
+        </table>
+        
+        <h3>Arquitectura del sistema</h3>
+        <ul>
+            <li><strong>5 subagents:</strong> market-content, market-conversion, market-competitive, market-technical, market-strategy</li>
+            <li><strong>14 skills:</strong> uno por cada comando (/market-audit, /market-copy, /market-emails, etc.)</li>
+            <li><strong>Python scripts:</strong> analyze_page.py, competitor_scanner.py, social_calendar.py, generate_pdf_report.py</li>
+            <li><strong>Templates:</strong> email sequences, calendars, proposals, checklists</li>
+        </ul>
+        
+        <p class="source">Repo: <a href="https://github.com/zubair-trabzada/ai-marketing-claude">github.com/zubair-trabzada/ai-marketing-claude</a></p>
+    </div>
+    
+    <!-- TERCERO: WEEKEND GUIDE -->
+    <div class="card">
+        <h2>🏢 Guía: Claude para Pequeña Empresa en un Fin de Semana</h2>
+        <span class="tag">Solopreneurs</span>
+        <span class="tag">Automatización</span>
+        
+        <h3>Lo que realmente necesita una pyme</h3>
+        <ul>
+            <li>Menos tabs abiertos</li>
+            <li>Menos tareas repetitivas</li>
+            <li>Menos "Can you quickly draft this?" en Slack</li>
+            <li>Un asistente rápido que haga el trabajo sin necesitar un equipo de ML</li>
+        </ul>
+        
+        <h3>Capas de implementación (de cero a avanzado)</h3>
+        <table>
+            <tr><th>Nivel</th><th>Qué</th><th>Para quién</th></tr>
+            <tr><td>1 — Cero código</td><td>Web app, Team/Pro plans</td><td>No técnicos</td></tr>
+            <tr><td>2 — API básico</td><td>Integraciones simples</td><td>Solopreneurs con algo de conocimiento</td></tr>
+            <tr><td>3 — API automation</td><td>Cuando realmente hace falta</td><td>Empresas con necesidades específicas</td></tr>
+        </table>
+        
+        <h3>Modelos disponibles</h3>
+        <div class="masonry">
+            <div class="item">
+                <h4>Opus 4.6</h4>
+                <p>Mejor lenguaje, contexto largo, para tareas complejas</p>
+            </div>
+            <div class="item">
+                <h4>Sonnet 4.6</h4>
+                <p>Balance entre coste y rendimiento</p>
+            </div>
+            <div class="item">
+                <h4>Haiku 4.5</h4>
+                <p>Rápido y barato para tareas simples</p>
+            </div>
+        </div>
+        
+        <h3>Posibles aplicaciones para Dani</h3>
+        <ul>
+            <li>Automatizar respuestas a emails comunes de las empresas</li>
+            <li>Generar propuestas comerciales automáticas</li>
+            <li>Auditar contenido de webs periódicamente</li>
+            <li>Generar contenido para redes sociales</li>
+            <li>Analizar métricas y generar informes automáticos</li>
+        </ul>
+        
+        <p class="source">Fuente: <a href="https://medium.com/@sebuzdugan/how-to-use-claude-to-automate-your-small-business-in-a-weekend-15c749aac5e0">Medium — How to Use Claude to Automate Your Small Business in a Weekend</a></p>
+    </div>
+    
+    <!-- LINK A 185 AGENTES -->
+    <div class="card" style="text-align:center; padding: 40px;">
+        <h2 style="font-size:28px;">🔧 Los 185 Agentes Completos</h2>
+        <p style="color:#888; margin: 15px 0;">Arquitectura, languages, infrastructure, security, SEO, business, AI, data, documentation, orchestration</p>
+        <a href="185_agentes.html" class="back-link" style="font-size:16px; padding:15px 30px;">Ver los 185 agentes →</a>
+    </div>
+    
+    <p style="color: #444; text-align: center; margin-top: 50px; font-size: 12px;">
+        Investigación: 15 archivos crudos en scrape/ — Panel generado 2026-05-20
+    </p>
+</body>
+</html>
