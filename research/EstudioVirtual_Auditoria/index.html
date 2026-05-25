@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudio Virtual — Auditoría Completa</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui; background: #0a0a0f; color: #e0e0e0; padding: 20px; }
+        h1 { color: #00d4aa; margin-bottom: 10px; font-size: 28px; }
+        h2 { color: #00d4aa; margin: 30px 0 15px 0; font-size: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        h3 { color: #fff; margin: 20px 0 10px 0; font-size: 16px; }
+        p { color: #aaa; line-height: 1.6; margin-bottom: 10px; }
+        .meta { color: #666; font-size: 12px; margin-bottom: 30px; }
+        .nav { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+        .nav a { background: #1a1a24; color: #00d4aa; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; }
+        .nav a:hover { background: #00d4aa; color: #000; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th { background: #1a1a24; color: #00d4aa; padding: 12px; text-align: left; border: 1px solid #333; }
+        td { padding: 10px 12px; border: 1px solid #333; color: #ccc; }
+        tr:hover { background: #1a1a24; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-left: 8px; }
+        .badge-red { background: #ff4444; color: white; }
+        .badge-orange { background: #ffaa00; color: black; }
+        .badge-green { background: #44bb44; color: white; }
+        .badge-blue { background: #3498db; color: white; }
+        .badge-purple { background: #9b59b6; color: white; }
+        .critical { background: #2a1a1a; border-left: 4px solid #ff4444; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .high { background: #2a2a1a; border-left: 4px solid #ffaa00; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .medium { background: #1a2a1a; border-left: 4px solid #44bb44; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        code { background: #1a1a24; padding: 2px 6px; border-radius: 4px; color: #00d4aa; }
+        pre { background: #1a1a24; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; }
+        ul { margin: 10px 0 10px 20px; color: #aaa; }
+        li { margin: 5px 0; }
+        .summary-box { background: #1a1a24; padding: 20px; border-radius: 12px; margin: 20px 0; }
+        .summary-box h3 { color: #00d4aa; margin-top: 0; }
+        .tag { display: inline-block; background: #333; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin: 2px; }
+        .section { margin: 30px 0; padding: 20px; background: #111; border-radius: 12px; }
+        .back { color: #00d4aa; text-decoration: none; margin-bottom: 20px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="index.html">📊 Dashboard</a>
+        <a href="tareas.html">📋 Tareas</a>
+        <a href="investigaciones.html">🔬 Investigaciones</a>
+        <a href="viewer.html">📖 Visor MD</a>
+    </nav>
+    
+    <a href="investigaciones.html" class="back">← Volver a Investigaciones</a>
+    
+    <h1>📋 Estudio Virtual — Auditoría Completa</h1>
+    <p class="meta">Fecha: 2026-05-25 | Prepared para pasar a IA externa para plan de acción</p>
+    
+    <div class="summary-box">
+        <h3>📌 Resumen Ejecutivo</h3>
+        <p><strong>Empresa:</strong> Estudio Virtual | <strong>Dominio:</strong> estudiovirtual.es</p>
+        <p><strong>Modelo:</strong> B2B — servicios para arquitectos, constructoras, promotores</p>
+        <p><strong>Score actual:</strong> 2.5/10 | <strong>Objetivo:</strong> Migrar a HTML + arreglar todo</p>
+        <p><span class="tag">SSL ❌</span><span class="tag">404s 🔴</span><span class="tag">Sin contenido 🔴</span><span class="tag">B2B ✅</span></p>
+    </div>
+
+    <h2>🔴 Errores Críticos</h2>
+    
+    <div class="critical">
+        <h3>1. SSL No Funciona — HTTP puro</h3>
+        <p><strong>Impacto:</strong> Chrome marca "no seguro", SEO penalizado, datos expuestos</p>
+        <p><strong>Solución:</strong> Activar Let's Encrypt en DonDominio (30 min)</p>
+    </div>
+    
+    <div class="critical">
+        <h3>2. Robots.txt Bloquea Bots de SEO</h3>
+        <p>Bloquea: AhrefsBot, SemrushBot, YandexBot — autoflagelación</p>
+        <p><strong>Solución:</strong> Eliminar bloqueos de User-agents buenos</p>
+    </div>
+    
+    <div class="critical">
+        <h3>3. 5+ Páginas Rotas (404)</h3>
+        <table>
+            <tr><th>Página</th><th>Estado</th></tr>
+            <tr><td>/contacto/</td><td>❌ 404</td></tr>
+            <tr><td>/catalogo-3d/</td><td>❌ 404</td></tr>
+            <tr><td>/sobre-nosotros/</td><td>❌ 404</td></tr>
+            <tr><td>/proyectos/</td><td>❌ 404</td></tr>
+            <tr><td>/portafolio/</td><td>❌ 404</td></tr>
+        </table>
+    </div>
+
+    <h2>🟠 Errores Altos</h2>
+    
+    <div class="high">
+        <h3>4. Sin Página "Quiénes Somos"</h3>
+        <p>Clientes B2B necesitan confianza — cero credibilidad sin historia de empresa</p>
+    </div>
+    
+    <div class="high">
+        <h3>5. Portfolio Vacío (stats a 0)</h3>
+        <p>"0 Infografías Realizadas" / "0 M2 Modelados" — no hay prueba social</p>
+    </div>
+    
+    <div class="high">
+        <h3>6. Página Contacto No Funciona</h3>
+        <p>Solo muestra preferencias de cookies — no hay formulario real</p>
+    </div>
+
+    <h2>🟡 Errores Medios</h2>
+    <ul>
+        <li>Sin meta description (SEO fallando)</li>
+        <li>Sin Schema markup (Google no entiende el negocio)</li>
+        <li>Velocidad lenta (WordPress pesado)</li>
+        <li>Sin presencia en redes sociales (LinkedIn, Behance)</li>
+        <li>FAQ duplicada en página servicios</li>
+        <li>Sin testimonios ni casos de estudio</li>
+    </ul>
+
+    <h2>📦 Páginas Existentes</h2>
+    <table>
+        <tr><th>URL</th><th>Estado</th><th>Contenido</th></tr>
+        <tr><td>/ (inicio)</td><td>✅ Basic</td><td>Infografías, Escáner, BIM, stats a 0</td></tr>
+        <tr><td>/servicios-bim/</td><td>✅ Buena</td><td>4 servicios + FAQ detallada</td></tr>
+        <tr><td>/contacto/</td><td>❌ 404</td><td>Solo cookies</td></tr>
+        <tr><td>/infografias/</td><td>⚠️ Genérica</td><td>Solo cookies</td></tr>
+        <tr><td>/catalogo-3d/</td><td>❌ 404</td><td>No existe</td></tr>
+        <tr><td>/sobre-nosotros/</td><td>❌ 404</td><td>No existe</td></tr>
+        <tr><td>/proyectos/</td><td>❌ 404</td><td>No existe</td></tr>
+    </table>
+
+    <h2>🔧 Plan de Migración a HTML</h2>
+    
+    <div class="section">
+        <h3>Stack Técnico</h3>
+        <table>
+            <tr><th>Componente</th><th>Herramienta</th><th>Notas</th></tr>
+            <tr><td>Generador</td><td>11ty (Eleventy)</td><td>Simple, sin dependencias</td></tr>
+            <tr><td>Hosting</td><td>Netlify</td><td>Gratis + SSL automático + CDN</td></tr>
+            <tr><td>Formulario</td><td>Formspree / Netlify Forms</td><td>Gratis hasta 50 submissions/mes</td></tr>
+            <tr><td>Estilos</td><td>Tailwind CSS</td><td>Rápido, responsive</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Estructura de Navegación Propuesta</h3>
+        <ul>
+            <li><strong>Inicio</strong> — Hero + servicios + stats + CTA</li>
+            <li><strong>Servicios</strong> — 4 servicios detallados + FAQ</li>
+            <li><strong>Nosotros</strong> — Historia + equipo + metodología</li>
+            <li><strong>Portfolio</strong> — Galería de proyectos reales</li>
+            <li><strong>Contacto</strong> — Formulario + email + teléfono</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>Semanas de Implementación</h3>
+        <table>
+            <tr><th>Semana</th><th>Tareas</th></tr>
+            <tr><td><span class="badge badge-red">1</span></td><td>Netlify setup + DNS + 11ty base + Header/Footer + Página Inicio</td></tr>
+            <tr><td><span class="badge badge-orange">2</span></td><td>Migrar Servicios + Contacto (Netlify Forms) + SEO básico + Sitemap</td></tr>
+            <tr><td><span class="badge badge-green">3</span></td><td>Animaciones CSS + Optimizar imágenes + Mobile + Testing</td></tr>
+            <tr><td><span class="badge badge-blue">4</span></td><td>Quiénes somos + Portfolio + Testimonios + Casos de estudio</td></tr>
+        </table>
+    </div>
+
+    <h2>📝 SEO a Implementar</h2>
+    <div class="section">
+        <p><strong>Meta tags needed:</strong></p>
+        <pre>&lt;title&gt;Estudio Virtual | Renderizado 3D y Servicios BIM en Valladolid&lt;/title&gt;
+&lt;meta name="description" content="Servicios de renderizado 3D, escaneo láser y modelado BIM para profesionales de arquitectura y construcción. Valladolid."&gt;</pre>
+        
+        <p><strong>Keywords objetivo:</strong> renderizado 3D arquitectura, escaneo láser 3D Valladolid, servicios BIM España, modelado BIM profesional, infografías arquitectónicas</p>
+        
+        <p><strong>Schema markup:</strong> ProfessionalService con address, telephone, email, areaServed</p>
+    </div>
+
+    <h2>❌ No Procede (quitado)</h2>
+    <ul>
+        <li><span class="badge badge-purple">Google Business</span> — B2B, clientes profesionales no buscan así</li>
+        <li><span class="badge badge-purple">WhatsApp Business</span> — B2B, contacto formal por email/teléfono</li>
+        <li><span class="badge badge-purple">Instagram personal</span> — Mejor LinkedIn + Behance</li>
+    </ul>
+
+    <h2>📋 Lo que Necesito de Dani</h2>
+    <table>
+        <tr><th>Recurso</th><th>Para qué</th></tr>
+        <tr><td>Fotos de proyectos reales</td><td>Portfolio — lo más importante</td></tr>
+        <tr><td>Datos reales</td><td>Número proyectos, m2 modelados, clientes</td></tr>
+        <tr><td>Equipo</td><td>Nombres y roles para "Quiénes somos"</td></tr>
+        <tr><td>Historia</td><td>Cuándo empezó, evolución, servicios destacados</td></tr>
+        <tr><td>Confirmación copy</td><td>¿El tono y texto propuesto está bien?</td></tr>
+    </table>
+
+    <h2>⏱️ Estimación de Tiempo</h2>
+    <table>
+        <tr><th>Versión</th><th>Horas</th><th>Incluye</th></tr>
+        <tr><td>Básica</td><td>15-20h</td><td>3 páginas (inicio, servicios, contacto) + SEO básico</td></tr>
+        <tr><td>Completa</td><td>25-30h</td><td>+ Quiénes somos + Portfolio + Testimonios</td></tr>
+        <tr><td>Premium</td><td>40h+</td><td>+ Blog + SEO avanzado + Portfolio interactivo</td></tr>
+    </table>
+
+    <h2>✅ Resultado Final</h2>
+    <div class="summary-box">
+        <ul>
+            <li>✅ Web en HTML estático (0 mantenimiento)</li>
+            <li>✅ SSL funcionando (automático en Netlify)</li>
+            <li>✅ Velocidad < 1s carga</li>
+            <li>✅ SEO básico correcto (meta tags, sitemap, schema)</li>
+            <li>✅ Portfolio con proyectos reales</li>
+            <li>✅ Mantenimiento: 0 (actualizable editando .md)</li>
+        </ul>
+    </div>
+    
+    <p style="margin-top: 40px; color: #666; font-size: 12px;">
+        Documento preparado por BRAIN — 2026-05-25<br>
+        Ubicación: /data/.openclaw/workspace/Research/EstudioVirtual_BRAIN/DOCUMENTO_COMPLETO_AUDITORIA.md
+    </p>
+</body>
+</html>
