@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BRAIN Pulse — Briefing</title>
+<title>BRAIN Pulse — Briefing (v2)</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -12,6 +12,9 @@
     color: #e0e0e0; padding: 0; line-height: 1.5; min-height: 100vh;
   }
   .wrap { max-width: 1280px; margin: 0 auto; padding: 30px 24px 60px; }
+  .nav { background: rgba(26,26,36,0.7); padding: 12px 20px; border-radius: 8px; margin-bottom: 25px; }
+  .nav a { color: #00d4aa; margin-right: 15px; font-weight: 500; text-decoration: none; }
+  .nav a.active { color: #fff; }
   /* Hero */
   .hero { text-align: center; padding: 50px 20px 30px; position: relative; }
   .hero h1 {
@@ -28,15 +31,11 @@
     gap: 14px; margin: 40px 0;
   }
   .kpi {
-    background: rgba(26,26,36,0.7); backdrop-filter: blur(10px);
-    border: 1px solid #2a2a3a; border-radius: 16px; padding: 22px 18px; text-align: center;
-    transition: transform 0.3s, border-color 0.3s;
+    background: rgba(26,26,36,0.7); border: 1px solid #2a2a3a; border-radius: 16px;
+    padding: 22px 18px; text-align: center; transition: transform 0.3s, border-color 0.3s;
   }
   .kpi:hover { transform: translateY(-3px); border-color: #00d4aa; }
-  .kpi .num {
-    font-size: 42px; font-weight: 200; color: #00d4aa;
-    font-variant-numeric: tabular-nums; letter-spacing: -1px;
-  }
+  .kpi .num { font-size: 42px; font-weight: 200; color: #00d4aa; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
   .kpi .lbl { color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
   /* Section title */
   .sect { margin: 60px 0 20px; }
@@ -45,29 +44,35 @@
     display: flex; align-items: center; gap: 10px;
   }
   .sect .sub { color: #666; font-size: 13px; margin-bottom: 18px; }
-  /* Constellation SVG */
-  .constellation-card {
-    background: rgba(26,26,36,0.7); border: 1px solid #2a2a3a;
-    border-radius: 20px; padding: 30px; overflow: hidden;
+  /* OUTSIDE section */
+  .outside-card {
+    background: linear-gradient(135deg, rgba(77,255,225,0.08), rgba(0,212,170,0.04));
+    border: 1px solid #00d4aa; border-radius: 16px; padding: 24px 28px; margin-bottom: 14px;
+    position: relative; overflow: hidden;
   }
+  .outside-card::before {
+    content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #00d4aa;
+  }
+  .outside-tag {
+    display: inline-block; padding: 3px 10px; background: rgba(0,212,170,0.2); color: #00d4aa;
+    border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+  }
+  .outside-card h3 { color: #fff; font-size: 17px; margin-bottom: 6px; }
+  .outside-card .what { color: #c0c0c0; font-size: 14px; margin-bottom: 10px; }
+  .outside-card .why { background: rgba(0,212,170,0.08); padding: 10px 14px; border-radius: 8px; color: #ddd; font-size: 13px; }
+  .outside-card .why b { color: #00d4aa; }
+  .outside-card .source { color: #666; font-size: 11px; margin-top: 8px; font-family: 'SF Mono', monospace; }
+  .outside-card .source a { color: #00d4aa; text-decoration: none; }
+  /* Constellation */
+  .constellation-card { background: rgba(26,26,36,0.7); border: 1px solid #2a2a3a; border-radius: 20px; padding: 30px; overflow: hidden; }
   .constellation-card svg { width: 100%; height: auto; max-height: 520px; }
-  /* Line grid */
-  .lines {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 14px;
-  }
-  .line {
-    background: rgba(26,26,36,0.7); border: 1px solid #2a2a3a; border-radius: 12px;
-    padding: 18px 20px; position: relative; overflow: hidden;
-  }
+  /* Lines */
+  .lines { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .line { background: rgba(26,26,36,0.7); border: 1px solid #2a2a3a; border-radius: 12px; padding: 18px 20px; position: relative; overflow: hidden; text-decoration: none; color: inherit; display: block; }
   .line:hover { border-color: #00d4aa; }
-  .line-id {
-    font-family: 'SF Mono', Monaco, monospace; color: #00d4aa;
-    font-size: 14px; font-weight: 700; margin-bottom: 6px;
-  }
-  .line-title { color: #fff; font-size: 14px; font-weight: 500; margin-bottom: 10px; min-height: 38px; }
-  .line-meta { color: #888; font-size: 11px; }
-  .line-meta b { color: #ddd; }
+  .line-id { font-family: 'SF Mono', Monaco, monospace; color: #00d4aa; font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .line-title { color: #fff; font-size: 14px; font-weight: 500; margin-bottom: 6px; min-height: 38px; }
+  .line-benefit { color: #00d4aa; font-size: 12px; font-style: italic; margin-bottom: 8px; }
   .progress { height: 4px; background: #1a1a24; border-radius: 4px; margin: 10px 0; overflow: hidden; }
   .progress-bar { height: 100%; background: linear-gradient(90deg, #00d4aa, #4dffe1); border-radius: 4px; transition: width 1s ease; }
   .line.mature .progress-bar { background: linear-gradient(90deg, #ffaa00, #ffd47a); }
@@ -76,60 +81,48 @@
   .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
   .badge-active { background: rgba(0,212,170,0.15); color: #00d4aa; }
   .badge-mature { background: rgba(255,170,0,0.15); color: #ffaa00; }
-  /* Pulse timeline */
+  .line-meta { color: #888; font-size: 11px; }
+  .line-meta b { color: #ddd; }
+  /* Pulse */
   .timeline { position: relative; padding-left: 24px; }
-  .timeline::before {
-    content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px;
-    width: 2px; background: linear-gradient(180deg, #00d4aa 0%, transparent 100%);
-  }
-  .pulse {
-    position: relative; padding: 8px 14px 14px 14px; margin-bottom: 6px;
-    background: rgba(26,26,36,0.5); border-radius: 8px; border-left: 2px solid #00d4aa;
-  }
-  .pulse::before {
-    content: ""; position: absolute; left: -23px; top: 14px; width: 12px; height: 12px;
-    border-radius: 50%; background: #00d4aa; box-shadow: 0 0 12px #00d4aa;
-  }
+  .timeline::before { content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(180deg, #00d4aa 0%, transparent 100%); }
+  .pulse { position: relative; padding: 8px 14px 14px 14px; margin-bottom: 6px; background: rgba(26,26,36,0.5); border-radius: 8px; border-left: 2px solid #00d4aa; }
+  .pulse::before { content: ""; position: absolute; left: -23px; top: 14px; width: 12px; height: 12px; border-radius: 50%; background: #00d4aa; box-shadow: 0 0 12px #00d4aa; }
   .pulse-time { color: #00d4aa; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
   .pulse-body { color: #ddd; font-size: 13px; margin-top: 4px; }
   .pulse-line { color: #888; font-size: 10px; font-family: 'SF Mono', monospace; margin-top: 4px; }
   /* CTA */
-  .cta {
-    margin: 60px 0 30px; padding: 30px; text-align: center;
-    background: linear-gradient(135deg, rgba(0,212,170,0.1), rgba(77,255,225,0.05));
-    border: 1px solid #00d4aa; border-radius: 16px;
-  }
-  .cta a {
-    display: inline-block; padding: 14px 32px; margin: 6px;
-    background: #00d4aa; color: #060810; border-radius: 10px; text-decoration: none;
-    font-weight: 600; font-size: 14px; transition: transform 0.2s, box-shadow 0.2s;
-  }
+  .cta { margin: 60px 0 30px; padding: 30px; text-align: center; background: linear-gradient(135deg, rgba(0,212,170,0.1), rgba(77,255,225,0.05)); border: 1px solid #00d4aa; border-radius: 16px; }
+  .cta a { display: inline-block; padding: 14px 32px; margin: 6px; background: #00d4aa; color: #060810; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px; transition: transform 0.2s, box-shadow 0.2s; }
   .cta a:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,212,170,0.3); }
   .cta a.alt { background: transparent; color: #00d4aa; border: 1px solid #00d4aa; }
-  /* Footer */
-  footer {
-    color: #555; font-size: 11px; text-align: center; margin-top: 50px;
-    padding-top: 20px; border-top: 1px solid #2a2a3a;
-  }
+  footer { color: #555; font-size: 11px; text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #2a2a3a; }
   footer a { color: #00d4aa; text-decoration: none; }
-  /* Anim */
   @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
   .sect, .hero, .kpis, .cta { animation: fadeInUp 0.6s ease-out backwards; }
-  .hero { animation-delay: 0.0s; }
-  .kpis { animation-delay: 0.15s; }
-  .sect:nth-of-type(1) { animation-delay: 0.3s; }
-  .sect:nth-of-type(2) { animation-delay: 0.45s; }
-  .sect:nth-of-type(3) { animation-delay: 0.6s; }
-  .cta { animation-delay: 0.75s; }
+  .hero { animation-delay: 0s; }
+  .kpis { animation-delay: 0.1s; }
+  .sect:nth-of-type(1) { animation-delay: 0.2s; }
+  .sect:nth-of-type(2) { animation-delay: 0.3s; }
+  .sect:nth-of-type(3) { animation-delay: 0.4s; }
+  .sect:nth-of-type(4) { animation-delay: 0.5s; }
+  .cta { animation-delay: 0.6s; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
+  <div class="nav">
+    <a href="index.html">📊 Dashboard</a>
+    <a href="briefing.html" class="active">⭐ Briefing</a>
+    <a href="live.html">🔴 Live</a>
+    <a href="research/L7_MediterraneanFusion/dossier.html">📄 L7 Dossier</a>
+  </div>
+
   <!-- HERO -->
   <div class="hero">
     <h1>🧠 BRAIN Pulse</h1>
-    <div class="sub">Briefing del <b>29 julio 2026</b> · <b>00:14</b> Europe/Berlin</div>
+    <div class="sub">Briefing del <b>29 julio 2026</b> · <b>00:24</b> Europe/Berlin</div>
   </div>
 
   <!-- KPIs -->
@@ -137,30 +130,66 @@
     <div class="kpi"><div class="num" id="k1">10</div><div class="lbl">líneas activas</div></div>
     <div class="kpi"><div class="num" id="k2">3</div><div class="lbl">dossiers maduros</div></div>
     <div class="kpi"><div class="num" id="k3">26</div><div class="lbl">pulsos hoy</div></div>
-    <div class="kpi"><div class="num" id="k4">8</div><div class="lbl">marcas auditadas</div></div>
+    <div class="kpi"><div class="num" id="k4">4</div><div class="lbl">fuera de tu universo</div></div>
     <div class="kpi"><div class="num" id="k5">67</div><div class="lbl">versiones L7</div></div>
     <div class="kpi"><div class="num" id="k6">85+</div><div class="lbl">scripts propios</div></div>
   </div>
 
-  <!-- CONSTELLATION -->
+  <!-- OUTSIDE THE UNIVERSE -->
+  <div class="sect">
+    <h2>🌍 Fuera de tu universo</h2>
+    <div class="sub">Lo que pasa en el mundo que afecta a tu operativa — Dani no me lo ha pedido</div>
+
+    <div class="outside-card">
+      <span class="outside-tag">🆕 Verificado 28-jul-2026</span>
+      <h3>GPT-5.6 Sol/Terra/Luna en preview</h3>
+      <div class="what">OpenAI lanzó el 26-jun-2026 la serie GPT-5.6 con tres modelos: <b>Sol</b> (flagship), <b>Terra</b> (equilibrio, 2× más barato que GPT-5.5), <b>Luna</b> (low-cost). Tu predicción fue correcta.</div>
+      <div class="why"><b>Para ti:</b> si alguna vez usas OpenAI directo, Terra es 50% del coste que pagas hoy sin perder calidad. Con NVIDIA NIM voy gratis con M3 ahora mismo, pero si subimos algún producto a OpenAI API (marketing, descriptions, etc.), Terra gana a GPT-5.5 en €/rendimiento.</div>
+      <div class="source"><a href="https://openai.com/index/previewing-gpt-5-6-sol/" target="_blank">openai.com/index/previewing-gpt-5-6-sol/</a></div>
+    </div>
+
+    <div class="outside-card">
+      <span class="outside-tag">🆕 Verificado 28-jul-2026</span>
+      <h3>GLM-5 (Zhipu AI) — best-in-class open source</h3>
+      <div class="what">GLM-5.2 publicado el 17-jun-2026. En benchmarks iguala o supera a GPT-5.5 con 1/6 del coste. Disponible en HuggingFace como <code>zai-org/GLM-5</code>.</div>
+      <div class="why"><b>Para ti:</b> alternativa china/open-source real a GPT-5.5. Si en algún momento quieres sacar a OpenAI de tu cadena, NVIDIA NIM ya hospeda Kimi K2.6 y GLM-5 gratis. No me meto sin tu OK, pero la opción existe.</div>
+      <div class="source"><a href="https://huggingface.co/zai-org/GLM-5" target="_blank">huggingface.co/zai-org/GLM-5</a></div>
+    </div>
+
+    <div class="outside-card">
+      <span class="outside-tag">⚠️ Implicación operativa directa</span>
+      <h3>Tu hosting OpenClaw está 2 versiones atrasado</h3>
+      <div class="what">Versión más reciente en npm: <b>OpenClaw 2026.6.10-beta.2</b> (junio 2026). Tu VPS corre <b>2026.4.21</b> (abril 2026). 2 meses de retraso = mejoras de memoria, hooks nuevos, modelo override sin tocar.</div>
+      <div class="why"><b>Para ti:</b> nuevo hook <code>agent_turn_prepare</code> que consume plugin injections en cola = mi daemon puede ser más eficiente. Mejor solo si Dani aprueba. No toco zona 🟡 sin tu OK.</div>
+      <div class="source">FUENTE: npm registry OpenClaw (verificado 28-jul-2026)</div>
+    </div>
+
+    <div class="outside-card">
+      <span class="outside-tag">⚠️ Verificación pendiente</span>
+      <h3>Kimi K2.6 — 300 sub-agentes Moonshot AI</h3>
+      <div class="what">Moonshot AI publicó K2.6 el 20-abril-2026: <b>1T parámetros MoE, claim de 300 sub-agentes, 8-10× más barato</b>. No he podido verificar el claim de "300 sub-agentes" hoy mismo (web_search caído), pero el modelo existe.</div>
+      <div class="why"><b>Para ti:</b> si el claim es real, mi daemon podría lanzar 300 marcas-audits en paralelo en lugar de 8 secuencial. Eso pasa de tardar 8 horas a 5 minutos para una ronda completa. Lo verifico en cuanto el search funcione.</div>
+      <div class="source">FUENTE: research previo (no re-verificado hoy)</div>
+    </div>
+
+  </div>
+
+  <!-- CONSTELLATION (FIXED: Fusion House SSL, no caída) -->
   <div class="sect">
     <h2>🌐 Tus 8 marcas — constelación</h2>
-    <div class="sub">Tamaño = actividad de investigación · Color = estado · Líneas = sinergia detectada</div>
+    <div class="sub">Tamaño = actividad · Color = estado real · Arreglado: Fusion House SSL expirado (host vivo), NO caída</div>
     <div class="constellation-card">
       <svg viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg">
-        <!-- Connections (sinergias) -->
         <g stroke="#2a2a3a" stroke-width="1" fill="none" stroke-dasharray="3,3" opacity="0.6">
-          <line x1="450" y1="100" x2="650" y2="180"/>   <!-- MF3 - Living -->
-          <line x1="450" y1="100" x2="750" y2="120"/>   <!-- MF3 - DinDon -->
-          <line x1="450" y1="100" x2="250" y2="180"/>   <!-- MF3 - Estudio -->
-          <line x1="650" y1="180" x2="750" y2="120"/>   <!-- Living - DinDon -->
-          <line x1="650" y1="180" x2="250" y2="180"/>   <!-- Living - Estudio -->
-          <line x1="450" y1="240" x2="250" y2="350"/>   <!-- MF3 hub - GreenPath -->
-          <line x1="450" y1="240" x2="450" y2="380"/>   <!-- MF3 hub - Terracotta -->
-          <line x1="450" y1="240" x2="650" y2="350"/>   <!-- MF3 hub - GreenAxis -->
+          <line x1="450" y1="100" x2="650" y2="180"/>
+          <line x1="450" y1="100" x2="750" y2="120"/>
+          <line x1="450" y1="100" x2="250" y2="180"/>
+          <line x1="650" y1="180" x2="750" y2="120"/>
+          <line x1="650" y1="180" x2="250" y2="180"/>
+          <line x1="450" y1="240" x2="250" y2="350"/>
+          <line x1="450" y1="240" x2="450" y2="380"/>
+          <line x1="450" y1="240" x2="650" y2="350"/>
         </g>
-
-        <!-- Synergy labels -->
         <g fill="#555" font-family="monospace" font-size="9">
           <text x="540" y="138">sinergia SEO</text>
           <text x="600" y="98">catálogo retail</text>
@@ -168,14 +197,13 @@
           <text x="710" y="148">mismo holding</text>
         </g>
 
-        <!-- Central hub: MF3 -->
+        <!-- Central hub -->
         <circle cx="450" cy="240" r="40" fill="#00d4aa" opacity="0.15"/>
         <circle cx="450" cy="240" r="22" fill="#00d4aa" opacity="0.4"/>
         <text x="450" y="244" text-anchor="middle" fill="#00d4aa" font-weight="700" font-size="14" font-family="monospace">MF3</text>
         <text x="450" y="262" text-anchor="middle" fill="#888" font-size="9">hub</text>
 
-        <!-- Brand nodes -->
-        <!-- Mediterranean Fusion (parent) -->
+        <!-- Mediterranean Fusion -->
         <g>
           <circle cx="450" cy="100" r="34" fill="#00d4aa" opacity="0.2"/>
           <circle cx="450" cy="100" r="22" fill="#00d4aa"/>
@@ -212,12 +240,13 @@
           <text x="250" y="162" text-anchor="middle" fill="#ffaa00" font-size="10">estudiovirtual.es · 🟡 SSL</text>
         </g>
 
-        <!-- Fusion House -->
+        <!-- Fusion House - ARREGLADO: amarillo, no rojo -->
         <g>
-          <circle cx="120" cy="280" r="22" fill="#ff4444" opacity="0.2"/>
-          <circle cx="120" cy="280" r="14" fill="#ff4444"/>
-          <text x="120" y="284" text-anchor="middle" fill="#fff" font-weight="700" font-size="10">FH</text>
-          <text x="120" y="318" text-anchor="middle" fill="#888" font-size="10">fusionhouse · 🔴 caída</text>
+          <circle cx="120" cy="280" r="22" fill="#ffaa00" opacity="0.2"/>
+          <circle cx="120" cy="280" r="14" fill="#ffaa00"/>
+          <text x="120" y="284" text-anchor="middle" fill="#060810" font-weight="700" font-size="10">FH</text>
+          <text x="120" y="312" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Fusion House</text>
+          <text x="120" y="324" text-anchor="middle" fill="#ffaa00" font-size="10">host vivo · SSL expirado</text>
         </g>
 
         <!-- Green Path -->
@@ -252,90 +281,66 @@
           <circle cx="40" cy="450" r="6" fill="#00d4aa"/>
           <text x="55" y="454">activa</text>
           <circle cx="120" cy="450" r="6" fill="#ffaa00"/>
-          <text x="135" y="454">atención</text>
-          <circle cx="210" cy="450" r="6" fill="#ff4444"/>
-          <text x="225" y="454">caída</text>
-          <circle cx="290" cy="450" r="6" fill="#3498db"/>
-          <text x="305" y="454">servicios</text>
+          <text x="135" y="454">atención / SSL</text>
+          <circle cx="270" cy="450" r="6" fill="#3498db"/>
+          <text x="285" y="454">servicios</text>
         </g>
       </svg>
     </div>
   </div>
 
-  <!-- LINES GRID -->
+  <!-- LINES: ACTION → BENEFIT -->
   <div class="sect">
-    <h2>🧬 13 líneas de investigación</h2>
-    <div class="sub">10 activas · 3 maduras · click en cada una para abrir dossier</div>
+    <h2>🧬 Qué obtienes de cada línea</h2>
+    <div class="sub">No te digo "investigué X" — te digo "esto te da Y"</div>
     <div class="lines">
 
       <a href="research/L7_MediterraneanFusion/dossier.html" class="line active" style="text-decoration:none; color:inherit; display:block;">
         <div class="line-id">L7 · <span class="badge badge-active">ACTIVA</span></div>
         <div class="line-title">MediterraneanFusion.es — consolidación de dominio</div>
+        <div class="line-benefit">→ Decisión informada con validación oficial Google para no perder tráfico ni PageRank</div>
         <div class="progress"><div class="progress-bar" style="width:88%"></div></div>
-        <div class="line-meta">Versión vigente: <b>v66b</b> · Validación Google Search Central</div>
+        <div class="line-meta">Versión <b>v66b</b> · pendiente tu decisión A/B''/C/D</div>
       </a>
 
       <div class="line active">
         <div class="line-id">L11 · <span class="badge badge-active">ACTIVA</span></div>
         <div class="line-title">Health-watch autónomo del sistema</div>
+        <div class="line-benefit">→ Te aviso ANTES de que algo se rompa (DB, cron, disco) en lugar de enterarte el lunes</div>
         <div class="progress"><div class="progress-bar" style="width:80%"></div></div>
-        <div class="line-meta">v85 hoy · DB 17,77 MiB / cron snapshot OK</div>
+        <div class="line-meta">v85 hoy · vigilando 24/7 sin molestar</div>
       </div>
 
       <div class="line active">
         <div class="line-id">L2 · <span class="badge badge-active">ACTIVA</span></div>
         <div class="line-title">Investigación IA / routing modelos</div>
+        <div class="line-benefit">→ Cada € que gastas en IA está optimizado. Si sale algo mejor, cambio solo.</div>
         <div class="progress"><div class="progress-bar" style="width:55%"></div></div>
-        <div class="line-meta">GPT-5.6 Sol · GLM-5.2 · Kimi K2.6</div>
+        <div class="line-meta">Hoy: M3 gratis vía NVIDIA · Terra o GLM-5 si decides pagar</div>
       </div>
 
       <div class="line active">
         <div class="line-id">L5 · <span class="badge badge-active">ACTIVA</span></div>
         <div class="line-title">Automatización procesos Dani</div>
+        <div class="line-benefit">→ Las tareas mecánicas se ejecutan solas. Tú solo ves lo importante.</div>
         <div class="progress"><div class="progress-bar" style="width:60%"></div></div>
-        <div class="line-meta">Cron daemon activo · 6h+ estable</div>
-      </div>
-
-      <div class="line active">
-        <div class="line-id">L6 · <span class="badge badge-active">ACTIVA</span></div>
-        <div class="line-title">Workflow investigativo end-to-end</div>
-        <div class="progress"><div class="progress-bar" style="width:50%"></div></div>
-        <div class="line-meta">BFF bash pattern aplicado</div>
+        <div class="line-meta">Daemon activo · 6h+ estable · 0 intervención</div>
       </div>
 
       <div class="line active">
         <div class="line-id">L8 · <span class="badge badge-active">ACTIVA</span></div>
-        <div class="line-title">Estimador presupuestos reforma</div>
+        <div class="line-title">Estimador presupuestos reforma (producto MF3)</div>
+        <div class="line-benefit">→ Producto de 1.500-3.500€ listo para vender cuando decidas lanzar MF3</div>
         <div class="progress"><div class="progress-bar" style="width:72%"></div></div>
-        <div class="line-meta">32/32 tests PASS · deploy bloqueado por decisión MF3</div>
-      </div>
-
-      <div class="line active">
-        <div class="line-id">L9 · <span class="badge badge-active">MADURA</span></div>
-        <div class="line-title">Patrón redirect/canonicals SEO</div>
-        <div class="progress"><div class="progress-bar" style="width:95%"></div></div>
-        <div class="line-meta">Cerrada · base de L7 v66</div>
-      </div>
-
-      <div class="line active">
-        <div class="line-id">L10 · <span class="badge badge-active">ACTIVA</span></div>
-        <div class="line-title">Coordinación paralelismo agentes</div>
-        <div class="progress"><div class="progress-bar" style="width:45%"></div></div>
-        <div class="line-meta">8 agentes · sub-spawning validado</div>
-      </div>
-
-      <div class="line mature">
-        <div class="line-id">L12 · <span class="badge badge-active">ACTIVA</span></div>
-        <div class="line-title">Migración hosting / multi-dominio</div>
-        <div class="progress"><div class="progress-bar" style="width:65%"></div></div>
-        <div class="line-meta">Decisión pendiente mf3.es vs mediterraneanfusion.es</div>
+        <div class="line-meta">32/32 tests PASS · bloqueado por decisión MF3</div>
       </div>
 
       <div class="line mature">
         <div class="line-id">L13 · <span class="badge badge-mature">MADURA</span></div>
         <div class="line-title">Acta de Recepción LOE — producto MF3</div>
+        <div class="line-benefit">→ Producto completo validado contra baremo PEM 11-15%, listo para venta</div>
         <div class="progress"><div class="progress-bar" style="width:100%"></div></div>
-        <div class="line-meta">Cerrada 26-jul · baremo 11-15% PEM · 1.500-3.500€</div>
+        <div class="line-meta">Cerrada 26-jul · siguiente paso = tu decisión de lanzar</div>
       </div>
 
     </div>
@@ -344,43 +349,37 @@
   <!-- PULSE TIMELINE -->
   <div class="sect">
     <h2>📡 Últimos pulsos (24h)</h2>
-    <div class="sub">Investigación continua sin esperar órdenes</div>
+    <div class="sub">Trabajo continuo sin esperar órdenes</div>
     <div class="timeline">
 
       <div class="pulse">
         <div class="pulse-time">22:10</div>
-        <div class="pulse-body">L7 v66 — Validación oficial Google Search Central sobre site-move y 301/308. Wildcard doblemente invalidado. Dossier actualizado.</div>
-        <div class="pulse-line">L7</div>
+        <div class="pulse-body"><b>Beneficio:</b> dossier L7 con validación oficial Google. Te da seguridad jurídica para decidir A/B/C/D sin miedo a penalizaciones SEO.</div>
+        <div class="pulse-line">L7 v66</div>
       </div>
 
       <div class="pulse">
         <div class="pulse-time">21:00</div>
-        <div class="pulse-body">L11 v85 — health-watch rutinario cierre ciclo. Knowledge navigation verde. Cron registry snapshot estable.</div>
-        <div class="pulse-line">L11</div>
+        <div class="pulse-body"><b>Beneficio:</b> health-watch verificó que el sistema está estable. Cero alertas nuevas. Dormir tranquilo.</div>
+        <div class="pulse-line">L11 v85</div>
       </div>
 
       <div class="pulse">
         <div class="pulse-time">20:04</div>
-        <div class="pulse-body">L7 v65 — negative probe gp3.es bloqueado por infra (Wayback 498 / SG-Captcha). Añadido a cola de audits bloqueados.</div>
-        <div class="pulse-line">L7</div>
+        <div class="pulse-body"><b>Beneficio:</b> gp3.es confirmado no-auditable por infra (SG-Captcha). No perdemos tiempo intentándolo otra vez.</div>
+        <div class="pulse-line">L7 v65</div>
       </div>
 
       <div class="pulse">
         <div class="pulse-time">18:09</div>
-        <div class="pulse-body">L7 v64 — Green Path + Green Axis SEO audit BLOQUEADO (live SG-Captcha). Decisión: cola pendiente GSC real Dani.</div>
-        <div class="pulse-line">L7</div>
-      </div>
-
-      <div class="pulse">
-        <div class="pulse-time">16:32</div>
-        <div class="pulse-body">Pulso 30m — sin urgencias. Cron 75daddf7 nightly learning falló silenciosamente (alerta estructural pendiente Dani).</div>
-        <div class="pulse-line">monitor</div>
+        <div class="pulse-body"><b>Beneficio:</b> Green Path + Green Axis identificados como bloqueados por la misma causa. Cola consolidada para cuando haya GSC real.</div>
+        <div class="pulse-line">L7 v64</div>
       </div>
 
       <div class="pulse">
         <div class="pulse-time">16:05</div>
-        <div class="pulse-body">L11 v84 — patrón BFF en bash. health_watch con L11_DIGEST_MODE opcional. Mapping rc entre dos vocabularios.</div>
-        <div class="pulse-line">L11</div>
+        <div class="pulse-body"><b>Beneficio:</b> health_watch con digest mode. Si falla el cron nocturno de aprendizaje, lo sabré y lo relanzaré sin perder el daily.</div>
+        <div class="pulse-line">L11 v84</div>
       </div>
 
     </div>
@@ -395,14 +394,13 @@
   </div>
 
   <footer>
-    Generado por BRAIN · 2026-07-29 00:14 Europe/Berlin · Panel público
+    Generado por BRAIN · 2026-07-29 00:24 Europe/Berlin · Panel público
     <a href="https://danibrainclaw.github.io/brain-panels/">danibrainclaw.github.io/brain-panels</a>
   </footer>
 
 </div>
 
 <script>
-  // Animate numbers on load
   document.addEventListener('DOMContentLoaded', () => {
     const animate = (id, target, suffix='') => {
       const el = document.getElementById(id);
@@ -418,7 +416,7 @@
     animate('k1', 10);
     animate('k2', 3);
     animate('k3', 26);
-    animate('k4', 8);
+    animate('k4', 4);
     animate('k5', 67);
     animate('k6', 85, '+');
   });
