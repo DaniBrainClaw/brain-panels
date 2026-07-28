@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa Interactivo — Tus 8 marcas</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: radial-gradient(ellipse at top, #0f1626 0%, #060810 70%);
+    color: #e0e0e0; line-height: 1.5; min-height: 100vh; padding: 20px;
+  }
+  .wrap { max-width: 1400px; margin: 0 auto; }
+  .nav { background: rgba(26,26,36,0.7); padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; }
+  .nav a { color: #00d4aa; margin-right: 15px; text-decoration: none; font-weight: 500; }
+  .nav a.active { color: #fff; }
+  h1 { font-size: 36px; font-weight: 200; color: #fff; margin-bottom: 6px;
+       background: linear-gradient(135deg, #00d4aa, #4dffe1);
+       -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub { color: #888; font-size: 13px; margin-bottom: 20px; }
+  .filters { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .filters button {
+    background: rgba(26,26,36,0.7); color: #ddd; border: 1px solid #2a2a3a;
+    padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    transition: all 0.2s;
+  }
+  .filters button:hover { border-color: #00d4aa; }
+  .filters button.active { background: #00d4aa; color: #060810; border-color: #00d4aa; font-weight: 600; }
+  .layout { display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
+  @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+  .map-card { background: rgba(26,26,36,0.5); border: 1px solid #2a2a3a; border-radius: 16px; padding: 20px; }
+  .map-card svg { width: 100%; height: auto; }
+  /* Detail panel */
+  .detail {
+    background: rgba(26,26,36,0.7); border: 1px solid #2a2a3a; border-radius: 16px;
+    padding: 24px; min-height: 500px; transition: all 0.3s;
+  }
+  .detail h2 { color: #00d4aa; font-size: 24px; margin-bottom: 6px; }
+  .detail .domain { color: #888; font-family: 'SF Mono', monospace; font-size: 12px; margin-bottom: 14px; }
+  .detail .status { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px; }
+  .st-active { background: rgba(0,212,170,0.15); color: #00d4aa; }
+  .st-attention { background: rgba(255,170,0,0.15); color: #ffaa00; }
+  .st-down { background: rgba(255,68,68,0.15); color: #ff4444; }
+  .st-services { background: rgba(52,152,219,0.15); color: #3498db; }
+  .field { margin-bottom: 12px; }
+  .field .lbl { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  .field .val { color: #ddd; font-size: 14px; margin-top: 2px; }
+  .field .val b { color: #fff; }
+  .section-title { color: #00d4aa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #2a2a3a; }
+  .decision { background: rgba(255,170,0,0.05); border-left: 3px solid #ffaa00; padding: 10px 14px; margin-bottom: 8px; border-radius: 4px; font-size: 13px; color: #ddd; }
+  .decision b { color: #ffaa00; }
+  .opportunity { background: rgba(0,212,170,0.05); border-left: 3px solid #00d4aa; padding: 10px 14px; margin-bottom: 8px; border-radius: 4px; font-size: 13px; color: #ddd; }
+  .opportunity b { color: #00d4aa; }
+  .risk { background: rgba(255,68,68,0.05); border-left: 3px solid #ff4444; padding: 10px 14px; margin-bottom: 8px; border-radius: 4px; font-size: 13px; color: #ddd; }
+  .risk b { color: #ff4444; }
+  .placeholder { text-align: center; color: #555; padding: 60px 20px; }
+  .placeholder .icon { font-size: 64px; margin-bottom: 14px; }
+  /* SVG nodes */
+  .brand-node { cursor: pointer; transition: transform 0.3s; }
+  .brand-node:hover { transform: scale(1.08); }
+  .brand-circle { transition: all 0.3s; }
+  .brand-label { fill: #fff; font-weight: 600; pointer-events: none; }
+  .brand-sub { fill: #888; font-size: 10px; pointer-events: none; }
+  .selected-ring { fill: none; stroke: #00d4aa; stroke-width: 3; opacity: 0; transition: opacity 0.3s; }
+  .selected .selected-ring { opacity: 1; }
+  /* Animation */
+  @keyframes pulse { 0% { r: 22; } 50% { r: 28; } 100% { r: 22; } }
+  .pulse-active { animation: pulse 2s infinite ease-in-out; }
+  /* Stats bar */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  .stat { background: rgba(26,26,36,0.7); border: 1px solid #2a2a3a; border-radius: 8px; padding: 12px; text-align: center; }
+  .stat-num { font-size: 24px; font-weight: 200; color: #00d4aa; }
+  .stat-lbl { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="nav">
+    <a href="index.html">📊 Dashboard</a>
+    <a href="briefing.html">⭐ Briefing</a>
+    <a href="live.html">🔴 Live</a>
+    <a href="mapa.html" class="active">🗺️ Mapa interactivo</a>
+    <a href="decisions.html">📋 Decisiones</a>
+  </div>
+
+  <h1>🗺️ Tu universo, en un mapa</h1>
+  <p class="sub">Pulsa una marca para ver TODO lo que sé: estado, decisiones pendientes, oportunidades, riesgos. Datos en vivo desde mi research (Research/Empresas/ + L7).</p>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-num">8</div><div class="stat-lbl">marcas</div></div>
+    <div class="stat"><div class="stat-num">4</div><div class="stat-lbl">sociedades</div></div>
+    <div class="stat"><div class="stat-num">3</div><div class="stat-lbl">decisiones pendientes</div></div>
+    <div class="stat"><div class="stat-num">2</div><div class="stat-lbl">SSL a renovar</div></div>
+  </div>
+
+  <div class="filters">
+    <button class="active" data-filter="all">Todas (8)</button>
+    <button data-filter="active">🟢 Activas (4)</button>
+    <button data-filter="attention">🟡 Atención (2)</button>
+    <button data-filter="down">🔴 Caídas (0)</button>
+    <button data-filter="services">🔵 Servicios (2)</button>
+    <button data-filter="holding-MF3">Sociedad MF3 (5)</button>
+    <button data-filter="holding-BEM">Sociedad BEM (1)</button>
+    <button data-filter="holding-TERRA">Sociedad Terra (1)</button>
+  </div>
+
+  <div class="layout">
+    <div class="map-card">
+      <svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="hub-grad">
+            <stop offset="0%" stop-color="#00d4aa" stop-opacity="0.4"/>
+            <stop offset="100%" stop-color="#00d4aa" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <!-- Synergy lines -->
+        <g stroke="#2a2a3a" stroke-width="1.5" fill="none" stroke-dasharray="4,4" opacity="0.5">
+          <line x1="450" y1="300" x2="280" y2="180" id="L-mf3-ev"/>
+          <line x1="450" y1="300" x2="620" y2="180" id="L-mf3-living"/>
+          <line x1="450" y1="300" x2="750" y2="280" id="L-mf3-dindon"/>
+          <line x1="450" y1="300" x2="180" y2="450" id="L-mf3-fusionhouse"/>
+          <line x1="450" y1="300" x2="350" y2="500" id="L-mf3-greenpath"/>
+          <line x1="450" y1="300" x2="650" y2="490" id="L-mf3-greenaxis"/>
+          <line x1="450" y1="300" x2="450" y2="540" id="L-mf3-terracotta"/>
+          <line x1="450" y1="300" x2="160" y2="280" id="L-mf3-medfusionold"/>
+        </g>
+
+        <!-- Synergy labels (subtle) -->
+        <g fill="#555" font-family="monospace" font-size="8">
+          <text x="350" y="225">mismo holding</text>
+          <text x="540" y="225">cross-sell</text>
+          <text x="600" y="295">80% catálogo retail</text>
+        </g>
+
+        <!-- Central hub: MF3 SL -->
+        <circle cx="450" cy="300" r="120" fill="url(#hub-grad)"/>
+        <circle cx="450" cy="300" r="40" fill="#00d4aa" opacity="0.15"/>
+        <circle cx="450" cy="300" r="24" fill="#00d4aa" opacity="0.4" class="pulse-active"/>
+        <text x="450" y="298" text-anchor="middle" fill="#00d4aa" font-weight="700" font-size="15" font-family="monospace">HUB</text>
+        <text x="450" y="316" text-anchor="middle" fill="#00d4aa" font-size="10" font-family="monospace">3 sociedades</text>
+
+        <!-- Mediterranean Fusion SL brands -->
+        <g class="brand-node" data-brand="mediterraneanfusion_old" data-status="attention" data-holding="MF3" onclick="selectBrand(this)">
+          <circle cx="160" cy="280" r="34" class="selected-ring"/>
+          <circle cx="160" cy="280" r="22" fill="#ffaa00" opacity="0.2" class="brand-circle"/>
+          <circle cx="160" cy="280" r="16" fill="#ffaa00" class="brand-circle"/>
+          <text x="160" y="284" text-anchor="middle" class="brand-label" font-size="10">MediterraneanFusion</text>
+          <text x="160" y="248" text-anchor="middle" class="brand-label" font-size="11">mediterraneanfusion.es</text>
+          <text x="160" y="234" text-anchor="middle" class="brand-sub">dominio histórico · L7</text>
+        </g>
+
+        <g class="brand-node" data-brand="mf3" data-status="active" data-holding="MF3" onclick="selectBrand(this)">
+          <circle cx="450" cy="100" r="34" class="selected-ring"/>
+          <circle cx="450" cy="100" r="22" fill="#00d4aa" opacity="0.2" class="brand-circle"/>
+          <circle cx="450" cy="100" r="16" fill="#00d4aa" class="brand-circle"/>
+          <text x="450" y="104" text-anchor="middle" class="brand-label" font-size="10">MF3.es</text>
+          <text x="450" y="68" text-anchor="middle" class="brand-label" font-size="12">Mediterranean Fusion</text>
+          <text x="450" y="54" text-anchor="middle" class="brand-sub">reforma + arquitectura</text>
+        </g>
+
+        <g class="brand-node" data-brand="living" data-status="active" data-holding="MF3" onclick="selectBrand(this)">
+          <circle cx="620" cy="180" r="32" class="selected-ring"/>
+          <circle cx="620" cy="180" r="20" fill="#00d4aa" opacity="0.2" class="brand-circle"/>
+          <circle cx="620" cy="180" r="14" fill="#00d4aa" class="brand-circle"/>
+          <text x="620" y="184" text-anchor="middle" class="brand-label" font-size="11">Living</text>
+          <text x="620" y="148" text-anchor="middle" class="brand-label" font-size="12">Living</text>
+          <text x="620" y="134" text-anchor="middle" class="brand-sub">consultoría hogar</text>
+        </g>
+
+        <g class="brand-node" data-brand="dindon" data-status="active" data-holding="MF3" onclick="selectBrand(this)">
+          <circle cx="750" cy="280" r="32" class="selected-ring"/>
+          <circle cx="750" cy="280" r="20" fill="#00d4aa" opacity="0.2" class="brand-circle"/>
+          <circle cx="750" cy="280" r="14" fill="#00d4aa" class="brand-circle"/>
+          <text x="750" y="284" text-anchor="middle" class="brand-label" font-size="10">DinDon</text>
+          <text x="750" y="248" text-anchor="middle" class="brand-label" font-size="12">Din Don Living</text>
+          <text x="750" y="234" text-anchor="middle" class="brand-sub">retail mobiliário</text>
+        </g>
+
+        <g class="brand-node" data-brand="fusionhouse" data-status="attention" data-holding="MF3" onclick="selectBrand(this)">
+          <circle cx="180" cy="450" r="28" class="selected-ring"/>
+          <circle cx="180" cy="450" r="18" fill="#ffaa00" opacity="0.2" class="brand-circle"/>
+          <circle cx="180" cy="450" r="13" fill="#ffaa00" class="brand-circle"/>
+          <text x="180" y="454" text-anchor="middle" class="brand-label" font-size="10">FH</text>
+          <text x="180" y="494" text-anchor="middle" class="brand-label" font-size="11">Fusion House</text>
+          <text x="180" y="506" text-anchor="middle" class="brand-sub">prefabricadas · host vivo</text>
+        </g>
+
+        <g class="brand-node" data-brand="estudiovirtual" data-status="attention" data-holding="MF3" onclick="selectBrand(this)">
+          <circle cx="280" cy="180" r="28" class="selected-ring"/>
+          <circle cx="280" cy="180" r="18" fill="#ffaa00" opacity="0.2" class="brand-circle"/>
+          <circle cx="280" cy="180" r="13" fill="#ffaa00" class="brand-circle"/>
+          <text x="280" y="184" text-anchor="middle" class="brand-label" font-size="10">EV</text>
+          <text x="280" y="148" text-anchor="middle" class="brand-label" font-size="11">Estudio Virtual</text>
+          <text x="280" y="134" text-anchor="middle" class="brand-sub">SSL hostname mismatch</text>
+        </g>
+
+        <!-- BEM POLYPUS -->
+        <g class="brand-node" data-brand="greenpath" data-status="attention" data-holding="BEM" onclick="selectBrand(this)">
+          <circle cx="350" cy="500" r="28" class="selected-ring"/>
+          <circle cx="350" cy="500" r="18" fill="#ffaa00" opacity="0.2" class="brand-circle"/>
+          <circle cx="350" cy="500" r="13" fill="#ffaa00" class="brand-circle"/>
+          <text x="350" y="504" text-anchor="middle" class="brand-label" font-size="10">GP</text>
+          <text x="350" y="544" text-anchor="middle" class="brand-label" font-size="11">Green Path</text>
+          <text x="350" y="556" text-anchor="middle" class="brand-sub">BEM POLYPUS SL</text>
+        </g>
+
+        <!-- TERRACOTA -->
+        <g class="brand-node" data-brand="terracotta" data-status="active" data-holding="TERRA" onclick="selectBrand(this)">
+          <circle cx="450" cy="540" r="28" class="selected-ring"/>
+          <circle cx="450" cy="540" r="18" fill="#00d4aa" opacity="0.2" class="brand-circle"/>
+          <circle cx="450" cy="540" r="13" fill="#00d4aa" class="brand-circle"/>
+          <text x="450" y="544" text-anchor="middle" class="brand-label" font-size="10">TC</text>
+          <text x="450" y="582" text-anchor="middle" class="brand-label" font-size="11">Terracotta</text>
+          <text x="450" y="594" text-anchor="middle" class="brand-sub">Terra. Hostelería Coop.</text>
+        </g>
+
+        <!-- Green Axis -->
+        <g class="brand-node" data-brand="greenaxis" data-status="services" data-holding="MF3" onclick="selectBrand(this)">
+          <circle cx="650" cy="490" r="28" class="selected-ring"/>
+          <circle cx="650" cy="490" r="18" fill="#3498db" opacity="0.2" class="brand-circle"/>
+          <circle cx="650" cy="490" r="13" fill="#3498db" class="brand-circle"/>
+          <text x="650" y="494" text-anchor="middle" class="brand-label" font-size="10">GA</text>
+          <text x="650" y="534" text-anchor="middle" class="brand-label" font-size="11">Green Axis</text>
+          <text x="650" y="546" text-anchor="middle" class="brand-sub">mantenimiento integral</text>
+        </g>
+
+        <!-- Legend -->
+        <g font-family="monospace" font-size="10" fill="#888">
+          <circle cx="40" cy="80" r="6" fill="#00d4aa"/>
+          <text x="55" y="84">activa</text>
+          <circle cx="120" cy="80" r="6" fill="#ffaa00"/>
+          <text x="135" y="84">atención</text>
+          <circle cx="220" cy="80" r="6" fill="#3498db"/>
+          <text x="235" y="84">servicios</text>
+          <text x="40" y="105" fill="#555">Pulsa cualquier marca →</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="detail" id="detail">
+      <div class="placeholder">
+        <div class="icon">👈</div>
+        <h3 style="color:#888; font-weight:400; font-size:16px;">Pulsa una marca del mapa</h3>
+        <p style="margin-top:8px; font-size:13px;">Verás: estado, decisiones pendientes,<br>oportunidades, riesgos y siguiente paso</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const BRANDS = {
+  mf3: {
+    name: "Mediterranean Fusion",
+    domain: "mf3.es",
+    society: "MEDITERRANEAN FUSION SL",
+    type: "Reforma integral + Arquitectura + Cocinas Mobalco",
+    location: "Plaza Martí y Monsó, 1 · Valladolid",
+    founded: "2015 (11 años)",
+    status: "active",
+    status_label: "ACTIVA · operación diaria",
+    decisions: [
+      "<b>Multi-dominio:</b> consolidar mediterraneanfusion.es → mf3.es o mantener separado. (L7 v66 recomienda B'': migración selectiva)"
+    ],
+    opportunities: [
+      "<b>L13 Acta Recepción LOE</b> — producto de 1.500-3.500€ listo para vender",
+      "<b>L8 Estimador presupuestos</b> — 32/32 tests PASS, pendiente decisión de lanzamiento",
+      "<b>L7 v66</b> validación Google Search Central desbloquea consolidación"
+    ],
+    risks: [
+      "<b>Estudio Virtual SSL</b> impide operación normal — cliente lo nota"
+    ],
+    next_step: "Decisión A/B/C/D para mediterraneanfusion.es + lanzar L13"
+  },
+  living: {
+    name: "Living",
+    domain: "liv-ing.com",
+    society: "MEDITERRANEAN FUSION SL (B47745948)",
+    type: "Consultoría del hogar integral",
+    location: "Plaza Martí y Monsó 1 bajo · Valladolid",
+    phone: "674 38 68 74",
+    email: "info@liv-ing.com",
+    status: "active",
+    status_label: "ACTIVA · consultoría diaria",
+    decisions: [],
+    opportunities: [
+      "Sinergia cross-sell con MF3 (clientes reforma → consultoría hogar)",
+      "Embudo de contenido Living → MF3 sin coste adicional"
+    ],
+    risks: [],
+    next_step: "Auditar conversiones y atribución Living → MF3"
+  },
+  dindon: {
+    name: "Din Don Living",
+    domain: "dindonliving.com",
+    society: "MEDITERRANEAN FUSION SL (B47745948)",
+    type: "Retail mobiliário + decoración",
+    location: "Plaza Martí y Monsó, 1 · Valladolid",
+    phone: "633 678 313",
+    email: "hola@dindonliving.com",
+    status: "active",
+    status_label: "ACTIVA · retail vivo",
+    decisions: [],
+    opportunities: [
+      "<b>Catálogo mediterraneanfusion.es</b> (1.877 productos, 80% retail) encaja con WooCommerce de dindonliving.com — L7 v66 recomienda migrar ahí el catálogo",
+      "WooCommerce activo listo para absorber productos sin migración técnica"
+    ],
+    risks: [
+      "Sin meta descriptions → SEO penalizado en retail queries"
+    ],
+    next_step: "Esperar decisión L7 v66 (B'') → ejecutar migración retail mediterraneanfusion.es → dindonliving.com"
+  },
+  estudiovirtual: {
+    name: "Estudio Virtual",
+    domain: "estudiovirtual.es",
+    society: "MEDITERRANEAN FUSION SL (B47745948)",
+    type: "Renderizado 3D + visualizaciones arquitectura",
+    location: "Plaza Martí y Monsó 1 · Valladolid",
+    phone: "622 480 222 / 654 151 150",
+    email: "info@estudiovirtual.es",
+    status: "attention",
+    status_label: "🟡 SSL HOSTNAME MISMATCH",
+    decisions: [
+      "<b>Renovar SSL con cert correcto</b> (Let's Encrypt) — bloqueante para clientes"
+    ],
+    opportunities: [
+      "Renderizado 3D complementa perfectamente oferta MF3"
+    ],
+    risks: [
+      "<b>CRÍTICO:</b> cert SSL es para *.dondominio.com, no para estudiovirtual.es. Clientes no pueden entrar.",
+      "Pérdida de tráfico SEO mientras siga caído"
+    ],
+    next_step: "Renovar SSL — 10 minutos con certbot, zona 🟡 esperando OK Dani"
+  },
+  fusionhouse: {
+    name: "Fusion House",
+    domain: "fusionhouse.es",
+    society: "Mediterranean Fusion SL (deducido)",
+    type: "Viviendas prefabricadas (steel frame + madera)",
+    market: "Castilla y León · Valladolid como núcleo",
+    status: "attention",
+    status_label: "🟡 HOST VIVO · SSL EXPIRADO",
+    decisions: [
+      "<b>Renovar SSL</b> (cert caducado, navegador bloquea acceso)",
+      "<b>Reactivar contenido</b> — dominio registrado pero sin hosting activo (julio 2026)"
+    ],
+    opportunities: [
+      "Sector prefabricadas en alza — demanda Castilla y León crece",
+      "Sinergia cross-sell con MF3 (clientes reforma → ampliación modular)"
+    ],
+    risks: [
+      "<b>SSL expirado</b> — navegador marca como no seguro",
+      "Dominio registrado sin uso = coste oportunidad"
+    ],
+    next_step: "Renovar SSL + decidir contenido base. Dani dijo que NO está caída — host vivo, cert a renovar."
+  },
+  greenpath: {
+    name: "Green Path",
+    domain: "gp3.es",
+    society: "BEM POLYPUS SL (B47760236)",
+    type: "Solar fotovoltaica + reformas + climatización",
+    location: "Plaza Martí y Monsó, 1 · Valladolid",
+    status: "attention",
+    status_label: "🟡 MÍNIMO",
+    decisions: [
+      "<b>Auditoría SEO bloqueada</b> por infra (SG-Captcha + Wayback 498). Necesita GSC real o navegador humano Dani para desbloquear."
+    ],
+    opportunities: [
+      "Solar + reformas = oferta complementaria natural",
+      "Green Axis (mantenimiento) ya tiene audiencia — cross-sell"
+    ],
+    risks: [
+      "Mínimo desarrollo = potencial infrautilizado",
+      "Sin contenido ni campaña activa"
+    ],
+    next_step: "Dani da acceso GSC o desbloquea desde navegador"
+  },
+  terracotta: {
+    name: "Terracotta",
+    domain: "terracottavalladolid.com",
+    society: "Terracota Hostelería Sociedad Cooperativa",
+    type: "Cafetería-restaurante",
+    location: "Calle Teresa Gil 25 · Valladolid",
+    phone: "649 894 751",
+    status: "active",
+    status_label: "ACTIVA · operativa",
+    decisions: [],
+    opportunities: [
+      "Cliente real de MF3 (mobiliário) — histórico",
+      "Caso de uso para portfolio visual"
+    ],
+    risks: [],
+    next_step: "Sin acción inmediata"
+  },
+  greenaxis: {
+    name: "Green Axis",
+    domain: "greenaxis.es",
+    type: "Mantenimiento integral multi-gremio",
+    location: "Plaza Martí y Monsó, 1 · Valladolid",
+    whatsapp: "633 577 208",
+    status: "services",
+    status_label: "🔵 SERVICIOS (no retail)",
+    decisions: [],
+    opportunities: [
+      "Agrega servicios de otras marcas pero factura cada una por separado",
+      "Buen eje para mantener relación cliente a largo plazo"
+    ],
+    risks: [
+      "Auditoría SEO bloqueada por infra (igual que Green Path)"
+    ],
+    next_step: "Misma decisión que Green Path: acceso GSC real"
+  },
+  mediterraneanfusion_old: {
+    name: "Mediterranean Fusion (dominio histórico)",
+    domain: "mediterraneanfusion.es",
+    society: "MEDITERRANEAN FUSION SL (deducido)",
+    type: "Catálogo retail histórico (mobiliário + iluminación)",
+    status: "attention",
+    status_label: "🟡 DOMINIO A DECIDIR",
+    decisions: [
+      "<b>A:</b> mantener como está · <b>B'':</b> migración selectiva (recomendada) · <b>C:</b> retirada selectiva · <b>D:</b> wildcard o expiración (DESCARTADA)"
+    ],
+    opportunities: [
+      "<b>L7 v66b:</b> validación oficial Google Search Central confirma B''. Catálogo retail (80%) encaja con dindonliving.com. Editorial (20%) con mf3.es.",
+      "<b>23/36 páginas de marca</b> siguen vivas — son tráfico real, no cascarón vacío"
+    ],
+    risks: [
+      "<b>v53-v54:</b> el supuesto de v51 (wildcard) habría enviado 23 páginas vivas a 404s. No ejecutar D.",
+      "404 masivo si se hace mal = pérdida SEO irreparable"
+    ],
+    next_step: "Dani decide A/B''/C. Mi voto: B'' por lotes pequeños con QA Google Search Console."
+  }
+};
+
+let currentBrand = null;
+
+function selectBrand(node) {
+  const brandKey = node.dataset.brand;
+  const brand = BRANDS[brandKey];
+  if (!brand) return;
+
+  // Highlight selected node
+  document.querySelectorAll('.brand-node').forEach(n => n.classList.remove('selected'));
+  node.classList.add('selected');
+
+  currentBrand = brandKey;
+  renderDetail(brand);
+}
+
+function renderDetail(brand) {
+  const statusClass = `st-${brand.status}`;
+  const phone = brand.phone || brand.whatsapp || '—';
+  const contact = brand.email ? `${brand.email} · ${phone}` : phone;
+
+  let html = `
+    <h2>${brand.name}</h2>
+    <div class="domain">${brand.domain}</div>
+    <div class="status ${statusClass}">${brand.status_label}</div>
+
+    <div class="field"><div class="lbl">Sociedad</div><div class="val">${brand.society || '—'}</div></div>
+    <div class="field"><div class="lbl">Tipo</div><div class="val">${brand.type || '—'}</div></div>
+    <div class="field"><div class="lbl">Ubicación</div><div class="val">${brand.location || '—'}</div></div>
+    ${contact !== '—' ? `<div class="field"><div class="lbl">Contacto</div><div class="val">${contact}</div></div>` : ''}
+  `;
+
+  if (brand.decisions && brand.decisions.length) {
+    html += `<div class="section-title">⚠️ Decisiones pendientes</div>`;
+    brand.decisions.forEach(d => html += `<div class="decision">${d}</div>`);
+  }
+
+  if (brand.opportunities && brand.opportunities.length) {
+    html += `<div class="section-title">💡 Oportunidades</div>`;
+    brand.opportunities.forEach(o => html += `<div class="opportunity">${o}</div>`);
+  }
+
+  if (brand.risks && brand.risks.length) {
+    html += `<div class="section-title">🚨 Riesgos</div>`;
+    brand.risks.forEach(r => html += `<div class="risk">${r}</div>`);
+  }
+
+  if (brand.next_step) {
+    html += `<div class="section-title">➡️ Siguiente paso</div><div class="val" style="background:rgba(0,212,170,0.08); padding:12px; border-radius:6px; border-left:3px solid #00d4aa;">${brand.next_step}</div>`;
+  }
+
+  document.getElementById('detail').innerHTML = html;
+}
+
+// Filters
+document.querySelectorAll('.filters button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filter = btn.dataset.filter;
+
+    document.querySelectorAll('.brand-node').forEach(node => {
+      const status = node.dataset.status;
+      const holding = node.dataset.holding;
+      let show = false;
+      if (filter === 'all') show = true;
+      else if (filter === 'active' && status === 'active') show = true;
+      else if (filter === 'attention' && status === 'attention') show = true;
+      else if (filter === 'down' && status === 'down') show = true;
+      else if (filter === 'services' && status === 'services') show = true;
+      else if (filter.startsWith('holding-')) {
+        const h = filter.replace('holding-', '');
+        if (h === 'MF3') show = ['MF3'].includes(holding);
+        if (h === 'BEM') show = ['BEM'].includes(holding);
+        if (h === 'TERRA') show = ['TERRA'].includes(holding);
+      }
+      node.style.opacity = show ? '1' : '0.15';
+      node.style.pointerEvents = show ? 'auto' : 'none';
+    });
+  });
+});
+
+// Auto-select MF3 on load
+window.addEventListener('load', () => {
+  const mf3 = document.querySelector('.brand-node[data-brand="mf3"]');
+  if (mf3) selectBrand(mf3);
+});
+</script>
+</body>
+</html>

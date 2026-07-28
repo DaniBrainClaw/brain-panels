@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decisiones pendientes</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: radial-gradient(ellipse at top, #0f1626, #060810 70%); color: #e0e0e0; padding: 20px; line-height: 1.6; }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .nav { background: rgba(26,26,36,0.7); padding: 12px 20px; border-radius: 8px; margin-bottom: 25px; }
+  .nav a { color: #00d4aa; margin-right: 15px; text-decoration: none; font-weight: 500; }
+  .nav a.active { color: #fff; }
+  h1 { color: #fff; font-size: 32px; font-weight: 200; margin-bottom: 6px; }
+  h1 span { background: linear-gradient(135deg, #ffaa00, #ffd47a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub { color: #888; font-size: 13px; margin-bottom: 25px; }
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 30px; }
+  .sum { background: rgba(26,26,36,0.7); border: 1px solid #2a2a3a; border-radius: 12px; padding: 16px; text-align: center; }
+  .sum-num { font-size: 32px; font-weight: 200; color: #ffaa00; }
+  .sum-lbl { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+  .decision {
+    background: rgba(26,26,36,0.7); border: 1px solid #2a2a3a; border-left: 4px solid #ffaa00;
+    border-radius: 12px; padding: 20px 24px; margin-bottom: 14px;
+  }
+  .decision.priority-high { border-left-color: #ff4444; }
+  .decision.priority-medium { border-left-color: #ffaa00; }
+  .decision.priority-low { border-left-color: #00d4aa; }
+  .decision h3 { color: #fff; font-size: 17px; margin-bottom: 6px; }
+  .decision .meta { color: #888; font-size: 11px; margin-bottom: 10px; font-family: monospace; }
+  .decision .context { color: #c0c0c0; font-size: 14px; margin-bottom: 12px; }
+  .decision .options { background: rgba(0,0,0,0.3); padding: 12px 16px; border-radius: 6px; margin-bottom: 10px; }
+  .decision .options b { color: #00d4aa; }
+  .decision .options li { margin-left: 18px; margin-bottom: 4px; font-size: 13px; }
+  .decision .vote { color: #00d4aa; font-style: italic; font-size: 13px; }
+  .decision a { color: #00d4aa; }
+  footer { color: #555; font-size: 11px; text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #2a2a3a; }
+  footer a { color: #00d4aa; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <a href="index.html">📊 Dashboard</a>
+    <a href="briefing.html">⭐ Briefing</a>
+    <a href="live.html">🔴 Live</a>
+    <a href="mapa.html">🗺️ Mapa</a>
+    <a href="decisions.html" class="active">📋 Decisiones</a>
+  </div>
+
+  <h1>📋 Tus decisiones pendientes <span>(5)</span></h1>
+  <p class="sub">Todo lo que está bloqueado esperando tu OK. Ordenado por impacto en facturación/operativa.</p>
+
+  <div class="summary">
+    <div class="sum"><div class="sum-num">2</div><div class="sum-lbl">críticas</div></div>
+    <div class="sum"><div class="sum-num">2</div><div class="sum-lbl">estratégicas</div></div>
+    <div class="sum"><div class="sum-num">1</div><div class="sum-lbl">técnica</div></div>
+    <div class="sum"><div class="sum-num">~6h</div><div class="sum-lbl">trabajo total</div></div>
+  </div>
+
+  <div class="decision priority-high">
+    <h3>1. 🔴 Estudiar Virtual: renovar SSL (hostname mismatch)</h3>
+    <div class="meta">estudiovirtual.es · cert actual para *.dondominio.com · bloqueante</div>
+    <div class="context">El certificado SSL del dominio está emitido para otro dominio. Los navegadores bloquean el acceso a clientes. Cualquier persona que intenta entrar ve "No seguro".</div>
+    <div class="options">
+      <b>Tu opción:</b>
+      <ul>
+        <li><b>A.</b> Renovar SSL con certbot en DonDominio (10 min) — recomendado</li>
+        <li><b>B.</b> Cambiar de proveedor hosting (mayor control)</li>
+      </ul>
+    </div>
+    <div class="vote">Mi voto: A. Zona 🟡, espero tu OK para ejecutar.</div>
+  </div>
+
+  <div class="decision priority-high">
+    <h3>2. 🔴 Fusion House: renovar SSL + decidir reactivar</h3>
+    <div class="meta">fusionhouse.es · cert expirado · host vivo (NO caído) · sector prefabricadas en alza</div>
+    <div class="context">El host responde (verificado hoy) pero el certificado SSL está caducado. Dominio registrado sin uso activo. Sector viviendas prefabricadas Castilla y León en crecimiento.</div>
+    <div class="options">
+      <b>Tu opción:</b>
+      <ul>
+        <li><b>A.</b> Renovar SSL + reactivar web con contenido base (1-2 días)</li>
+        <li><b>B.</b> Renovar SSL + dejar en parking mientras se decide contenido</li>
+        <li><b>C.</b> Dejar expirar el dominio (libera el coste anual)</li>
+      </ul>
+    </div>
+    <div class="vote">Mi voto: A. Tienes la marca y el sector tira — coste SSL vs oportunidad.</div>
+  </div>
+
+  <div class="decision priority-medium">
+    <h3>3. 🟠 MediterraneanFusion.es: consolidación del dominio</h3>
+    <div class="meta">L7 v66b · validación Google Search Central completa · 1.877 productos en catálogo</div>
+    <div class="context">El dominio histórico conserva un catálogo vivo (23/36 marcas con contenido real). 80% retail encaja con dindonliving.com; 20% editorial con mf3.es. Google recomienda B'' (migración selectiva URL-a-URL).</div>
+    <div class="options">
+      <b>Tu opción:</b>
+      <ul>
+        <li><b>A.</b> Mantener como está (pausa sin acción)</li>
+        <li><b>B''.</b> Migración selectiva dividida por intención — <b>RECOMENDADA</b></li>
+        <li><b>C.</b> Retirada selectiva (404/410 para obsoletas)</li>
+        <li><b>D.</b> Wildcard o expiración — <b>DESCARTADA</b> (rompería 23 páginas vivas)</li>
+      </ul>
+    </div>
+    <div class="vote">Mi voto: B''. Dossier completo en <a href="research/L7_MediterraneanFusion/dossier.html">research/L7_MediterraneanFusion/</a>.</div>
+  </div>
+
+  <div class="decision priority-medium">
+    <h3>4. 🟠 MF3: lanzar productos L8 (estimador) y L13 (Acta Recepción)</h3>
+    <div class="meta">L8 32/32 tests PASS · L13 cerrado 26-jul · baremo PEM 11-15% validado</div>
+    <div class="context">Tengo dos productos listos para vender bajo MF3: estimador presupuestos (1.500-3.500€) y servicio Acta Recepción LOE (mismo rango). Faltan decisiones de lanzamiento: pricing final, página web, posicionamiento.</div>
+    <div class="options">
+      <b>Tu opción:</b>
+      <ul>
+        <li><b>A.</b> Lanzar L8 + L13 juntos (campaña completa)</li>
+        <li><b>B.</b> Empezar por L13 (más sencillo, valida mercado)</li>
+        <li><b>C.</b> Empezar por L8 (más visual, mejor engagement)</li>
+        <li><b>D.</b> Esperar a tener decidido multi-dominio MF3</li>
+      </ul>
+    </div>
+    <div class="vote">Mi voto: B. L13 es producto cerrado, menor riesgo, valida antes de L8.</div>
+  </div>
+
+  <div class="decision priority-low">
+    <h3>5. 🟢 Meta descriptions para las 8 webs</h3>
+    <div class="meta">SEO básico pendiente · ~2h de trabajo · afecta todas las marcas</div>
+    <div class="context">8 webs sin meta descriptions. Penalización SEO en queries comerciales. Tengo los datos para generarlas con mi investigación L7+L9+L8.</div>
+    <div class="options">
+      <b>Tu opción:</b>
+      <ul>
+        <li><b>A.</b> Las genero esta noche con IA y te las paso en página GitHub Pages (mañana)</li>
+        <li><b>B.</b> Las hago yo (Dani) cuando tenga rato</li>
+        <li><b>C.</b> Contrato a copy externo</li>
+      </ul>
+    </div>
+    <div class="vote">Mi voto: A. Ya estaba en mi plan de ataque de esta noche.</div>
+  </div>
+
+  <footer>
+    Generado por BRAIN · 2026-07-29 00:35 Europe/Berlin · 
+    <a href="https://danibrainclaw.github.io/brain-panels/">danibrainclaw.github.io/brain-panels</a>
+  </footer>
+</div>
+</body>
+</html>
