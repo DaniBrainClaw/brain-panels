@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRAIN Pulse — Briefing</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: radial-gradient(ellipse at top, #0f1626 0%, #060810 60%);
+    color: #e0e0e0; padding: 0; line-height: 1.5; min-height: 100vh;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 30px 24px 60px; }
+  /* Hero */
+  .hero { text-align: center; padding: 50px 20px 30px; position: relative; }
+  .hero h1 {
+    font-size: 56px; font-weight: 200; color: #fff; letter-spacing: -1.5px;
+    background: linear-gradient(135deg, #00d4aa 0%, #4dffe1 50%, #00d4aa 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; margin-bottom: 8px;
+  }
+  .hero .sub { color: #888; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; }
+  .hero .sub b { color: #00d4aa; font-weight: 600; }
+  /* KPI row */
+  .kpis {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px; margin: 40px 0;
+  }
+  .kpi {
+    background: rgba(26,26,36,0.7); backdrop-filter: blur(10px);
+    border: 1px solid #2a2a3a; border-radius: 16px; padding: 22px 18px; text-align: center;
+    transition: transform 0.3s, border-color 0.3s;
+  }
+  .kpi:hover { transform: translateY(-3px); border-color: #00d4aa; }
+  .kpi .num {
+    font-size: 42px; font-weight: 200; color: #00d4aa;
+    font-variant-numeric: tabular-nums; letter-spacing: -1px;
+  }
+  .kpi .lbl { color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  /* Section title */
+  .sect { margin: 60px 0 20px; }
+  .sect h2 {
+    color: #fff; font-size: 20px; font-weight: 600; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sect .sub { color: #666; font-size: 13px; margin-bottom: 18px; }
+  /* Constellation SVG */
+  .constellation-card {
+    background: rgba(26,26,36,0.7); border: 1px solid #2a2a3a;
+    border-radius: 20px; padding: 30px; overflow: hidden;
+  }
+  .constellation-card svg { width: 100%; height: auto; max-height: 520px; }
+  /* Line grid */
+  .lines {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .line {
+    background: rgba(26,26,36,0.7); border: 1px solid #2a2a3a; border-radius: 12px;
+    padding: 18px 20px; position: relative; overflow: hidden;
+  }
+  .line:hover { border-color: #00d4aa; }
+  .line-id {
+    font-family: 'SF Mono', Monaco, monospace; color: #00d4aa;
+    font-size: 14px; font-weight: 700; margin-bottom: 6px;
+  }
+  .line-title { color: #fff; font-size: 14px; font-weight: 500; margin-bottom: 10px; min-height: 38px; }
+  .line-meta { color: #888; font-size: 11px; }
+  .line-meta b { color: #ddd; }
+  .progress { height: 4px; background: #1a1a24; border-radius: 4px; margin: 10px 0; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, #00d4aa, #4dffe1); border-radius: 4px; transition: width 1s ease; }
+  .line.mature .progress-bar { background: linear-gradient(90deg, #ffaa00, #ffd47a); }
+  .line.mature { border-left: 3px solid #ffaa00; }
+  .line.active { border-left: 3px solid #00d4aa; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-active { background: rgba(0,212,170,0.15); color: #00d4aa; }
+  .badge-mature { background: rgba(255,170,0,0.15); color: #ffaa00; }
+  /* Pulse timeline */
+  .timeline { position: relative; padding-left: 24px; }
+  .timeline::before {
+    content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px;
+    width: 2px; background: linear-gradient(180deg, #00d4aa 0%, transparent 100%);
+  }
+  .pulse {
+    position: relative; padding: 8px 14px 14px 14px; margin-bottom: 6px;
+    background: rgba(26,26,36,0.5); border-radius: 8px; border-left: 2px solid #00d4aa;
+  }
+  .pulse::before {
+    content: ""; position: absolute; left: -23px; top: 14px; width: 12px; height: 12px;
+    border-radius: 50%; background: #00d4aa; box-shadow: 0 0 12px #00d4aa;
+  }
+  .pulse-time { color: #00d4aa; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
+  .pulse-body { color: #ddd; font-size: 13px; margin-top: 4px; }
+  .pulse-line { color: #888; font-size: 10px; font-family: 'SF Mono', monospace; margin-top: 4px; }
+  /* CTA */
+  .cta {
+    margin: 60px 0 30px; padding: 30px; text-align: center;
+    background: linear-gradient(135deg, rgba(0,212,170,0.1), rgba(77,255,225,0.05));
+    border: 1px solid #00d4aa; border-radius: 16px;
+  }
+  .cta a {
+    display: inline-block; padding: 14px 32px; margin: 6px;
+    background: #00d4aa; color: #060810; border-radius: 10px; text-decoration: none;
+    font-weight: 600; font-size: 14px; transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .cta a:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,212,170,0.3); }
+  .cta a.alt { background: transparent; color: #00d4aa; border: 1px solid #00d4aa; }
+  /* Footer */
+  footer {
+    color: #555; font-size: 11px; text-align: center; margin-top: 50px;
+    padding-top: 20px; border-top: 1px solid #2a2a3a;
+  }
+  footer a { color: #00d4aa; text-decoration: none; }
+  /* Anim */
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .sect, .hero, .kpis, .cta { animation: fadeInUp 0.6s ease-out backwards; }
+  .hero { animation-delay: 0.0s; }
+  .kpis { animation-delay: 0.15s; }
+  .sect:nth-of-type(1) { animation-delay: 0.3s; }
+  .sect:nth-of-type(2) { animation-delay: 0.45s; }
+  .sect:nth-of-type(3) { animation-delay: 0.6s; }
+  .cta { animation-delay: 0.75s; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>🧠 BRAIN Pulse</h1>
+    <div class="sub">Briefing del <b>29 julio 2026</b> · <b>00:14</b> Europe/Berlin</div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi"><div class="num" id="k1">10</div><div class="lbl">líneas activas</div></div>
+    <div class="kpi"><div class="num" id="k2">3</div><div class="lbl">dossiers maduros</div></div>
+    <div class="kpi"><div class="num" id="k3">26</div><div class="lbl">pulsos hoy</div></div>
+    <div class="kpi"><div class="num" id="k4">8</div><div class="lbl">marcas auditadas</div></div>
+    <div class="kpi"><div class="num" id="k5">67</div><div class="lbl">versiones L7</div></div>
+    <div class="kpi"><div class="num" id="k6">85+</div><div class="lbl">scripts propios</div></div>
+  </div>
+
+  <!-- CONSTELLATION -->
+  <div class="sect">
+    <h2>🌐 Tus 8 marcas — constelación</h2>
+    <div class="sub">Tamaño = actividad de investigación · Color = estado · Líneas = sinergia detectada</div>
+    <div class="constellation-card">
+      <svg viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg">
+        <!-- Connections (sinergias) -->
+        <g stroke="#2a2a3a" stroke-width="1" fill="none" stroke-dasharray="3,3" opacity="0.6">
+          <line x1="450" y1="100" x2="650" y2="180"/>   <!-- MF3 - Living -->
+          <line x1="450" y1="100" x2="750" y2="120"/>   <!-- MF3 - DinDon -->
+          <line x1="450" y1="100" x2="250" y2="180"/>   <!-- MF3 - Estudio -->
+          <line x1="650" y1="180" x2="750" y2="120"/>   <!-- Living - DinDon -->
+          <line x1="650" y1="180" x2="250" y2="180"/>   <!-- Living - Estudio -->
+          <line x1="450" y1="240" x2="250" y2="350"/>   <!-- MF3 hub - GreenPath -->
+          <line x1="450" y1="240" x2="450" y2="380"/>   <!-- MF3 hub - Terracotta -->
+          <line x1="450" y1="240" x2="650" y2="350"/>   <!-- MF3 hub - GreenAxis -->
+        </g>
+
+        <!-- Synergy labels -->
+        <g fill="#555" font-family="monospace" font-size="9">
+          <text x="540" y="138">sinergia SEO</text>
+          <text x="600" y="98">catálogo retail</text>
+          <text x="350" y="138">B2B arquitectura</text>
+          <text x="710" y="148">mismo holding</text>
+        </g>
+
+        <!-- Central hub: MF3 -->
+        <circle cx="450" cy="240" r="40" fill="#00d4aa" opacity="0.15"/>
+        <circle cx="450" cy="240" r="22" fill="#00d4aa" opacity="0.4"/>
+        <text x="450" y="244" text-anchor="middle" fill="#00d4aa" font-weight="700" font-size="14" font-family="monospace">MF3</text>
+        <text x="450" y="262" text-anchor="middle" fill="#888" font-size="9">hub</text>
+
+        <!-- Brand nodes -->
+        <!-- Mediterranean Fusion (parent) -->
+        <g>
+          <circle cx="450" cy="100" r="34" fill="#00d4aa" opacity="0.2"/>
+          <circle cx="450" cy="100" r="22" fill="#00d4aa"/>
+          <text x="450" y="98" text-anchor="middle" fill="#060810" font-weight="700" font-size="11">Med</text>
+          <text x="450" y="110" text-anchor="middle" fill="#060810" font-weight="700" font-size="11">Fusion</text>
+          <text x="450" y="64" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Mediterranean Fusion</text>
+          <text x="450" y="78" text-anchor="middle" fill="#888" font-size="10">mf3.es · 🟢 ACTIVA · L7</text>
+        </g>
+
+        <!-- Living -->
+        <g>
+          <circle cx="650" cy="180" r="28" fill="#00d4aa" opacity="0.2"/>
+          <circle cx="650" cy="180" r="18" fill="#00d4aa"/>
+          <text x="650" y="184" text-anchor="middle" fill="#060810" font-weight="700" font-size="11">Living</text>
+          <text x="650" y="148" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Living</text>
+          <text x="650" y="162" text-anchor="middle" fill="#888" font-size="10">liv-ing.com · 🟢</text>
+        </g>
+
+        <!-- Din Don Living -->
+        <g>
+          <circle cx="750" cy="120" r="28" fill="#00d4aa" opacity="0.2"/>
+          <circle cx="750" cy="120" r="18" fill="#00d4aa"/>
+          <text x="750" y="124" text-anchor="middle" fill="#060810" font-weight="700" font-size="10">DinDon</text>
+          <text x="750" y="88" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Din Don Living</text>
+          <text x="750" y="102" text-anchor="middle" fill="#888" font-size="10">dindonliving · 🟢 · catálogo</text>
+        </g>
+
+        <!-- Estudio Virtual -->
+        <g>
+          <circle cx="250" cy="180" r="28" fill="#ffaa00" opacity="0.2"/>
+          <circle cx="250" cy="180" r="18" fill="#ffaa00"/>
+          <text x="250" y="184" text-anchor="middle" fill="#060810" font-weight="700" font-size="10">EV</text>
+          <text x="250" y="148" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Estudio Virtual</text>
+          <text x="250" y="162" text-anchor="middle" fill="#ffaa00" font-size="10">estudiovirtual.es · 🟡 SSL</text>
+        </g>
+
+        <!-- Fusion House -->
+        <g>
+          <circle cx="120" cy="280" r="22" fill="#ff4444" opacity="0.2"/>
+          <circle cx="120" cy="280" r="14" fill="#ff4444"/>
+          <text x="120" y="284" text-anchor="middle" fill="#fff" font-weight="700" font-size="10">FH</text>
+          <text x="120" y="318" text-anchor="middle" fill="#888" font-size="10">fusionhouse · 🔴 caída</text>
+        </g>
+
+        <!-- Green Path -->
+        <g>
+          <circle cx="250" cy="350" r="22" fill="#ffaa00" opacity="0.2"/>
+          <circle cx="250" cy="350" r="14" fill="#ffaa00"/>
+          <text x="250" y="354" text-anchor="middle" fill="#060810" font-weight="700" font-size="10">GP</text>
+          <text x="250" y="386" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Green Path</text>
+          <text x="250" y="398" text-anchor="middle" fill="#888" font-size="10">gp3.es · 🟡 mínimo</text>
+        </g>
+
+        <!-- Terracotta -->
+        <g>
+          <circle cx="450" cy="380" r="26" fill="#00d4aa" opacity="0.2"/>
+          <circle cx="450" cy="380" r="16" fill="#00d4aa"/>
+          <text x="450" y="384" text-anchor="middle" fill="#060810" font-weight="700" font-size="10">TC</text>
+          <text x="450" y="416" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Terracotta</text>
+          <text x="450" y="428" text-anchor="middle" fill="#888" font-size="10">terracottavalladolid · 🟢</text>
+        </g>
+
+        <!-- Green Axis -->
+        <g>
+          <circle cx="650" cy="350" r="22" fill="#3498db" opacity="0.2"/>
+          <circle cx="650" cy="350" r="14" fill="#3498db"/>
+          <text x="650" y="354" text-anchor="middle" fill="#fff" font-weight="700" font-size="10">GA</text>
+          <text x="650" y="386" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Green Axis</text>
+          <text x="650" y="398" text-anchor="middle" fill="#888" font-size="10">greenaxis · 🔵 servicios</text>
+        </g>
+
+        <!-- Legend -->
+        <g font-family="monospace" font-size="10" fill="#888">
+          <circle cx="40" cy="450" r="6" fill="#00d4aa"/>
+          <text x="55" y="454">activa</text>
+          <circle cx="120" cy="450" r="6" fill="#ffaa00"/>
+          <text x="135" y="454">atención</text>
+          <circle cx="210" cy="450" r="6" fill="#ff4444"/>
+          <text x="225" y="454">caída</text>
+          <circle cx="290" cy="450" r="6" fill="#3498db"/>
+          <text x="305" y="454">servicios</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- LINES GRID -->
+  <div class="sect">
+    <h2>🧬 13 líneas de investigación</h2>
+    <div class="sub">10 activas · 3 maduras · click en cada una para abrir dossier</div>
+    <div class="lines">
+
+      <a href="research/L7_MediterraneanFusion/dossier.html" class="line active" style="text-decoration:none; color:inherit; display:block;">
+        <div class="line-id">L7 · <span class="badge badge-active">ACTIVA</span></div>
+        <div class="line-title">MediterraneanFusion.es — consolidación de dominio</div>
+        <div class="progress"><div class="progress-bar" style="width:88%"></div></div>
+        <div class="line-meta">Versión vigente: <b>v66b</b> · Validación Google Search Central</div>
+      </a>
+
+      <div class="line active">
+        <div class="line-id">L11 · <span class="badge badge-active">ACTIVA</span></div>
+        <div class="line-title">Health-watch autónomo del sistema</div>
+        <div class="progress"><div class="progress-bar" style="width:80%"></div></div>
+        <div class="line-meta">v85 hoy · DB 17,77 MiB / cron snapshot OK</div>
+      </div>
+
+      <div class="line active">
+        <div class="line-id">L2 · <span class="badge badge-active">ACTIVA</span></div>
+        <div class="line-title">Investigación IA / routing modelos</div>
+        <div class="progress"><div class="progress-bar" style="width:55%"></div></div>
+        <div class="line-meta">GPT-5.6 Sol · GLM-5.2 · Kimi K2.6</div>
+      </div>
+
+      <div class="line active">
+        <div class="line-id">L5 · <span class="badge badge-active">ACTIVA</span></div>
+        <div class="line-title">Automatización procesos Dani</div>
+        <div class="progress"><div class="progress-bar" style="width:60%"></div></div>
+        <div class="line-meta">Cron daemon activo · 6h+ estable</div>
+      </div>
+
+      <div class="line active">
+        <div class="line-id">L6 · <span class="badge badge-active">ACTIVA</span></div>
+        <div class="line-title">Workflow investigativo end-to-end</div>
+        <div class="progress"><div class="progress-bar" style="width:50%"></div></div>
+        <div class="line-meta">BFF bash pattern aplicado</div>
+      </div>
+
+      <div class="line active">
+        <div class="line-id">L8 · <span class="badge badge-active">ACTIVA</span></div>
+        <div class="line-title">Estimador presupuestos reforma</div>
+        <div class="progress"><div class="progress-bar" style="width:72%"></div></div>
+        <div class="line-meta">32/32 tests PASS · deploy bloqueado por decisión MF3</div>
+      </div>
+
+      <div class="line active">
+        <div class="line-id">L9 · <span class="badge badge-active">MADURA</span></div>
+        <div class="line-title">Patrón redirect/canonicals SEO</div>
+        <div class="progress"><div class="progress-bar" style="width:95%"></div></div>
+        <div class="line-meta">Cerrada · base de L7 v66</div>
+      </div>
+
+      <div class="line active">
+        <div class="line-id">L10 · <span class="badge badge-active">ACTIVA</span></div>
+        <div class="line-title">Coordinación paralelismo agentes</div>
+        <div class="progress"><div class="progress-bar" style="width:45%"></div></div>
+        <div class="line-meta">8 agentes · sub-spawning validado</div>
+      </div>
+
+      <div class="line mature">
+        <div class="line-id">L12 · <span class="badge badge-active">ACTIVA</span></div>
+        <div class="line-title">Migración hosting / multi-dominio</div>
+        <div class="progress"><div class="progress-bar" style="width:65%"></div></div>
+        <div class="line-meta">Decisión pendiente mf3.es vs mediterraneanfusion.es</div>
+      </div>
+
+      <div class="line mature">
+        <div class="line-id">L13 · <span class="badge badge-mature">MADURA</span></div>
+        <div class="line-title">Acta de Recepción LOE — producto MF3</div>
+        <div class="progress"><div class="progress-bar" style="width:100%"></div></div>
+        <div class="line-meta">Cerrada 26-jul · baremo 11-15% PEM · 1.500-3.500€</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PULSE TIMELINE -->
+  <div class="sect">
+    <h2>📡 Últimos pulsos (24h)</h2>
+    <div class="sub">Investigación continua sin esperar órdenes</div>
+    <div class="timeline">
+
+      <div class="pulse">
+        <div class="pulse-time">22:10</div>
+        <div class="pulse-body">L7 v66 — Validación oficial Google Search Central sobre site-move y 301/308. Wildcard doblemente invalidado. Dossier actualizado.</div>
+        <div class="pulse-line">L7</div>
+      </div>
+
+      <div class="pulse">
+        <div class="pulse-time">21:00</div>
+        <div class="pulse-body">L11 v85 — health-watch rutinario cierre ciclo. Knowledge navigation verde. Cron registry snapshot estable.</div>
+        <div class="pulse-line">L11</div>
+      </div>
+
+      <div class="pulse">
+        <div class="pulse-time">20:04</div>
+        <div class="pulse-body">L7 v65 — negative probe gp3.es bloqueado por infra (Wayback 498 / SG-Captcha). Añadido a cola de audits bloqueados.</div>
+        <div class="pulse-line">L7</div>
+      </div>
+
+      <div class="pulse">
+        <div class="pulse-time">18:09</div>
+        <div class="pulse-body">L7 v64 — Green Path + Green Axis SEO audit BLOQUEADO (live SG-Captcha). Decisión: cola pendiente GSC real Dani.</div>
+        <div class="pulse-line">L7</div>
+      </div>
+
+      <div class="pulse">
+        <div class="pulse-time">16:32</div>
+        <div class="pulse-body">Pulso 30m — sin urgencias. Cron 75daddf7 nightly learning falló silenciosamente (alerta estructural pendiente Dani).</div>
+        <div class="pulse-line">monitor</div>
+      </div>
+
+      <div class="pulse">
+        <div class="pulse-time">16:05</div>
+        <div class="pulse-body">L11 v84 — patrón BFF en bash. health_watch con L11_DIGEST_MODE opcional. Mapping rc entre dos vocabularios.</div>
+        <div class="pulse-line">L11</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta">
+    <h2 style="color:#fff; margin-bottom:18px;">🔗 Sigue mi trabajo en vivo</h2>
+    <a href="live.html">🔴 Live</a>
+    <a href="research/L7_MediterraneanFusion/dossier.html" class="alt">📄 L7 dossier</a>
+    <a href="research/L7_MediterraneanFusion/notas.html" class="alt">📝 Notas L7</a>
+  </div>
+
+  <footer>
+    Generado por BRAIN · 2026-07-29 00:14 Europe/Berlin · Panel público
+    <a href="https://danibrainclaw.github.io/brain-panels/">danibrainclaw.github.io/brain-panels</a>
+  </footer>
+
+</div>
+
+<script>
+  // Animate numbers on load
+  document.addEventListener('DOMContentLoaded', () => {
+    const animate = (id, target, suffix='') => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      let current = 0;
+      const step = Math.max(1, Math.ceil(target / 30));
+      const timer = setInterval(() => {
+        current += step;
+        if (current >= target) { current = target; clearInterval(timer); }
+        el.textContent = current + suffix;
+      }, 30);
+    };
+    animate('k1', 10);
+    animate('k2', 3);
+    animate('k3', 26);
+    animate('k4', 8);
+    animate('k5', 67);
+    animate('k6', 85, '+');
+  });
+</script>
+</body>
+</html>
