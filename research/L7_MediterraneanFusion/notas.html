@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notas L7</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+       background: #0a0a0f; color: #e0e0e0; padding: 20px; line-height: 1.6; max-width: 1100px; margin: 0 auto; }
+h1 { color: #00d4aa; margin-bottom: 10px; font-size: 28px; }
+h2 { color: #00d4aa; margin: 30px 0 15px 0; font-size: 22px; border-bottom: 1px solid #2a2a3a; padding-bottom: 8px; }
+h3 { color: #fff; margin: 20px 0 10px 0; font-size: 17px; }
+h4 { color: #ddd; margin: 15px 0 8px 0; font-size: 15px; }
+p { color: #c0c0c0; margin-bottom: 12px; }
+strong { color: #fff; }
+em { color: #ffaa00; }
+code { background: #1a1a24; color: #00d4aa; padding: 2px 6px; border-radius: 3px; font-family: 'SF Mono', Monaco, monospace; font-size: 0.9em; }
+pre { background: #1a1a24; color: #eee; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; }
+pre code { background: none; color: inherit; padding: 0; }
+blockquote { border-left: 3px solid #00d4aa; padding: 10px 15px; margin: 15px 0; background: #1a1a24; color: #ddd; font-style: italic; }
+table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+th { background: #1a1a24; color: #00d4aa; padding: 10px; text-align: left; border-bottom: 2px solid #00d4aa; }
+td { padding: 8px 10px; border-bottom: 1px solid #2a2a3a; color: #c0c0c0; }
+tr:hover td { background: #1a1a24; }
+ul, ol { margin: 10px 0 15px 25px; color: #c0c0c0; }
+li { margin-bottom: 5px; }
+hr { border: none; border-top: 1px solid #2a2a3a; margin: 25px 0; }
+a { color: #00d4aa; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.nav { background: #1a1a24; padding: 12px 20px; border-radius: 8px; margin-bottom: 25px; }
+.nav a { color: #00d4aa; margin-right: 15px; font-weight: 500; }
+.nav a.active { color: #fff; }
+.meta { color: #888; font-size: 13px; margin-bottom: 25px; }
+.meta strong { color: #00d4aa; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-right: 5px; }
+.badge-active { background: #27ae60; color: white; }
+.badge-critical { background: #ff4444; color: white; }
+.badge-pending { background: #ffaa00; color: black; }
+.pulse { background: #1a1a24; border-radius: 12px; padding: 18px; margin-bottom: 12px; border-left: 4px solid #00d4aa; }
+.pulse-time { color: #888; font-size: 13px; }
+.pulse-body { color: #ddd; margin-top: 8px; }
+footer { color: #555; font-size: 12px; text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #2a2a3a; }
+</style>
+</head>
+<body>
+<div class="nav"><a href="index.html">📊 Dashboard</a><a href="live.html">🔴 Live</a><a href="investigaciones.html" class="active">🔬 Investigaciones</a><a href="tareas.html">📋 Tareas</a><a href="viewer.html">📖 Visor MD</a></div>
+
+<h1>Notas de pulso — L7 Mediterranean Fusion</h1>
+<p class="meta">Última versión: <strong>2026-07-29 00:04 (v67)</strong></p>
+<h2>Pulso 2026-07-29 00:04 — L7 v67: redirect strategy oficial Google</h2>
+<strong>Pregunta:</strong> ¿cómo aplicar B-refinado a mediterraneanfusion.es sin wildcard destructivo?
+<ul><li>Google Search Central mantiene que los redirects permanentes (301/308) son la señal adecuada para consolidar URLs antiguas hacia nuevas; el destino debe ser equivalente y estable.</li>
+<li>La guía de canonicalización recomienda señales coherentes (redirect, canonical, sitemap y enlaces internos); un redirect global a la home no es equivalente para la mayoría de rutas.</li>
+</ul><li>Aplicación L7: B-refinado = mapear cada ruta histórica con destino temáticamente equivalente en mf3.es; las rutas sin equivalente deben responder 404/410, no enviarse a la home. Mantener <code>/mobiliario/</code> como caso especial requiere decisión explícita porque hay contenido paralelo.</li>
+<li>Fuentes oficiales consultadas (28-jul-2026): Google Search Central, <code>301-redirects</code>; <code>consolidate-duplicate-urls</code>.</li>
+<strong>Siguiente:</strong> construir, solo como propuesta para Dani, una tabla URL-a-URL de las 16 rutas auditadas y marcar qué destinos necesitan confirmación humana antes de tocar DonDominio.
+
+<footer>
+Generado por BRAIN — 2026-07-29T00:10:36.066020+02:00 · Panel público <a href="https://danibrainclaw.github.io/brain-panels/">danibrainclaw.github.io/brain-panels</a>
+</footer>
+</body>
+</html>

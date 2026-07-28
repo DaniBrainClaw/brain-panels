@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L7 — Mediterranean Fusion · v56</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+       background: #0a0a0f; color: #e0e0e0; padding: 20px; line-height: 1.6; max-width: 1100px; margin: 0 auto; }
+h1 { color: #00d4aa; margin-bottom: 10px; font-size: 28px; }
+h2 { color: #00d4aa; margin: 30px 0 15px 0; font-size: 22px; border-bottom: 1px solid #2a2a3a; padding-bottom: 8px; }
+h3 { color: #fff; margin: 20px 0 10px 0; font-size: 17px; }
+h4 { color: #ddd; margin: 15px 0 8px 0; font-size: 15px; }
+p { color: #c0c0c0; margin-bottom: 12px; }
+strong { color: #fff; }
+em { color: #ffaa00; }
+code { background: #1a1a24; color: #00d4aa; padding: 2px 6px; border-radius: 3px; font-family: 'SF Mono', Monaco, monospace; font-size: 0.9em; }
+pre { background: #1a1a24; color: #eee; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; }
+pre code { background: none; color: inherit; padding: 0; }
+blockquote { border-left: 3px solid #00d4aa; padding: 10px 15px; margin: 15px 0; background: #1a1a24; color: #ddd; font-style: italic; }
+table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+th { background: #1a1a24; color: #00d4aa; padding: 10px; text-align: left; border-bottom: 2px solid #00d4aa; }
+td { padding: 8px 10px; border-bottom: 1px solid #2a2a3a; color: #c0c0c0; }
+tr:hover td { background: #1a1a24; }
+ul, ol { margin: 10px 0 15px 25px; color: #c0c0c0; }
+li { margin-bottom: 5px; }
+hr { border: none; border-top: 1px solid #2a2a3a; margin: 25px 0; }
+a { color: #00d4aa; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.nav { background: #1a1a24; padding: 12px 20px; border-radius: 8px; margin-bottom: 25px; }
+.nav a { color: #00d4aa; margin-right: 15px; font-weight: 500; }
+.nav a.active { color: #fff; }
+.meta { color: #888; font-size: 13px; margin-bottom: 25px; }
+.meta strong { color: #00d4aa; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-right: 5px; }
+.badge-active { background: #27ae60; color: white; }
+.badge-critical { background: #ff4444; color: white; }
+.badge-pending { background: #ffaa00; color: black; }
+.pulse { background: #1a1a24; border-radius: 12px; padding: 18px; margin-bottom: 12px; border-left: 4px solid #00d4aa; }
+.pulse-time { color: #888; font-size: 13px; }
+.pulse-body { color: #ddd; margin-top: 8px; }
+footer { color: #555; font-size: 12px; text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #2a2a3a; }
+</style>
+</head>
+<body>
+<div class="nav"><a href="index.html">📊 Dashboard</a><a href="live.html">🔴 Live</a><a href="investigaciones.html" class="active">🔬 Investigaciones</a><a href="tareas.html">📋 Tareas</a><a href="viewer.html">📖 Visor MD</a></div>
+
+<h1>🔬 L7 — Mediterranean Fusion (consolidación de dominio)</h1>
+<p class="meta">
+<span class="badge badge-active">Línea activa</span>
+Versión vigente: <strong>v56</strong> (2026-07-22) ·
+Estado: <strong>esperando decisión A/B''/C/D de Dani</strong>
+</p>
+
+<p>Investigación viva sobre la consolidación del dominio <code>mediterraneanfusion.es</code> hacia <code>mf3.es</code> y/o <code>dindonliving.com</code>. Auditoría independiente del catálogo, evidencia Wayback, validación contra Google Search Central, propuesta de redirect selectivo dividido por intención.</p>
+
+<h2>📌 Recomendación vigente</h2>
+<blockquote><strong>B'' — Migración selectiva dividida por intención.</strong> Catálogo transaccional con equivalente real → evaluar <code>dindonliving.com</code>; páginas editoriales/servicios → evaluar <code>mf3.es</code>. 301 solo tras crear y validar el destino. Wildcard descartado.</blockquote>
+
+<h2>📂 Entregables</h2>
+<ul>
+<li><a href="dossier.html">Dossier ejecutivo completo</a> — análisis, evidencia, opciones, plan B'</li>
+<li><a href="notas.html">Notas de pulso</a> — últimas iteraciones de la investigación</li>
+<li><a href="sources.html">Fuentes consultadas</a> — URLs oficiales y JSONs de evidencia</li>
+<li><a href="data/">Datos JSON</a> — evidencia reproducible de cada versión</li>
+</ul>
+
+<h2>🧭 Línea de tiempo de versiones</h2>
+<table>
+<tr><th>v</th><th>Fecha</th><th>Hallazgo</th></tr>
+<tr><td>v51</td><td>2026-07-21</td><td>Propuso wildcard — RETRACTADA</td></tr>
+<tr><td>v53</td><td>2026-07-22</td><td>23/36 páginas de marca con contenido real vivo</td></tr>
+<tr><td>v54</td><td>2026-07-22</td><td>Wayback proxy: 20/23 con 200 histórico</td></tr>
+<tr><td>v55</td><td>2026-07-22</td><td>Sitemap con UA: 2.058 entradas anunciadas</td></tr>
+<tr><td>v56</td><td>2026-07-22</td><td>Deduplicación: 1.877 productos únicos, 80,3% retail</td></tr>
+<tr><td>v59</td><td>2026-07-23</td><td>FácilReformas aún enlaza a mediterraneanfusion.es</td></tr>
+<tr><td>v60</td><td>2026-07-24</td><td>/mobalco1/ y /firmas/ con contenido paralelo</td></tr>
+<tr><td>v66</td><td>2026-07-28</td><td>Validación oficial Google Search Central</td></tr>
+<tr><td>v67</td><td>2026-07-29</td><td>Redirect strategy oficial + nota actual</td></tr>
+</table>
+
+<h2>⚠️ Decisión pendiente de Dani</h2>
+<ol>
+<li>¿Qué marcas del catálogo siguen siendo comerciales para MF3?</li>
+<li>¿Consolidar en <code>mf3.es</code> o mantener vertical separado?</li>
+<li>¿Puede facilitar acceso de solo lectura a GSC o export de backlinks?</li>
+</ol>
+
+<footer>
+Generado por BRAIN — 2026-07-29T00:10:36.066020+02:00 · Panel público <a href="https://danibrainclaw.github.io/brain-panels/">danibrainclaw.github.io/brain-panels</a>
+</footer>
+</body>
+</html>

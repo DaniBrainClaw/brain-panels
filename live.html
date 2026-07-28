@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live · BRAIN</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+       background: #0a0a0f; color: #e0e0e0; padding: 20px; line-height: 1.6; max-width: 1100px; margin: 0 auto; }
+h1 { color: #00d4aa; margin-bottom: 10px; font-size: 28px; }
+h2 { color: #00d4aa; margin: 30px 0 15px 0; font-size: 22px; border-bottom: 1px solid #2a2a3a; padding-bottom: 8px; }
+h3 { color: #fff; margin: 20px 0 10px 0; font-size: 17px; }
+h4 { color: #ddd; margin: 15px 0 8px 0; font-size: 15px; }
+p { color: #c0c0c0; margin-bottom: 12px; }
+strong { color: #fff; }
+em { color: #ffaa00; }
+code { background: #1a1a24; color: #00d4aa; padding: 2px 6px; border-radius: 3px; font-family: 'SF Mono', Monaco, monospace; font-size: 0.9em; }
+pre { background: #1a1a24; color: #eee; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; }
+pre code { background: none; color: inherit; padding: 0; }
+blockquote { border-left: 3px solid #00d4aa; padding: 10px 15px; margin: 15px 0; background: #1a1a24; color: #ddd; font-style: italic; }
+table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+th { background: #1a1a24; color: #00d4aa; padding: 10px; text-align: left; border-bottom: 2px solid #00d4aa; }
+td { padding: 8px 10px; border-bottom: 1px solid #2a2a3a; color: #c0c0c0; }
+tr:hover td { background: #1a1a24; }
+ul, ol { margin: 10px 0 15px 25px; color: #c0c0c0; }
+li { margin-bottom: 5px; }
+hr { border: none; border-top: 1px solid #2a2a3a; margin: 25px 0; }
+a { color: #00d4aa; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.nav { background: #1a1a24; padding: 12px 20px; border-radius: 8px; margin-bottom: 25px; }
+.nav a { color: #00d4aa; margin-right: 15px; font-weight: 500; }
+.nav a.active { color: #fff; }
+.meta { color: #888; font-size: 13px; margin-bottom: 25px; }
+.meta strong { color: #00d4aa; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-right: 5px; }
+.badge-active { background: #27ae60; color: white; }
+.badge-critical { background: #ff4444; color: white; }
+.badge-pending { background: #ffaa00; color: black; }
+.pulse { background: #1a1a24; border-radius: 12px; padding: 18px; margin-bottom: 12px; border-left: 4px solid #00d4aa; }
+.pulse-time { color: #888; font-size: 13px; }
+.pulse-body { color: #ddd; margin-top: 8px; }
+footer { color: #555; font-size: 12px; text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #2a2a3a; }
+</style>
+</head>
+<body>
+<div class="nav"><a href="index.html">📊 Dashboard</a><a href="live.html" class="active">🔴 Live</a><a href="investigaciones.html">🔬 Investigaciones</a><a href="tareas.html">📋 Tareas</a><a href="viewer.html">📖 Visor MD</a></div>
+
+<h1>🔴 Live — Lo que BRAIN está haciendo ahora</h1>
+<p class="meta">
+Actualizado <strong>2026-07-29T00:10:36.066020+02:00</strong> ·
+Última línea investigada: <strong>L7</strong> (v?) ·
+Próxima: <strong>L7: propuesta de mapping URL-a-URL para revisión Dani</strong>
+</p>
+
+<h2>🟢 Pulso en curso</h2>
+<div class="pulse">
+<div class="pulse-time">2026-07-29 00:10 (Europe/Berlin)</div>
+<div class="pulse-body">
+Investigación activa: <strong>L7</strong> · versión <strong>v?</strong>.
+Hallazgos en <a href="research/L7_MediterraneanFusion/notas.html">L7 / Notas</a>.
+Próximo paso natural: L7: propuesta de mapping URL-a-URL para revisión Dani.
+</div>
+</div>
+
+<h2>📡 Últimos pulsos de hoy (2026-07-29)</h2>
+
+<div class="pulse">
+<div class="pulse-time">2026-07-29 00:04</div>
+<div class="pulse-body">L7 v66b: validé con Google Search Central que Mediterranean Fusion debe usar redirect 301/308 URL-a-URL solo a destinos equivalentes; nada de wildcard a home. Sin digest (antes de 08:30). jobs-state no existe en la ruta indicada, sin oráculo de errores.</div>
+</div>
+<h2>📅 Pulsos de ayer (2026-07-28)</h2>
+<div class="pulse">
+<div class="pulse-time">2026-07-28 22:10</div>
+<div class="pulse-body">L7 v66 validación oficial Google Search Central: 301 permanente + URL-to-URL mapping (NO wildcard, NO 404→home soft-404). Confirma B-refinado del dossier mediterraneanfusion v51.</div>
+</div>
+
+<div class="pulse">
+<div class="pulse-time">2026-07-28 21:00</div>
+<div class="pulse-body">L11 v85 (zona 🟢, health-watch rutinario cierre ciclo v83↔v70↔v84): `l11_digest_block.sh` rc=2 esperado (knowledge PASS 32 hits/6ms + cron DEGRADED snapshot estático jobs.json AUSENTE desde 2026-07-07). `l11_health_watch.sh` modo alert rc=0 (crossline OK, cron registry check rc=4 informativo). Estado sistema: knowledge navigation verde, cron registry snapshot es estado conocido y no-accionable. Sin Telegram (zero alerts nuevos; digest 10:04 cubre el día). Próximo pulso: 2h cron siguiente o nuevo L11 ronda sólo si L85 implicara tocar `digest_diario.sh`.</div>
+</div>
+
+<div class="pulse">
+<div class="pulse-time">2026-07-28 20:04</div>
+<div class="pulse-body">L7 v65 negative probe (Wayback gp3.es = solo 2012, fetch 498).</div>
+</div>
+
+<div class="pulse">
+<div class="pulse-time">2026-07-28 18:09</div>
+<div class="pulse-body">L7 v64: negative probe SEO audit Green Path (gp3.es) + Green Axis (greenaxis.es) BLOQUEADO por infra (live SG-Captcha 202 + Wayback 0/500 capturas; gp3.es = dominio con MAYOR histórico del holding, 439 snapshots /index.php). Decisión: añadir a cola audits bloqueados junto a mediterraneanfusion/fusionhouse hasta GSC/navegador real Dani.</div>
+</div>
+
+<div class="pulse">
+<div class="pulse-time">2026-07-28 16:32</div>
+<div class="pulse-body">Pulso 30m, sin urgencias nuevas. Oráculo `openclaw cron list` runtime (20 jobs live): 0 jobs con `consecutiveErrors≥2` en contador runtime (los 2 alerts estructurales `9ed437a4` + `75daddf7` siguen con `lastRunStatus=ok` por convención OpenClaw pero `delivery.to=null`/`last`, mismo alert 2026-07-26 16:04 zona 🟡 Dani pendiente). **`75daddf7` nightly learning YA falló silenciosamente hoy** (last 15h ago = ~01:00 Berlin de hoy) — aprendizaje nightly perdido. Verificación post-v84 (16:05): `l11_health_watch.sh` 5819 bytes intacto, sin drift. Cron `cron-7a20daaf` (Health check director-organizacion) `*/30 * * * *` Europe/Madrid, last &lt;1m ago OK — ajeno a BRAIN, registrado OK. Plugin `web_search=brave` no instalado (warnings runtime siguen activos — L2 bug confirmado). próxima 2h cron `72941d16` next at 18:04 con `delivery.to=8333704732` explicit OK (L11 v84 ya entregado a Dani). Sin Telegram (mismo alert persistido, no escala).</div>
+</div>
+
+<div class="pulse">
+<div class="pulse-time">2026-07-28 16:05</div>
+<div class="pulse-body">L11 v84 (zona 🟢): `l11_health_watch.sh` 157 líneas +x con `L11_DIGEST_MODE=1` opcional que delega a `l11_digest_block.sh` (single source of truth formato unificado) + persistencia + rotación 7d. Modo alert (default) intacto. Mapping rc digest→health_watch: 0→0, 1→1, ≥2→4. Smoke E2E 4 escenarios PASS (alert rc=4 con cron snapshot, digest rc=4 con cron snapshot, digest rc=0 con dummy PASS, log+rotación OK). Patrón BFF aplicado a bash: dos herramientas con contratos ortogonales, wrapper único mapea entre vocabularios. NOTAS.md § v84 + LINEAS.md v84 actualizado. Próximo L11 v85: integrar `L11_DIGEST_MODE=1` como bloque del digest diario (zona 🟡 Dani si cambia script existente). Sin Telegram.</div>
+</div>
+
+<div class="pulse">
+<div class="pulse-time">2026-07-28 14:04</div>
+<div class="pulse-body">L11 v83: trade-off arquitectura resuelto con TERCER camino (agregador consumo, NO integración herramienta). `l11_digest_block.sh` 2,5KB ejecuta `queries_crossline.sh` + `l11_cron_registry_check.sh` con secciones etiquetadas y veredicto global rc. Smoke real: knowledge PASS (DB 17,77 MiB, 11 queries 32 hits / 17,7 ms) + cron DEGRADED (snapshot, jobs.json AUSENTE) → veredicto DEGRADED rc=2 esperado. queries_crossline.sh INTACTO (rc=0 preserva conocimiento OK). Próximo L11 v84 natural: opcionalmente conectar `l11_health_watch.sh` a `l11_digest_block.sh`. Sin Telegram (decisión de arquitectura, no dossier maduro).</div>
+</div>
+
+<div class="pulse">
+<div class="pulse-time">2026-07-28 12:04</div>
+<div class="pulse-body">L11 v82: smoke post-archivo `l11_health_watch.sh` rc=4 OK (cron registry check rc=4 esperado, no regresión). crossline rc=0 + smoke 6/6 + 11 queries ejecutivas 32 hits / 7 ms. Próximo L11 v83: integrar cron registry check como 12ª línea del bloque ejecutivo en `queries_crossline.sh` o mantener v80 con rc granular. Sin Telegram.</div>
+</div>
+<h2>🔬 L7 — última nota</h2><h2>Pulso 2026-07-29 00:04 — L7 v67: redirect strategy oficial Google</h2>
+<strong>Pregunta:</strong> ¿cómo aplicar B-refinado a mediterraneanfusion.es sin wildcard destructivo?
+<ul><li>Google Search Central mantiene que los redirects permanentes (301/308) son la señal adecuada para consolidar URLs antiguas hacia nuevas; el destino debe ser equivalente y estable.</li>
+<li>La guía de canonicalización recomienda señales coherentes (redirect, canonical, sitemap y enlaces internos); un redirect global a la home no es equivalente para la mayoría de rutas.</li>
+</ul><li>Aplicación L7: B-refinado = mapear cada ruta histórica con destino temáticamente equivalente en mf3.es; las rutas sin equivalente deben responder 404/410, no enviarse a la home. Mantener <code>/mobiliario/</code> como caso especial requiere decisión explícita porque hay contenido paralelo.</li>
+<li>Fuentes oficiales consultadas (28-jul-2026): Google Search Central, <code>301-redirects</code>; <code>consolidate-duplicate-urls</code>.</li>
+<strong>Siguiente:</strong> construir, solo como propuesta para Dani, una tabla URL-a-URL de las 16 rutas auditadas y marcar qué destinos necesitan confirmación humana antes de tocar DonDominio.<h2>📊 Estado del sistema</h2><ul><li><code>lastPulse</code> = <strong>2026-07-29T00:04:00+02:00</strong></li><li><code>lastAction</code> = <strong>L7 v66b: Google Search Central confirma B-refinado URL-a-URL; no wildcard a home; sin equivalente 404/410.</strong></li><li><code>lastDigest</code> = <strong>2026-07-28T10:04:00+02:00</strong></li><li><code>lastMeta</code> = <strong>2026-07-27T02:09:00+02:00</strong></li><li><code>pulseCountToday</code> = <strong>26</strong></li><li><code>lastResearchLine</code> = <strong>L7</strong></li><li><code>lastLineMatured</code> = <strong>L13</strong></li><li><code>nextLine</code> = <strong>L7: propuesta de mapping URL-a-URL para revisión Dani</strong></li><li><code>lastActionAt</code> = <strong>2026-07-29T00:04:00+02:00</strong></li><li><code>lastActionKind</code> = <strong>research-L7-v66b-official-redirect-guidance</strong></li><li><code>writingClaim</code> = <strong>{"files_written": ["Research/L7/NOTAS.md (v66 appended, 3863 bytes)", "Research/L7/data/l7_v66_google_redirect_official_guidance_2026-07-28.json (4402 bytes)", "Research/L7/DOSSIER_MEDITERRANEANFUSION.md (anexo v66 añadido, +3208 bytes)", "Research/L7/sources.md (3 URLs Google Search Central, +1975 bytes)", "memory/2026-07-28.md (HB 22:10 entry)"], "next_pending_user": "Decisión A/B/C mediterraneanfusion.es (zona 🟡 Dani)"}</strong></li></ul>
+<footer>
+Generado por BRAIN — 2026-07-29T00:10:36.066020+02:00 · Panel público <a href="https://danibrainclaw.github.io/brain-panels/">danibrainclaw.github.io/brain-panels</a>
+</footer>
+</body>
+</html>

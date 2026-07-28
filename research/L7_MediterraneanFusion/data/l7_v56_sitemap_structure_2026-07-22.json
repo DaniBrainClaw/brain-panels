@@ -1,0 +1,176 @@
+{
+  "version": "v56",
+  "timestamp": "2026-07-22T16:04:00+02:00",
+  "source": {
+    "path": "Research/L7/data/l7_v55_sitemap_inventory_2026-07-22.json",
+    "sha256": "535e0ec9eb07359af4913a38fc5fc410a8bbf519b64d19a67371febea6f6f97c",
+    "network": "none; cached sitemap inventory from v55"
+  },
+  "exact_inventory": {
+    "sitemap_entries_raw": 2058,
+    "unique_urls_all_sitemaps": 2055,
+    "unique_product_urls": 1877,
+    "product_category_entries_excluding_uncategorized": 59,
+    "normalized_distinct_product_categories": 56,
+    "page_urls": 114,
+    "exact_duplicate_urls": {
+      "/shop/": 2,
+      "/product/lampara-colgante-frame/": 2,
+      "/product/aplique-wheel/": 2
+    },
+    "correction_to_v55": "v55 said 1880 products / 2054 live URLs. Exact de-duplication gives 1877 unique product URLs and 2055 unique URLs across all advertised sitemaps (2058 raw entries)."
+  },
+  "brand_architecture": {
+    "normalized_categories_with_dedicated_page": 49,
+    "normalized_categories_total": 56,
+    "coverage_pct": 87.5,
+    "categories_without_dedicated_page": {
+      "apdecoration": [
+        "/product-category/ap-decoration/"
+      ],
+      "beltayfrajumar": [
+        "/product-category/belta-y-frajumar/"
+      ],
+      "decoas": [
+        "/product-category/decoas/"
+      ],
+      "dutchbone": [
+        "/product-category/dutchbone/"
+      ],
+      "marset": [
+        "/product-category/marset/",
+        "/product-category/marset-1/"
+      ],
+      "milan": [
+        "/product-category/milan-1/"
+      ],
+      "zuiver": [
+        "/product-category/zuiver/"
+      ]
+    },
+    "duplicate_category_namespaces": {
+      "marset": [
+        "/product-category/marset/",
+        "/product-category/marset-1/"
+      ],
+      "nordlux": [
+        "/product-category/nordlux/",
+        "/product-category/nordlux-1/"
+      ],
+      "pholc": [
+        "/product-category/pholc/",
+        "/product-category/pholc-1/"
+      ]
+    },
+    "interpretation": "49/56 normalized brand categories also have a dedicated editorial page in the same old domain; migration is at least a two-layer graph (category + page), not a flat product list."
+  },
+  "product_mix_from_url_slugs": {
+    "iluminacion": {
+      "count": 696,
+      "pct": 37.1,
+      "examples": [
+        "/product/aplique-abbacus/",
+        "/product/aplique-abby-2/",
+        "/product/aplique-abby/",
+        "/product/aplique-alba/",
+        "/product/aplique-alfi-cubierta-angulada-y-tapapared/"
+      ]
+    },
+    "asientos": {
+      "count": 402,
+      "pct": 21.4,
+      "examples": [
+        "/product/banco-dry/",
+        "/product/banco-inside/",
+        "/product/banco-lana-ottoman-doble-acero/",
+        "/product/banco-lana-ottoman-doble-madera/",
+        "/product/banco-oto/"
+      ]
+    },
+    "otros": {
+      "count": 293,
+      "pct": 15.6,
+      "examples": [
+        "/product/agate-grey/",
+        "/product/alacena-de-roble-y-panal-de-abeja-metal/",
+        "/product/alacena-malmo/",
+        "/product/alacena-rio/",
+        "/product/alpen-quartz/"
+      ]
+    },
+    "decoracion": {
+      "count": 205,
+      "pct": 10.9,
+      "examples": [
+        "/product/alfombra-magic/",
+        "/product/alfombra-marvel/",
+        "/product/alfombra-miller/",
+        "/product/alfombra-yenga/",
+        "/product/espejo-cleo/"
+      ]
+    },
+    "mesas": {
+      "count": 204,
+      "pct": 10.9,
+      "examples": [
+        "/product/consola-acabado-roble-de-dos-cajones/",
+        "/product/consola-concierge/",
+        "/product/consola-de-roble-envejecido-y-metal/",
+        "/product/consola-dolmen/",
+        "/product/consola-escritorio-class/"
+      ]
+    },
+    "almacenaje": {
+      "count": 69,
+      "pct": 3.7,
+      "examples": [
+        "/product/aparador-45/",
+        "/product/aparador-acabado-roble-y-puertas-de-listones/",
+        "/product/aparador-barbier/",
+        "/product/aparador-boli/",
+        "/product/aparador-cais/"
+      ]
+    },
+    "exterior": {
+      "count": 5,
+      "pct": 0.3,
+      "examples": [
+        "/product/tumbona-area-dv2_br-m-ts/",
+        "/product/tumbona-barceloneta-con-ruedas/",
+        "/product/tumbona-lineal/",
+        "/product/tumbona-redonda-weave/",
+        "/product/tumbona-weekend/"
+      ]
+    },
+    "camas": {
+      "count": 3,
+      "pct": 0.2,
+      "examples": [
+        "/product/cama-imbottito-con-banquillo/",
+        "/product/cama-olivo/",
+        "/product/cama-zero-16/"
+      ]
+    }
+  },
+  "commerce_core": {
+    "families": [
+      "iluminacion",
+      "asientos",
+      "mesas",
+      "decoracion"
+    ],
+    "count": 1507,
+    "pct": 80.3
+  },
+  "decision": {
+    "finding": "80.3% of unique product URLs are lighting, seating, tables or decor. Their commercial intent is materially closer to DinDon Living's WooCommerce catalogue than to mf3.es/mobiliario/, which is an editorial/B2B service page.",
+    "revised_option": "B'' split migration: commerce-equivalent catalogue families should be evaluated against dindonliving.com; architectural/service/editorial pages against mf3.es. Keep mediterraneanfusion.es unchanged until GSC plus current-brand status identify valuable URLs.",
+    "do_not_do": "Do not preselect mf3.es as destination for all 1877 products and do not wildcard redirect.",
+    "next_question": "Which of the 56 normalized catalogue brands are still commercial, and does GSC show product/category traffic that belongs in DinDon rather than MF3?"
+  },
+  "method_limits": [
+    "Product family classification is slug-based and mutually exclusive; 293 URLs remain 'otros'.",
+    "The sitemap proves advertised URL structure, not traffic, stock, sales, backlinks or current commercial contracts.",
+    "Current live requests were stopped after SiteGround returned HTTP 202 SG-Captcha; no CAPTCHA was bypassed."
+  ]
+}

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dossier L7 · v56</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+       background: #0a0a0f; color: #e0e0e0; padding: 20px; line-height: 1.6; max-width: 1100px; margin: 0 auto; }
+h1 { color: #00d4aa; margin-bottom: 10px; font-size: 28px; }
+h2 { color: #00d4aa; margin: 30px 0 15px 0; font-size: 22px; border-bottom: 1px solid #2a2a3a; padding-bottom: 8px; }
+h3 { color: #fff; margin: 20px 0 10px 0; font-size: 17px; }
+h4 { color: #ddd; margin: 15px 0 8px 0; font-size: 15px; }
+p { color: #c0c0c0; margin-bottom: 12px; }
+strong { color: #fff; }
+em { color: #ffaa00; }
+code { background: #1a1a24; color: #00d4aa; padding: 2px 6px; border-radius: 3px; font-family: 'SF Mono', Monaco, monospace; font-size: 0.9em; }
+pre { background: #1a1a24; color: #eee; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; }
+pre code { background: none; color: inherit; padding: 0; }
+blockquote { border-left: 3px solid #00d4aa; padding: 10px 15px; margin: 15px 0; background: #1a1a24; color: #ddd; font-style: italic; }
+table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+th { background: #1a1a24; color: #00d4aa; padding: 10px; text-align: left; border-bottom: 2px solid #00d4aa; }
+td { padding: 8px 10px; border-bottom: 1px solid #2a2a3a; color: #c0c0c0; }
+tr:hover td { background: #1a1a24; }
+ul, ol { margin: 10px 0 15px 25px; color: #c0c0c0; }
+li { margin-bottom: 5px; }
+hr { border: none; border-top: 1px solid #2a2a3a; margin: 25px 0; }
+a { color: #00d4aa; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.nav { background: #1a1a24; padding: 12px 20px; border-radius: 8px; margin-bottom: 25px; }
+.nav a { color: #00d4aa; margin-right: 15px; font-weight: 500; }
+.nav a.active { color: #fff; }
+.meta { color: #888; font-size: 13px; margin-bottom: 25px; }
+.meta strong { color: #00d4aa; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-right: 5px; }
+.badge-active { background: #27ae60; color: white; }
+.badge-critical { background: #ff4444; color: white; }
+.badge-pending { background: #ffaa00; color: black; }
+.pulse { background: #1a1a24; border-radius: 12px; padding: 18px; margin-bottom: 12px; border-left: 4px solid #00d4aa; }
+.pulse-time { color: #888; font-size: 13px; }
+.pulse-body { color: #ddd; margin-top: 8px; }
+footer { color: #555; font-size: 12px; text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #2a2a3a; }
+</style>
+</head>
+<body>
+<div class="nav"><a href="index.html">📊 Dashboard</a><a href="live.html">🔴 Live</a><a href="investigaciones.html" class="active">🔬 Investigaciones</a><a href="tareas.html">📋 Tareas</a><a href="viewer.html">📖 Visor MD</a></div>
+
+<h1>Dossier ejecutivo — mediterraneanfusion.es</h1>
+<p class="meta">Versión vigente <strong>v56</strong> · 2026-07-22</p>
+<h1>Dossier ejecutivo corregido — mediterraneanfusion.es</h1>
+<blockquote><strong>🚨 VERSIÓN VIGENTE: v56, 2026-07-22 16:04.</strong> Sustituye y RETRACTA la recomendación v51 de aplicar un redirect 301 wildcard. <strong>No ejecutar un wildcard ni dejar expirar el dominio con la evidencia actual.</strong></blockquote>
+<h2>TL;DR</h2>
+<p><code>mediterraneanfusion.es</code> no es solo un dominio histórico con URLs rotas: conserva un catálogo vivo. La auditoría v53 encontró <strong>23/36 páginas de marca con contenido real</strong>, mientras sus equivalentes en <code>mf3.es/{marca}/</code> devuelven 404. La comprobación independiente v54 en Wayback confirma que <strong>20/23 (87,0 %) de esas páginas vivas ya tenían un 200 histórico</strong>: 16 aparecen en capturas de 2024 y 4 en 2022.</p>
+<p>Por tanto, el wildcard propuesto en v51 habría enviado páginas vivas a destinos inexistentes. La autoridad SEO exacta sigue siendo desconocida — Wayback prueba existencia histórica, no tráfico, backlinks ni PageRank —, pero el riesgo ya es suficiente para descartar la acción masiva.</p>
+<strong>Recomendación vigente: B'' — migración selectiva y dividida por intención.</strong> Mantener el dominio mientras se decide qué marcas siguen siendo estratégicas. El inventario exacto v56 corrige v55: hay <strong>1.877 productos únicos</strong> y <strong>2.055 URLs únicas</strong> anunciadas (2.058 entradas brutas). El <strong>80,3 %</strong> de los productos son iluminación, asientos, mesas o decoración: su intención comercial encaja mejor con el WooCommerce de <code>dindonliving.com</code> que con la página editorial/B2B <code>mf3.es/mobiliario/</code>. Por tanto, no debe preseleccionarse <code>mf3.es</code> como destino universal: catálogo transaccional → evaluar DinDon; páginas editoriales/servicios → evaluar MF3. Crear primero destinos equivalentes y solo después aplicar 301 individuales.
+<h2>Evidencia actual</h2>
+<table>
+<thead><tr>
+<th>Auditoría</th>
+<th>Resultado</th>
+<th>Implicación</th>
+</tr></thead><tbody>
+<tr><td>v49 — persistencia</td><td>14/16 paths de servicio seguían 404</td><td>El redirect actual solo cubre la home; no hay consolidación global.</td></tr>
+<tr><td>v50 — Wayback dominio</td><td>509 URLs históricas con 200; 302 <code>/product/</code>, 42 <code>/product-category/</code></td><td>El dominio tuvo un catálogo amplio; no puede tratarse como cascarón vacío.</td></tr>
+<tr><td>v53 — GET actual</td><td>23/36 páginas de marca vivas; 0/36 migradas a mf3.es; 9/36 404 en ambos</td><td>El catálogo sigue activo y no tiene destinos equivalentes en mf3.es.</td></tr>
+<tr><td>v54 — Wayback páginas vivas</td><td>20/23 (87,0 %) con 200 histórico exacto</td><td>La mayoría tiene existencia histórica independiente; no redirigir a ciegas.</td></tr>
+<tr><td>v55 — sitemap con UA</td><td>2.058 entradas anunciadas; muestra 474/474 respondió 200 en ese momento</td><td>El alcance real es de miles de URLs, no 23 páginas aisladas.</td></tr>
+<tr><td>v56 — deduplicación + intención</td><td>2.055 URLs únicas; 1.877 productos; 1.507/1.877 (80,3 %) son iluminación/asientos/mesas/decoración</td><td>El destino natural del catálogo puede ser DinDon, no MF3; migración dividida por intención.</td></tr>
+</tbody></table>
+<h3>Proxy histórico v54</h3>
+<li><strong>20/23 páginas vivas</strong> tienen registro histórico 200 exacto en Wayback.</li>
+<li>Distribución de la URL histórica colapsada: <strong>16 en 2024 y 4 en 2022</strong>.</li>
+<li>Tamaño de respuesta archivada: mediana <strong>40.806 B</strong>, rango <strong>30.882–60.145 B</strong>, total <strong>852.931 B</strong>.</li>
+<li>Tres páginas hoy vivas no aparecen en esa consulta colapsada: <code>/mobalco/</code>, <code>/mobitec/</code>, <code>/alivar/</code>; requieren validación manual, no eliminación automática.</li>
+<li>Límite metodológico: estos datos prueban vida histórica y contenido, <strong>no autoridad SEO ni tráfico</strong>. Para eso hacen falta GSC o un índice de backlinks.</li>
+<p>Archivo de evidencia: <code>Research/L7/data/l7_v54_brand_wayback_proxy_2026-07-22.json</code>.</p>
+<h2>Arquitectura descubierta en v56</h2>
+<li><strong>2.058 entradas brutas → 2.055 URLs únicas</strong> tras deduplicar <code>/shop/</code>, <code>/product/lampara-colgante-frame/</code> y <code>/product/aplique-wheel/</code>.</li>
+<li><strong>1.877 productos únicos</strong>, no 1.880 como resumía v55.</li>
+<li><strong>59 categorías de producto</strong> (excluyendo <code>uncategorized</code>) que normalizan a <strong>56 marcas/categorías distintas</strong>.</li>
+<li><strong>49/56 (87,5 %) categorías normalizadas</strong> tienen además una página editorial dedicada dentro del dominio antiguo: la migración es un grafo de categoría + página + productos, no una lista plana.</li>
+<li>Mezcla por slug: iluminación 696 (37,1 %), asientos 402 (21,4 %), decoración 205 (10,9 %) y mesas 204 (10,9 %). Juntas: <strong>1.507/1.877 = 80,3 %</strong>.</li>
+<li><strong>Implicación:</strong> esos cuatro bloques son retail de mobiliario/iluminación y encajan semánticamente con DinDon Living. MF3 encaja con arquitectura, reformas, cocinas y páginas editoriales de servicio. La futura migración debe separar ambos destinos.</li>
+<p>Evidencia reproducible: <code>Research/L7/scripts/l7_v56_sitemap_structure.py</code>, <code>Research/L7/data/l7_v55_sitemap_inventory_2026-07-22.json</code> y <code>Research/L7/data/l7_v56_sitemap_structure_2026-07-22.json</code>.</p>
+<h2>Opciones corregidas</h2>
+<table>
+<thead><tr>
+<th>Opción</th>
+<th>Acción</th>
+<th>Riesgo</th>
+<th>Veredicto</th>
+</tr></thead><tbody>
+<tr><td><strong>A — Mantener como está</strong></td><td>Conservar ambos dominios sin cambios inmediatos</td><td>Canibalización y mantenimiento duplicado, pero evita destruir URLs vivas</td><td><strong>Seguro como pausa</strong>, no como solución final</td></tr>
+<tr><td><strong>B'' — Migración selectiva dividida</strong> ⭐</td><td>Catálogo transaccional con equivalente real → evaluar <code>dindonliving.com</code>; páginas editoriales/servicios → evaluar <code>mf3.es</code>; 301 solo tras crear y validar el destino</td><td>Trabajo editorial/técnico; requiere mapa, GSC y QA</td><td><strong>Recomendada</strong></td></tr>
+<tr><td><strong>C — Retirada selectiva</strong></td><td>Marcas obsoletas → destino de categoría realmente equivalente; si no existe, 404/410 controlado</td><td>Puede perder señales de URLs antiguas, pero evita soft-404 hacia home</td><td>Válida para catálogo sin valor comercial</td></tr>
+<tr><td><strong>D — Wildcard o expiración</strong></td><td>Redirección masiva o pérdida del dominio</td><td>Puede romper 23 páginas vivas y sus señales históricas</td><td><strong>DESCARTADA por ahora</strong></td></tr>
+</tbody></table>
+<h2>Plan B' seguro</h2>
+<li><strong>No cambiar DonDominio todavía.</strong> Mantener el dominio y sus URLs vivas.</li>
+<li>Extraer el inventario completo del catálogo actual, no solo la muestra de 36.</li>
+<li>Clasificar cada URL: marca vigente / marca obsoleta / servicio 404 / producto histórico.</li>
+<li>Para cada marca vigente, asignar intención y destino: producto/categoría retail → posible equivalente en <code>dindonliving.com</code>; arquitectura/reforma/servicio/editorial → posible equivalente en <code>mf3.es</code>. Crear primero el destino con contenido, canonical y estado 200.</li>
+<li>Aplicar <strong>301 individual</strong> antigua→nueva solo después de validar el destino.</li>
+<li>Para páginas de servicio 404 (<code>/reformas/</code>, <code>/proyectos/</code>, <code>/contacto/</code>), redirigir únicamente si el equivalente en mf3.es existe y responde 200 con la misma intención.</li>
+<li>Para contenido obsoleto sin equivalente, usar 404/410 o una categoría relevante; <strong>no enviar todo a la home</strong>.</li>
+<li>QA previo y posterior: estado HTTP, cadena de redirects, canonical, sitemap, enlaces internos y cobertura GSC.</li>
+<h2>Qué invalida esta versión del dossier v51</h2>
+<p>Quedan retractadas estas afirmaciones/instrucciones anteriores:</p>
+<ul><li>❌ “Mi recomendación: redirect 301 wildcard DonDominio”.</li>
+<li>❌ “Riesgo mínimo”.</li>
+<li>❌ “10 minutos y reversible” como solución completa.</li>
+</ul><li>❌ <code>*.mediterraneanfusion.es → https://mf3.es/$1</code> sin mapa previo.</li>
+<ul><li>❌ “El catálogo antiguo ya no aporta valor” sin validación comercial de Dani.</li>
+<li>❌ “Coste SEO residual post-B = 0”.</li>
+</ul>
+La corrección no es cosmética: v53 demostró que el supuesto básico de v51 era falso. El sitio tiene un catálogo activo y mayoritariamente histórico.
+<h2>Decisión que necesita Dani</h2>
+<p>No hace falta actuar hoy en DonDominio. La decisión útil es:</p>
+<li>¿Qué marcas del catálogo siguen siendo comerciales para MF3?</li>
+<li>¿Quiere consolidarlas en mf3.es o mantener ese vertical separado?</li>
+<li>¿Puede facilitar acceso de solo lectura a GSC o un export de backlinks para ordenar la migración por valor real?</li>
+<strong>Mi voto actual:</strong> mantener el dominio sin cambios mientras preparo el inventario comercial y el mapa selectivo. Ejecutar luego B'' por lotes pequeños con QA: DinDon para catálogo transaccional cuando exista equivalente real; MF3 para servicios/editorial. Nunca wildcard.
+<hr>
+<h2>Anexo técnico v66 — 2026-07-28 22:04 — Validación oficial Google Search Central</h2>
+<strong>Origen:</strong> <code>Research/L7/data/l7_v66_google_redirect_official_guidance_2026-07-28.json</code>. La opción <strong>B'' — Migración selectiva dividida</strong> (recomendada arriba) se valida 1:1 contra la documentación oficial de Google Search Central para site-move con cambio de dominio.
+<h3>Documentos canónicos citados</h3>
+<li><code>developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes</code> — <em>"Domain name changes such as example.com to example.net or merging multiple domains or hostnames"</em> (caso mediterraneanfusion.es → mf3.es documentado textualmente).</li>
+<li><code>developers.google.com/search/docs/crawling-indexing/301-redirects</code> — 301/308 = <em>permanent redirects</em> que usa <strong>la pipeline de indexación como señal fuerte de canonicidad</strong>; 302/307/303 son temporales y NO consolidan señales.</li>
+<li><code>developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls</code> — orden de señales canónicas: <strong>(1) Redirects > (2) rel="canonical" > (3) sitemap</strong>. <em>"Use redirects when you want to get rid of existing duplicate pages."</em></li>
+<h3>Por qué el approach B'' encaja con la guía</h3>
+<table>
+<thead><tr>
+<th>Práctica B'' del dossier</th>
+<th>Lo que dice Google</th>
+<th>Estado</th>
+</tr></thead><tbody>
+<tr><td>URL→URL mapping manual antes del redirect</td><td><em>"Prepare URL mapping → Create a mapping of old to new URLs"</em></td><td>✅ Coincide</td></tr>
+<tr><td>301 server-side, no 302</td><td><em>"the indexing pipeline uses the redirect as a signal that the redirect target should be canonical"</em></td><td>✅ Coincide</td></tr>
+<tr><td>Validación HTTP+canonical antes/después</td><td><em>"Update all URL details on the new site"</em> (canonicals, sitemap, hreflang)</td><td>✅ Coincide</td></tr>
+<tr><td>Por lotes pequeños + QA</td><td><em>"Monitor traffic"</em> con Search Console 28-90 días</td><td>✅ Coincide</td></tr>
+</tbody></table>
+<h3>Por qué opciones descartadas se confirman inválidas</h3>
+<li>❌ <strong>Wildcard</strong>: rompe /mobalco1/ y /firmas/ con contenido vivo (v60) <strong>+</strong> Google no prescribe regex para site-move; exige mapeos.</li>
+<li>❌ <strong>Soft-404 (404→home)</strong>: ningún patrón prescrito; diluye PageRank, confunde al crawler, sin consolidar nada en el destino.</li>
+<li>❌ <strong>302/307</strong> como "más conservador": NO conservan PageRank — son temporales por definición y NO consolidan.</li>
+<h3>Si Dani confirma expirar (opción A) — cambio de dirección formal</h3>
+<p>Si la decisión A es no-redirect (dejar expirar el dominio sin migrar), Google sigue requiriendo traspaso de propiedad:</p>
+<li><em>Change of Address tool</em> en Search Console (solo si existe GSC-property del dominio antiguo) para consolidar señales residuales.</li>
+<li>Validar con <code>curl -sI</code> que el dominio deja de resolver y que ningún backlink apunta a un parking que robe tráfico.</li>
+<li>Comunicar a partners estratégicos (FácilReformas <code>facilreformas.es/mediterraneanfusion</code> confirmado vivo v59) el corte del dominio.</li>
+<h3>Checklist verificación post-B'' (si se ejecuta)</h3>
+<li>Antes: <code>curl -sI -L <origen></code> → debe devolver 200 o 404, nunca 302 a home.</li>
+<li>Después (mapping aplicado): <code>curl -sI -L <origen></code> → debe devolver <strong>un único 301</strong> que apunte al destino y <strong>200 final</strong> con <code>rel="canonical"</code> apuntando a sí mismo o al destino.</li>
+<li>Regenerar sitemap <code>mf3.es</code> (o <code>dindonliving.com</code>) sin las URLs viejas.</li>
+<ul><li>Monitorizar GSC 28 días por caídas de clics, aparición de soft-404 ocanicas equivocadas.</li>
+</ul>
+
+<footer>
+Generado por BRAIN — 2026-07-29T00:10:36.066020+02:00 · Panel público <a href="https://danibrainclaw.github.io/brain-panels/">danibrainclaw.github.io/brain-panels</a>
+</footer>
+</body>
+</html>

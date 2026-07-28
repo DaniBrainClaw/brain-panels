@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fuentes L7</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+       background: #0a0a0f; color: #e0e0e0; padding: 20px; line-height: 1.6; max-width: 1100px; margin: 0 auto; }
+h1 { color: #00d4aa; margin-bottom: 10px; font-size: 28px; }
+h2 { color: #00d4aa; margin: 30px 0 15px 0; font-size: 22px; border-bottom: 1px solid #2a2a3a; padding-bottom: 8px; }
+h3 { color: #fff; margin: 20px 0 10px 0; font-size: 17px; }
+h4 { color: #ddd; margin: 15px 0 8px 0; font-size: 15px; }
+p { color: #c0c0c0; margin-bottom: 12px; }
+strong { color: #fff; }
+em { color: #ffaa00; }
+code { background: #1a1a24; color: #00d4aa; padding: 2px 6px; border-radius: 3px; font-family: 'SF Mono', Monaco, monospace; font-size: 0.9em; }
+pre { background: #1a1a24; color: #eee; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; }
+pre code { background: none; color: inherit; padding: 0; }
+blockquote { border-left: 3px solid #00d4aa; padding: 10px 15px; margin: 15px 0; background: #1a1a24; color: #ddd; font-style: italic; }
+table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+th { background: #1a1a24; color: #00d4aa; padding: 10px; text-align: left; border-bottom: 2px solid #00d4aa; }
+td { padding: 8px 10px; border-bottom: 1px solid #2a2a3a; color: #c0c0c0; }
+tr:hover td { background: #1a1a24; }
+ul, ol { margin: 10px 0 15px 25px; color: #c0c0c0; }
+li { margin-bottom: 5px; }
+hr { border: none; border-top: 1px solid #2a2a3a; margin: 25px 0; }
+a { color: #00d4aa; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.nav { background: #1a1a24; padding: 12px 20px; border-radius: 8px; margin-bottom: 25px; }
+.nav a { color: #00d4aa; margin-right: 15px; font-weight: 500; }
+.nav a.active { color: #fff; }
+.meta { color: #888; font-size: 13px; margin-bottom: 25px; }
+.meta strong { color: #00d4aa; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-right: 5px; }
+.badge-active { background: #27ae60; color: white; }
+.badge-critical { background: #ff4444; color: white; }
+.badge-pending { background: #ffaa00; color: black; }
+.pulse { background: #1a1a24; border-radius: 12px; padding: 18px; margin-bottom: 12px; border-left: 4px solid #00d4aa; }
+.pulse-time { color: #888; font-size: 13px; }
+.pulse-body { color: #ddd; margin-top: 8px; }
+footer { color: #555; font-size: 12px; text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #2a2a3a; }
+</style>
+</head>
+<body>
+<div class="nav"><a href="index.html">📊 Dashboard</a><a href="live.html">🔴 Live</a><a href="investigaciones.html" class="active">🔬 Investigaciones</a><a href="tareas.html">📋 Tareas</a><a href="viewer.html">📖 Visor MD</a></div>
+
+<h1>Fuentes consultadas — L7</h1>
+<p class="meta">Documentos canónicos y JSONs de evidencia</p>
+<p>[2026-07-22T08:06:35+02:00 BRAIN] 2026-07-22 — Google Search Central, “Site Moves and Migrations”: https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes — wildcard server-side válido en migraciones con estructura equivalente; redirects y sitemap.
+2026-07-22 — Google Search Central, “Redirects and Google Search”: https://developers.google.com/search/docs/crawling-indexing/301-redirects — 301/308 permanentes para consolidar señales.
+2026-07-22 — Google Search Console Help, “Change of Address tool”: https://support.google.com/webmasters/answer/9370220?hl=en — usar después de mover y redirigir, no para simples cambios internos.
+2026-07-22 — Brave Search, query “mediterraneanfusion.es indexed pages catalog”: https://www.facebook.com/mediterraneanfusion/?locale=es_ES (snippet de marca; fetch directo 400) y https://facilreformas.es/mediterraneanfusion (perfil comercial indexado).
+2026-07-22 — FácilReformas, perfil Mediterranean Fusion: https://facilreformas.es/mediterraneanfusion — HTTP 200; flujo de cita/presupuesto/financiación y declaración de colaboración.
+2026-07-22 — Common Crawl Index API, índices CC-MAIN-2024/2025/2026: https://index.commoncrawl.org/collinfo.json — 0 páginas mediterraneanfusion.es en índices 2025-06→2026-06 consultados; 1 en varios índices de 2024.
+2026-07-22 — urlscan.io Search API: https://urlscan.io/api/v1/search/?q=domain:mediterraneanfusion.es — HTTP 200, total=0 scans.
+$\n\n---\n\n## L7 v66 — 2026-07-28 — Validación oficial Google Search Central\n\n### Guías Google Search Central (Jina Reader, fetch directo devuelve SG-Captcha del holding)\n\n- Google Search Central, <strong>"Site moves with URL changes"</strong>: https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes (vía https://r.jina.ai/.../site-move-with-url-changes). Pasos: General best practices → Prepare URL mapping → Create mapping of old to new URLs → Update URL annotations (canonical/sitemap/hreflang) → Plan redirect strategy → Start site move → Monitor traffic. Caso textualmente incluido: "Domain name changes such as example.com to example.net or merging multiple domains or hostnames".\n- Google Search Central, <strong>"Redirects and Google Search"</strong>: https://developers.google.com/search/docs/crawling-indexing/301-redirects (vía https://r.jina.ai/.../301-redirects). 301/308 son permanent redirects (la pipeline de indexación usa el redirect como señal CANÓNICA del destino). 302/307/303 son temporales (la pipeline NO usa el redirect como señal canónica; el target puede indexarse igual). Ejemplo PHP: header("HTTP/1.1 301 Moved Permanently"); header("Location: https://..."). Apache <code>Redirect permanent</code>. NGINX <code>return 301</code>.\n- Google Search Central, <strong>"Specify a canonical"</strong>: https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls (vía https://r.jina.ai/.../consolidate-duplicate-urls). Orden señales: redirects > rel="canonical" > sitemap. Best practices: NO usar robots.txt para canónica; NO usar URL removal tool; self-referential canonical; combinar señales aumenta probabilidad. "Use redirects: Use this method when you want to get rid of existing duplicate pages." Cambiar de dirección formal: Change of Address tool en Search Console (https://support.google.com/webmasters/answer/9370220) — solo si existe GSC-property del dominio antiguo y hay propiedad destino equivalente.\n</p>
+<h2>📦 Datos JSON de evidencia</h2>
+<ul>
+<li><a href="data/l7_v66_google_redirect_official_guidance_2026-07-28.json">l7_v66_google_redirect_official_guidance_2026-07-28.json</a> — validación Google Search Central</li>
+<li><a href="data/l7_v56_sitemap_structure_2026-07-22.json">l7_v56_sitemap_structure_2026-07-22.json</a> — estructura deduplicada</li>
+</ul>
+
+<footer>
+Generado por BRAIN — 2026-07-29T00:10:36.066020+02:00 · Panel público <a href="https://danibrainclaw.github.io/brain-panels/">danibrainclaw.github.io/brain-panels</a>
+</footer>
+</body>
+</html>
