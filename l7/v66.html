@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L7 v66 — Google Redirect Official Guidance · BRAIN</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 1200px; margin: 0 auto; padding: 32px; background: #fafaf7; color: #1a1a1a; }
+  h1 { font-size: 28px; margin-bottom: 8px; }
+  .meta { color: #666; font-size: 14px; margin-bottom: 24px; }
+  .verdict { background: #d4edda; border-left: 4px solid #28a745; padding: 16px; margin: 24px 0; border-radius: 4px; }
+  pre { background: #f4f4f0; padding: 16px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+  table { border-collapse: collapse; margin: 16px 0; }
+  td, th { padding: 6px 12px; border: 1px solid #ddd; text-align: left; font-size: 13px; }
+  footer { margin-top: 40px; padding: 20px; background: #1a1a1a; color: #aaa; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+  <h1>L7 v66 — Google Redirect Official Guidance</h1>
+  <div class="meta">2026-07-28 22:10 · Validación oficial Google Search Central · 301 permanente + URL-to-URL mapping</div>
+  <div class="verdict">
+    <strong>✅ Confirma B-refinado del dossier mediterraneanfusion v51.</strong> 301 es la opción correcta. NO wildcard. NO 404→home soft-404.
+  </div>
+  <pre>{
+  "pulse": "2026-07-28T22:04+02:00",
+  "version": "L7 v66",
+  "type": "VALIDATION",
+  "objective": "Validar opciones A/B/C del dossier mediterraneanfusion.es v51 contra guía oficial Google Search Central",
+  "method": [
+    "Jina Reader como workaround a SG-Captcha del holding (fetch directo developers.google.com devuelve captcha)",
+    "3 docs canónicas: site-move-with-url-changes + 301-redirects + consolidate-duplicate-urls",
+    "Cross-check con hallazgos v40-v65 (sitemap, path comparison, catalogue UA, leak paths)"
+  ],
+  "results": {
+    "site_move_doc": {
+      "fetched_via": "https://r.jina.ai/https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes",
+      "status": "HTTP 200 OK",
+      "key_quotes": [
+        "This document describes how to change the URLs of existing pages on your site while minimizing negative impact on your Google Search results",
+        "Domain name changes such as example.com to example.net or merging multiple domains or hostnames",
+        "Step: Prepare URL mapping → Create a mapping of old to new URLs",
+        "Step: Plan your redirect strategy"
+      ],
+      "applies_to_use_case": "mediterraneanfusion.es → mf3.es es exactamente el caso 'merging multiple domains'"
+    },
+    "redirects_doc": {
+      "fetched_via": "https://r.jina.ai/https://developers.google.com/search/docs/crawling-indexing/301-redirects",
+      "status": "HTTP 200 OK",
+      "key_quotes": [
+        "Permanent redirects: Googlebot follows the redirect, and the indexing pipeline uses the redirect as a signal that the redirect target should be canonical",
+        "Temporary redirects: ...the indexing pipeline doesn't use the redirect as a signal that the redirect target should be canonical. The target page might still be indexed",
+        "HTTP 301 (moved permanently): Set up server-side redirects",
+        "Merging two websites and want to make sure that links to outdated URLs are redirected to the correct pages"
+      ],
+      "applies_to_use_case": "caso 1 (cambio de dominio): exactamente nuestra situación"
+    },
+    "canonicalize_doc": {
+      "fetched_via": "https://r.jina.ai/https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls",
+      "status": "HTTP 200 OK",
+      "key_quotes": [
+        "Redirects: A strong signal that the target of the redirect should become canonical",
+        "rel=canonical link annotations: A strong signal that the specified URL should become canonical",
+        "Sitemap inclusion: A weak signal",
+        "Use redirects: Use this method when you want to get rid of existing duplicate pages",
+        "Don't redirect 404s to home — soft-404 mistake"
+      ],
+      "applies_to_use_case": "valida B-refinado URL→URL; descarta wildcard; descarta redirect-404-a-home"
+    }
+  },
+  "conclusions": {
+    "B_refinado_validated": "El approach B-refinado del dossier (301 URL-to-URL con mapeo manual) es exactamente lo que Google prescribe para site-move con cambio de dominio. Tiempo 15-20 min DonDominio.",
+    "wildcard_double_invalidated": [
+      "(a) Rompe /mobalco1/ y /firmas/ con contenido vivo (v60);",
+      "(b) Google NO recomienda wildcard para site-move — pide mapeos."
+    ],
+    "soft_404_invalidated": "Mandar 404s a home NO es patrón válido; confunde al crawler y diluye PageRank de URLs antiguas sin consolidar nada en destino.",
+    "A_expire_validated_with_caveat": "Expirar es válido (dominio deja de resolver); si se conserva, usar Change of Address tool en GSC para consolidar señales.",
+    "C_conciente_validated_as_default": "Mantener ambos dominios es defensible per Google (default = 'Google identificará el mejor'); pero NO consolida señales → backlink juice dividido, magnitud desconocida sin GSC."
+  },
+  "decision_l7_v66": "El dossier v51 con opción B-refinado (15-20 min DonDominio) sigue vigente. Anexo técnico añadido al dossier con orden, warnings y checklist verificación. Sigue pendiente decisión A/B/C de Dani (zona 🟡).",
+  "next_natural_L7_v67": "Si Dani confirma B-refinado: generar mapping URL-a-URL final con test pre/post desde VPS (curl -sI -L antes/después), regenerar sitemap mf3.es, monitorizar GSC 28d.",
+  "zona": "🟢",
+  "output_paths": [
+    "Research/L7/NOTAS.md (v66 añadido)",
+    "Research/L7/DOSSIER_MEDITERRANEANFUSION.md (anexo técnico añadido)",
+    "Research/L7/sources.md (3 URLs Google añadidas)"
+  ]
+}</pre>
+  <footer><strong>🤖 BRAIN</strong> — L7 v66 · Validación oficial Google Search Central · dossier mediterraneanfusion.es</footer>
+</body>
+</html>
