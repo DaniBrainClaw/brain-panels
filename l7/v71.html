@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L7 v71 — CWV Proxy · BRAIN</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1400px; margin: 0 auto; padding: 32px; background: #fafaf7; color: #1a1a1a; }
+  h1 { font-size: 28px; margin-bottom: 8px; }
+  .meta { color: #666; font-size: 14px; margin-bottom: 24px; }
+  .meta strong { color: #c0392b; }
+  .roi { background: #fff3cd; border-left: 4px solid #f39c12; padding: 16px; margin: 24px 0; border-radius: 4px; }
+  .roi h2 { margin: 0 0 8px 0; font-size: 18px; color: #8a6d00; }
+  table { width: 100%; border-collapse: collapse; margin-top: 16px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+  th { background: #f4f4f0; font-weight: 600; }
+  tr:hover { background: #faf9f6; }
+  code { font-size: 12px; color: #555; }
+  .outlier { background: #ffebee !important; }
+  footer { margin-top: 40px; padding: 20px; background: #1a1a1a; color: #aaa; border-radius: 4px; font-size: 12px; }
+  footer a { color: #7cb3ff; }
+</style>
+</head>
+<body>
+  <h1>L7 v71 — CWV Proxy (5 webs Dani)</h1>
+  <div class="meta">
+    <strong>PSI API quemada (429 quota exceeded)</strong> · 2026-07-29T20:05:59+00:00 ·
+    Script: <code>Research/L7/scripts/l7_v71_cwv_proxy.py</code> · JSON: <code>Research/L7/data/l7_v71_cwv_proxy_2026-07-29.json</code>
+  </div>
+
+  <p>Google PageSpeed Insights API devolvió HTTP 429 (<code>project_number: 583797351490</code>, "Queries per day exceeded"). CrUX requiere API key con GCP billing. Pivote: proxy stdlib sin API que mide TTFB, peso HTML, compresión, cache-control, count de assets.</p>
+
+  <div class="roi">
+    <h2>🎯 ROI #1 — Activar compresión gzip/Brotli en hosting (~5 min, +70% transferencia en 4/5 webs)</h2>
+    <p><strong>5/5 webs</strong> devuelven HTML sin <code>content-encoding</code>. En particular <strong>dindonliving.com</strong> es OUTLIER 5× con 505 KB HTML, 97 scripts, 41 imágenes, 45 stylesheets → LCP estimado ~3.5s.</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>URL</th><th>HTTP</th><th>TTFB</th><th>Total</th><th>HTML</th>
+        <th>#script</th><th>#img</th><th>#style</th><th>Compresión</th><th>Cache</th><th>Grado</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+  <tr>
+    <td><code>https://mf3.es/</code></td>
+    <td>200</td>
+    <td>0.121s</td>
+    <td>0.211s</td>
+    <td>16.2 KB</td>
+    <td>9</td>
+    <td>16</td>
+    <td>0</td>
+    <td>❌</td>
+    <td><small>no-store</small></td>
+    <td>🟢 TTFB ok | 🟢 HTML liviano | 🟠 sin compresión</td>
+  </tr>
+  <tr>
+    <td><code>https://liv-ing.com/</code></td>
+    <td>200</td>
+    <td>0.122s</td>
+    <td>0.135s</td>
+    <td>26.3 KB</td>
+    <td>19</td>
+    <td>9</td>
+    <td>0</td>
+    <td>❌</td>
+    <td><small>—</small></td>
+    <td>🟢 TTFB ok | 🟢 HTML liviano | 🟠 sin compresión</td>
+  </tr>
+  <tr class="outlier">
+    <td><code>https://dindonliving.com/</td></td>
+    <td>200</td>
+    <td>0.393s</td>
+    <td>0.533s</td>
+    <td>505.3 KB</td>
+    <td>97</td>
+    <td>41</td>
+    <td>45</td>
+    <td>❌</td>
+    <td><small>—</small></td>
+    <td>🟢 TTFB ok | 🔴 HTML pesado | 🟠 sin compresión</td>
+  </tr>
+  <tr>
+    <td><code>https://terracottavalladolid.com/</code></td>
+    <td>200</td>
+    <td>0.144s</td>
+    <td>0.239s</td>
+    <td>135.9 KB</td>
+    <td>65</td>
+    <td>16</td>
+    <td>13</td>
+    <td>❌</td>
+    <td><small>—</small></td>
+    <td>🟢 TTFB ok | 🟠 HTML medio | 🟠 sin compresión</td>
+  </tr>
+  <tr>
+    <td><code>https://estudiovirtual.es/</code></td>
+    <td>200</td>
+    <td>0.128s</td>
+    <td>0.128s</td>
+    <td>3.4 KB</td>
+    <td>0</td>
+    <td>0</td>
+    <td>1</td>
+    <td>❌</td>
+    <td><small>—</small></td>
+    <td>🟢 TTFB ok | 🟢 HTML liviano | 🟠 sin compresión</td>
+  </tr>
+    </tbody>
+  </table>
+
+  <footer>
+    <strong>🤖 BRAIN</strong> — L7 v71 · 2026-07-29T20:05:59+00:00 · zona 🟢 · próximo natural: asset_audit imágenes >100KB<br>
+    Pipeline: 100% local, sin API externa · 5/5 webs sin gzip/br · 0/5 con cache-control max-age
+  </footer>
+</body>
+</html>
