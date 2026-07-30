@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>L13 v15 — Comparador visual 3 casos (MF3 prototipo interno)</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Comparador visual lado a lado de los 3 casos C/D/E del set de demos v14 (PAGAR / PARCIAL / NO_PAGAR override) + tabla de sensibilidad baremo × avance. Zona 🟢 artefacto interno MF3.">
+<style>
+:root{--c-pay:#0a7d3b;--c-partial:#b35a00;--c-nopay:#a01b1b;--c-line:#d8d8d8;--c-bg:#fafafa;--c-emph:#fff8e1}
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#222;max-width:1280px;margin:20px auto;padding:0 20px;line-height:1.45}
+h1{margin:0 0 4px;font-size:22px}
+.subtitle{color:#666;font-size:13px;margin-bottom:14px}
+.disclaimer{background:var(--c-emph);border-left:4px solid var(--c-partial);padding:8px 12px;margin:12px 0;font-size:12px}
+.cases{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+.card{border:2px solid #ccc;border-radius:4px;padding:12px}
+.card .head{font-weight:700;font-size:15px;margin-bottom:6px}
+.card .veredicto{display:inline-block;padding:2px 8px;border-radius:3px;font-size:12px;font-weight:700;color:#fff;margin-bottom:6px}
+.card .importe{font-size:22px;font-weight:700;margin:6px 0}
+.card .meta{font-size:11px;color:#666;margin-bottom:6px}
+.card ul{margin:6px 0 0;padding-left:18px;font-size:12px}
+.card li{margin-bottom:2px}
+.card li.grave{color:var(--c-nopay);font-weight:600}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:12px}
+th,td{border:1px solid var(--c-line);padding:4px 6px;text-align:right}
+th:first-child,td:first-child{text-align:left;font-weight:600}
+th{background:#f1f1f1}
+caption{caption-side:top;text-align:left;font-weight:700;padding:6px 0;font-size:13px}
+.foot{margin-top:24px;font-size:11px;color:#888;border-top:1px solid var(--c-line);padding-top:6px}
+</style>
+</head>
+<body>
+<h1>L13 v15 — Comparador visual 3 casos (MF3 · auditoría de fases)</h1>
+<div class="subtitle">Set de demos v14 (zona 🟢) side-by-side + tabla sensibilidad baremo × avance.</div>
+<div class="disclaimer"><b>Material interno MF3.</b> No es acta de recepción LOE, certificado final ni liberación de responsabilidad. Solo para revisión del equipo y validación con Dani.</div>
+
+<h2 style="font-size:16px;border-bottom:1px solid var(--c-line);padding-bottom:4px">1. Comparativa side-by-side (3 casos)</h2>
+<div class="cases">
+    <div class="card" style="background:#fdf4e3;border-color:var(--c-partial)">
+      <div class="head">Caso C · Reforma integral grande</div>
+      <span class="veredicto" style="background:var(--c-partial)">PARCIAL</span>
+      <div class="importe">5,850.00 €</div>
+      <div class="meta">80 m² · calidad media-alta · PEM 60,000 €</div>
+      <div class="meta">Avance 75% · Baremo 13% PEM</div>
+      <div class="meta">3 defectos subsanables; avance 75% × baremo 13% × PEM 60.000</div>
+      <ul><li class=""><b>PVC-01</b> (leve): Pendiente desagüe PVC &lt; 1,5% en baño principal</li><li class=""><b>REBT-09</b> (leve): Caja empalmes sin tapa en cocina</li><li class=""><b>DB-HS-1</b> (leve): Placa pladur zona húmeda sin tratamiento hidrófugo</li></ul>
+    </div>
+    
+    <div class="card" style="background:#eaf6ee;border-color:var(--c-pay)">
+      <div class="head">Caso D · Reforma cocina</div>
+      <span class="veredicto" style="background:var(--c-pay)">PAGAR</span>
+      <div class="importe">1,170.00 €</div>
+      <div class="meta">14 m² · calidad alta · PEM 9,000 €</div>
+      <div class="meta">Avance 100% · Baremo 13% PEM</div>
+      <div class="meta">Sin defectos; control ajuste + materiales + pruebas = OK</div>
+      <p style="color:var(--c-pay);font-size:12px;margin:6px 0">✓ Sin defectos detectados</p>
+    </div>
+    
+    <div class="card" style="background:#fbe7e7;border-color:var(--c-nopay)">
+      <div class="head">Caso E · Peritación dictamen</div>
+      <span class="veredicto" style="background:var(--c-nopay)">NO PAGAR</span>
+      <div class="importe">0.00 €</div>
+      <div class="meta">95 m² · calidad media · PEM 18,000 €</div>
+      <div class="meta">Avance 30% · Baremo 13% PEM</div>
+      <div class="meta">3 defectos GRAVES CTE/REBT/DB-SI; importe override 0 €</div>
+      <ul><li class="grave"><b>DB-SE-M 3.2</b> (GRAVE): Viga madera con pudrición activa — exige refuerzo</li><li class="grave"><b>REBT ITC-BT-17</b> (GRAVE): Cuadro eléctrico sin normalizar — riesgo incendio</li><li class="grave"><b>DB-SI 1+6</b> (GRAVE): Sectorización incendios no ejecutada</li></ul>
+    </div>
+    </div>
+
+<h2 style="font-size:16px;border-bottom:1px solid var(--c-line);padding-bottom:4px">2. Sensibilidad baremo × avance</h2>
+<table><caption>Sensibilidad baremo × avance (€ por caso, 6 baremos × 4 avances × 3 casos = 72 celdas). NO_PAGAR override → 0 € en todas las celdas del caso E.</caption><tr><th>Baremo % PEM ↓ / Avance % →</th><th>30%</th><th>50%</th><th>75%</th><th>100%</th></tr><tr id="r0-b10"><td>Cas C · baremo 10%</td><td>1,800 €</td><td>3,000 €</td><td>4,500 €</td><td>6,000 €</td></tr><tr id="r1-b10"><td>Cas D · baremo 10%</td><td>270 €</td><td>450 €</td><td>675 €</td><td>900 €</td></tr><tr id="r2-b10"><td>Cas E · baremo 10%</td><td>0 €</td><td>0 €</td><td>0 €</td><td>0 €</td></tr><tr id="r0-b11"><td>Cas C · baremo 11%</td><td>1,980 €</td><td>3,300 €</td><td>4,950 €</td><td>6,600 €</td></tr><tr id="r1-b11"><td>Cas D · baremo 11%</td><td>297 €</td><td>495 €</td><td>742 €</td><td>990 €</td></tr><tr id="r2-b11"><td>Cas E · baremo 11%</td><td>0 €</td><td>0 €</td><td>0 €</td><td>0 €</td></tr><tr id="r0-b12"><td>Cas C · baremo 12%</td><td>2,160 €</td><td>3,600 €</td><td>5,400 €</td><td>7,200 €</td></tr><tr id="r1-b12"><td>Cas D · baremo 12%</td><td>324 €</td><td>540 €</td><td>810 €</td><td>1,080 €</td></tr><tr id="r2-b12"><td>Cas E · baremo 12%</td><td>0 €</td><td>0 €</td><td>0 €</td><td>0 €</td></tr><tr id="r0-b13"><td>Cas C · baremo 13%</td><td>2,340 €</td><td>3,900 €</td><td>5,850 €</td><td>7,800 €</td></tr><tr id="r1-b13"><td>Cas D · baremo 13%</td><td>351 €</td><td>585 €</td><td>878 €</td><td>1,170 €</td></tr><tr id="r2-b13"><td>Cas E · baremo 13%</td><td>0 €</td><td>0 €</td><td>0 €</td><td>0 €</td></tr><tr id="r0-b14"><td>Cas C · baremo 14%</td><td>2,520 €</td><td>4,200 €</td><td>6,300 €</td><td>8,400 €</td></tr><tr id="r1-b14"><td>Cas D · baremo 14%</td><td>378 €</td><td>630 €</td><td>945 €</td><td>1,260 €</td></tr><tr id="r2-b14"><td>Cas E · baremo 14%</td><td>0 €</td><td>0 €</td><td>0 €</td><td>0 €</td></tr><tr id="r0-b15"><td>Cas C · baremo 15%</td><td>2,700 €</td><td>4,500 €</td><td>6,750 €</td><td>9,000 €</td></tr><tr id="r1-b15"><td>Cas D · baremo 15%</td><td>405 €</td><td>675 €</td><td>1,012 €</td><td>1,350 €</td></tr><tr id="r2-b15"><td>Cas E · baremo 15%</td><td>0 €</td><td>0 €</td><td>0 €</td><td>0 €</td></tr></table>
+
+<div class="foot">
+L13 v15 · artefacto zona 🟢 generado 3 casos · baremos [10, 11, 12, 13, 14, 15] · avances [30, 50, 75, 100] ·
+override NO_PAGAR preservado (importe=0 en cualquier celda del caso E).
+</div>
+</body>
+</html>
