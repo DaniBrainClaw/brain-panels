@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Auditoría técnica de tu reforma · MF3 Valladolid</title>
+  <meta name="description" content="Calculadora estimativa de honorarios MF3 (auditoría externa del cliente) para reformas en Valladolid y CyL. 11-15% PEM. Auditoría de fase en 48-72h." />
+  <style>
+    :root { --bg:#0f172a; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --brand:#d97706; --brand2:#f59e0b; --ok:#15803d; --err:#b91c1c; --info:#1e40af; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:linear-gradient(135deg,#0f172a,#334155); color:var(--ink); min-height:100vh; display:grid; place-items:center; padding:16px; }
+    main { width:min(540px,100%); background:var(--card); border-radius:20px; box-shadow:0 20px 60px rgba(0,0,0,.28); overflow:hidden; }
+    header { padding:22px 24px 14px; background:#fff7ed; border-bottom:1px solid #fed7aa; }
+    .badge { display:inline-block; background:var(--brand); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; letter-spacing:.04em; }
+    h1 { margin:10px 0 6px; font-size:22px; line-height:1.18; }
+    .sub { color:var(--muted); margin:0; font-size:13px; }
+    .wrap { padding:18px 24px 22px; }
+    label { display:block; font-weight:700; margin:14px 0 6px; font-size:13px; }
+    label:first-of-type { margin-top:0; }
+    .opts { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:8px; }
+    button.opt { background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:10px 12px; font-size:13px; cursor:pointer; text-align:left; transition:all .12s; font-weight:600; }
+    button.opt.selected { border-color:var(--brand); background:#fff7ed; box-shadow:0 0 0 2px #fed7aa; }
+    button.opt:focus-visible { outline:3px solid var(--brand); outline-offset:1px; }
+    input, select { width:100%; border:1px solid #cbd5e1; border-radius:10px; padding:11px; font-size:15px; }
+    input:focus-visible, select:focus-visible { outline:3px solid var(--brand); outline-offset:1px; border-color:var(--brand); }
+    input.invalid { border-color:var(--err); background:#fef2f2; }
+    .err { color:var(--err); font-size:12px; margin-top:4px; min-height:14px; }
+    .pricing { display:grid; grid-template-columns:1fr; gap:10px; margin-top:14px; }
+    .pricing > div { padding:14px; border-radius:12px; border:1px solid; }
+    .pem { background:#eff6ff; border-color:#bfdbfe; }
+    .hon { background:#ecfdf5; border-color:#bbf7d0; }
+    .timing { background:#fef3c7; border-color:#fde68a; }
+    .pricing .label { font-size:11px; text-transform:uppercase; letter-spacing:.06em; font-weight:700; color:var(--muted); }
+    .pricing .price { display:block; font-size:24px; font-weight:900; letter-spacing:-.02em; margin-top:4px; }
+    .pem .price { color:var(--info); }
+    .hon .price { color:var(--ok); }
+    .timing .price { font-size:18px; color:var(--brand); }
+    .pricing .note { font-size:11px; color:var(--muted); margin-top:4px; }
+    .rgpd { display:flex; gap:8px; align-items:flex-start; margin-top:14px; font-size:12px; color:var(--muted); line-height:1.45; }
+    .rgpd input { width:auto; margin-top:2px; flex-shrink:0; }
+    .cta { width:100%; margin-top:16px; background:var(--brand); color:white; border:0; border-radius:12px; padding:14px; font-weight:800; font-size:16px; cursor:pointer; transition:background .12s; }
+    .cta:hover:not(:disabled) { background:var(--brand2); }
+    .cta:disabled { background:#94a3b8; cursor:not-allowed; }
+    .disclaimer { font-size:11px; color:var(--muted); margin-top:12px; line-height:1.5; padding:10px; background:#f8fafc; border-radius:8px; }
+    .disclaimer strong { color:var(--ink); }
+    .proto { background:#fef3c7; color:#92400e; font-size:11px; padding:6px 10px; border-radius:6px; margin-top:8px; display:inline-block; font-weight:700; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="badge">L8 v13 · PROTOTIPO</span>
+    <h1>Auditoría técnica de tu reforma</h1>
+    <p class="sub">Honorarios orientativos MF3 · Valladolid y CyL · 11-15% PEM</p>
+  </header>
+  <div class="wrap">
+    <label for="tipo">Tipo de reforma</label>
+    <div class="opts" id="tipo-opts" role="radiogroup" aria-label="Tipo de reforma">
+      <button type="button" class="opt selected" data-value="integral" role="radio" aria-checked="true" tabindex="0">Integral vivienda</button>
+      <button type="button" class="opt" data-value="kitchen" role="radio" aria-checked="false" tabindex="-1">Cocina</button>
+      <button type="button" class="opt" data-value="bath" role="radio" aria-checked="false" tabindex="-1">Baño</button>
+      <button type="button" class="opt" data-value="local" role="radio" aria-checked="false" tabindex="-1">Local comercial</button>
+    </div>
+
+    <label for="sqm">Superficie (m²)</label>
+    <input id="sqm" type="number" min="2" max="400" step="1" value="80" aria-describedby="sqm-err" />
+    <div class="err" id="sqm-err" role="alert" aria-live="polite"></div>
+
+    <label for="prov">Provincia (CyL)</label>
+    <select id="prov" aria-describedby="prov-info">
+      <option value="valladolid">Valladolid</option>
+      <option value="burgos">Burgos</option>
+      <option value="leon">León</option>
+      <option value="palencia">Palencia</option>
+      <option value="salamanca">Salamanca</option>
+      <option value="segovia">Segovia</option>
+      <option value="soria">Soria</option>
+      <option value="avila">Ávila</option>
+      <option value="zamora">Zamora</option>
+    </select>
+    <div class="err" id="prov-info" style="font-size:11px">Baremo 변iación CyL ≥15% entre Valladolid y Soria rural. Pendiente calibración por provincia.</div>
+
+    <label for="calidad">Calidad de acabados</label>
+    <div class="opts" id="calidad-opts" role="radiogroup" aria-label="Calidad de acabados">
+      <button type="button" class="opt selected" data-value="media" role="radio" aria-checked="true" tabindex="0">Media</button>
+      <button type="button" class="opt" data-value="alta" role="radio" aria-checked="false" tabindex="-1">Alta / diseño</button>
+    </div>
+
+    <label for="complejidad">Complejidad</label>
+    <div class="opts" id="complejidad-opts" role="radiogroup" aria-label="Complejidad técnica">
+      <button type="button" class="opt selected" data-value="estandar" role="radio" aria-checked="true" tabindex="0">Estándar</button>
+      <button type="button" class="opt" data-value="patrimonio" role="radio" aria-checked="false" tabindex="-1">Patrimonio</button>
+      <button type="button" class="opt" data-value="demolicion" role="radio" aria-checked="false" tabindex="-1">Demolición parcial</button>
+    </div>
+
+    <div class="pricing" id="pricing" style="display:none" aria-live="polite">
+      <div class="pem">
+        <span class="label">PEM estimado (cliente paga a industriales)</span>
+        <span class="price" id="pem">—</span>
+        <div class="note">No incluye honorarios MF3. Coste mano de obra + materiales.</div>
+      </div>
+      <div class="hon">
+        <span class="label">Honorarios MF3 (11-15% PEM)</span>
+        <span class="price" id="hon">—</span>
+        <div class="note">Dirección de obra delegada + auditoría de fase + veredicto pagar/parcial/no pagar.</div>
+      </div>
+      <div class="timing">
+        <span class="label">Tiempo de auditoría</span>
+        <span class="price">48-72 h por fase</span>
+        <div class="note">Informe técnico Plantilla v0.1 (8 bloques + veredicto binario).</div>
+      </div>
+    </div>
+
+    <label for="email" style="margin-top:18px">Email para enviarte la estimación detallada</label>
+    <input id="email" type="email" placeholder="tu@email.com" autocomplete="email" aria-describedby="email-err" />
+    <div class="err" id="email-err" role="alert" aria-live="polite"></div>
+
+    <label class="rgpd">
+      <input id="rgpd" type="checkbox" aria-describedby="privacy-title" />
+      <span>He leído la información básica y consiento que Mediterranean Fusion SL me contacte para esta solicitud.</span>
+    </label>
+
+    <button class="cta" id="cta" disabled>Solicitar mi auditoría de fase</button>
+    <p class="proto">⚠️ PROTOTIPO zona 🟢 — sin deploy, sin captura real. Demo interna.</p>
+    <div class="disclaimer">
+      <strong>Qué NO es esta calculadora:</strong> No es presupuesto cerrado. El cliente contrata industriales (fontanero, electricista, albañil) directamente. MF3 cobra honorarios por dirección de obra delegada + auditoría de fase. Esta estimación NO equivale a un acta LOE (Ley de Ordenación de la Edificación) ni a un certificado final de obra. El informe MF3 es una recomendación técnica privada entre las partes.
+    </div>
+  </div>
+</main>
+<script>
+'use strict';
+const state = { tipo:'integral', calidad:'media', complejidad:'estandar', m2:80, prov:'valladolid', rgpd:false, emOk:false, sqmOk:true };
+
+// --- baremo L13 v2 + L8 v3 (zona 🟢, sin calibración con histórico MF3) ---
+// PEM (€) ≈ m² × €/m² según tipo × calidad
+const PEM_M2 = {
+  integral: { media:[460,650], alta:[800,1000] },
+  kitchen:  { media:[450,900], alta:[900,1500] }, // €/m² cocina
+  bath:     { media:[400,800], alta:[800,1200] }, // €/m² baño
+  local:    { media:[350,600], alta:[600,900] }
+};
+// Honorarios MF3: 11-15% PEM según complejidad
+const HONORARIOS = { estandar:[0.11,0.13], patrimonio:[0.13,0.15], demolicion:[0.13,0.15] };
+
+function calc(){
+  const m = state.m2;
+  if(m < 2 || m > 400) return null;
+  const key = state.calidad === 'alta' ? 'alta' : 'media';
+  const pemM2 = PEM_M2[state.tipo][key];
+  const pemMin = Math.round(pemM2[0]*m);
+  const pemMax = Math.round(pemM2[1]*m);
+  const h = HONORARIOS[state.complejidad];
+  const honMin = Math.round(pemMin*h[0]);
+  const honMax = Math.round(pemMax*h[1]);
+  return { pem:[pemMin, pemMax], hon:[honMin, honMax] };
+}
+
+function fmt(n){ return n.toLocaleString('es-ES') + ' €'; }
+function fmtRange(a){ return a[0].toLocaleString('es-ES') + '–' + a[1].toLocaleString('es-ES') + ' €'; }
+
+function update(){
+  const c = calc();
+  if(!c){ document.getElementById('pricing').style.display='none'; return; }
+  document.getElementById('pem').textContent = fmtRange(c.pem);
+  document.getElementById('hon').textContent = fmtRange(c.hon);
+  document.getElementById('pricing').style.display='grid';
+  document.getElementById('cta').disabled = !(state.sqmOk && state.emOk && state.rgpd);
+}
+
+// --- radio groups (mismo patrón APG que v5) ---
+function bindRadiogroup(containerId, key){
+  const buttons = document.querySelectorAll('#'+containerId+' .opt');
+  const select = (button, moveFocus) => {
+    buttons.forEach(x => {
+      const active = x===button;
+      x.classList.toggle('selected', active);
+      x.setAttribute('aria-checked', String(active));
+      x.tabIndex = active ? 0 : -1;
+      if(active && moveFocus) x.focus();
+    });
+    state[key] = button.dataset.value;
+    update();
+  };
+  buttons.forEach((b,i) => {
+    b.onclick = () => select(b);
+    b.onkeydown = (e) => {
+      const fwd = e.key==='ArrowRight'||e.key==='ArrowDown';
+      const bwd = e.key==='ArrowLeft'||e.key==='ArrowUp';
+      if(!fwd && !bwd) return;
+      e.preventDefault();
+      const next = (i + (fwd?1:-1) + buttons.length) % buttons.length;
+      select(buttons[next], true);
+    };
+  });
+}
+bindRadiogroup('tipo-opts', 'tipo');
+bindRadiogroup('calidad-opts', 'calidad');
+bindRadiogroup('complejidad-opts', 'complejidad');
+
+// --- m² ---
+const sqm = document.getElementById('sqm');
+const sqmErr = document.getElementById('sqm-err');
+function validateSqm(){
+  const v = parseFloat(sqm.value);
+  if(!v || v<2){ sqm.classList.add('invalid'); sqmErr.textContent='Mínimo 2 m²'; state.sqmOk=false; update(); return false; }
+  if(v>400){ sqm.classList.add('invalid'); sqmErr.textContent='Máximo 400 m² (¿es un edificio? hablemos)'; state.sqmOk=false; update(); return false; }
+  sqm.classList.remove('invalid'); sqmErr.textContent=''; state.m2=v; state.sqmOk=true; update(); return true;
+}
+sqm.addEventListener('input', validateSqm);
+
+// --- provincia ---
+document.getElementById('prov').addEventListener('change', (e) => { state.prov = e.target.value; });
+
+// --- email ---
+const email = document.getElementById('email');
+const emailErr = document.getElementById('email-err');
+function validateEmail(){
+  const v = email.value.trim();
+  const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  if(!ok && v.length>0){ email.classList.add('invalid'); emailErr.textContent='Email no válido'; state.emOk=false; update(); return false; }
+  if(v.length===0){ email.classList.remove('invalid'); emailErr.textContent=''; state.emOk=false; update(); return false; }
+  email.classList.remove('invalid'); emailErr.textContent=''; state.emOk=true; update(); return true;
+}
+email.addEventListener('input', validateEmail);
+
+// --- RGPD ---
+document.getElementById('rgpd').addEventListener('change', (e) => { state.rgpd = e.target.checked; update(); });
+
+// --- CTA (placeholder) ---
+document.getElementById('cta').addEventListener('click', () => {
+  alert('Prototipo v13 — sin captura real. Si OK Dani, integrar Stub v11 (Cloudflare Workers).');
+});
+
+// init
+update();
+</script>
+</body>
+</html>
