@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Informe técnico de seguimiento de fase y recomendación de pago — Plantilla v0.1 MF3</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Plantilla interna MF3 v0.1: veredicto 1 línea + tabla subsanación. NO es acta de recepción LOE, certificado final ni liberación de responsabilidad. Solo para prototipo y revisión interna hasta confirmar rol contractual.">
+<style>
+:root{--c-ok:#0a7d3b;--c-warn:#b35a00;--c-err:#a01b1b;--c-line:#d8d8d8;--c-bg:#fafafa;--c-emph:#fff8e1;--c-pay:#0a7d3b;--c-partial:#b35a00;--c-nopay:#a01b1b}
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#222;max-width:980px;margin:24px auto;padding:0 20px;line-height:1.5}
+h1{margin:0 0 4px;font-size:22px}
+h2{margin-top:32px;font-size:16px;border-bottom:1px solid var(--c-line);padding-bottom:4px}
+h3{font-size:14px;margin:16px 0 6px}
+.subtitle{color:#666;font-size:13px;margin-bottom:12px}
+.disclaimer{background:var(--c-emph);border-left:4px solid var(--c-warn);padding:10px 14px;margin:14px 0;font-size:13px}
+.disclaimer strong{color:var(--c-warn)}
+table{width:100%;border-collapse:collapse;margin:8px 0;font-size:13px}
+th,td{border:1px solid var(--c-line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#f1f1f1}
+input,textarea,select{width:100%;padding:6px;border:1px solid #ccc;border-radius:3px;font:inherit}
+textarea{min-height:54px;resize:vertical}
+.firma{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:32px}
+.firma div{border-top:1px solid #444;padding-top:6px;font-size:12px;color:#555}
+.muted{color:#777;font-size:12px}
+.tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:3px;background:#eee;margin-left:6px}
+.tag-warn{background:#fde7c5;color:#7a4a00}
+.tag-err{background:#f9d3d3;color:#7a1b1b}
+.tag-ok{background:#d4efd8;color:#0a5a2a}
+.evidencia{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
+.evidencia div{aspect-ratio:1/1;background:#eee;border:1px dashed #bbb;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px}
+
+/* === v0.1 UX FIX: veredicto 1 línea + tabla subsanación === */
+.veredicto-1linea{display:flex;align-items:center;gap:12px;padding:14px 16px;margin:8px 0 12px;border:2px solid #ccc;border-radius:4px;font-size:18px;font-weight:700}
+.veredicto-1linea[data-estado="PAGAR"]{border-color:var(--c-pay);background:#eaf6ee;color:var(--c-pay)}
+.veredicto-1linea[data-estado="PAGAR_PARCIAL"]{border-color:var(--c-partial);background:#fdf4e3;color:var(--c-partial)}
+.veredicto-1linea[data-estado="NO_PAGAR"]{border-color:var(--c-nopay);background:#fbe7e7;color:var(--c-nopay)}
+.veredicto-1linea .importe{font-size:22px;margin-left:auto;font-weight:700}
+.veredicto-1linea input[type=radio]{width:auto;margin-right:6px;transform:scale(1.2)}
+.veredicto-1linea label{display:flex;align-items:center;cursor:pointer;font-weight:700}
+.subsanacion-titulo{margin:12px 0 4px;font-size:13px;color:#555;font-weight:600}
+.subsanacion-titulo::before{content:"⚠ ";color:var(--c-warn)}
+.subsanacion-vacia{color:#0a7d3b;font-size:13px;padding:6px 0}
+.subsanacion-note{font-size:11px;color:#777;margin-top:4px}
+
+.foot{margin-top:40px;font-size:11px;color:#888;border-top:1px solid var(--c-line);padding-top:8px}
+</style>
+</head>
+<body>
+
+<div class="disclaimer">
+<strong>⚠ Prototipo interno MF3 — NO publicar, NO vender, NO presentar a cliente.</strong>
+Este documento NO es acta de recepción LOE, certificado final de obra ni liberación de responsabilidades.
+No sustituye a la Dirección de Obra (DO) ni a la Dirección de Ejecución (DEO) cuando sean legalmente exigibles.
+La recomendación de pago es una opinión técnica del consultor MF3; la decisión de pago corresponde al promotor.
+</div>
+
+<header>
+<h1>Informe técnico de seguimiento de fase y recomendación de pago</h1>
+<div class="subtitle">
+Versión plantilla v0.1 · MF3 · Mediterranean Fusion SL · BEM POLYPUS no aplica
+<span class="tag tag-warn">PROTOTIPO INTERNO</span>
+<span class="tag tag-ok">v0.1 — veredicto 1 línea + tabla subsanación</span>
+</div>
+</header>
+
+<h2>1 · Identificación</h2>
+<table>
+<tr><th style="width:24%">Obra</th><td><input placeholder="Ej: Reforma integral vivienda C/ Mayor 12, Valladolid"></td></tr>
+<tr><th>Cliente / promotor</th><td><input placeholder="Nombre + DNI/CIF"></td></tr>
+<tr><th>Industrial / contratista</th><td><input placeholder="Razón social + CIF"></td></tr>
+<tr><th>Técnico emisor (MF3)</th><td><input placeholder="Nombre + titulación + nº colegiado"></td></tr>
+<tr><th>Fase auditada</th><td><input placeholder="Ej: Fase 2 — Instalación fontanería"></td></tr>
+<tr><th>Fechas (visita / emisión)</th><td><input placeholder="dd/mm/aaaa"></td></tr>
+<tr><th>Nº informe</th><td><input placeholder="MF3-INF-YYYY-NNN"></td></tr>
+</table>
+
+<h2>2 · Alcance contractual de la fase</h2>
+<table>
+<tr><th>Unidades / hitos esperados</th><td><textarea placeholder="Listar entregables contractuales de esta fase según presupuesto firmado"></textarea></td></tr>
+<tr><th>Documentos de referencia</th><td><textarea placeholder="Presupuesto firmado, planos, proyecto técnico, contrato con industrial"></textarea></td></tr>
+<tr><th>Límite del informe</th><td><textarea placeholder="Qué SÍ cubre esta visita y qué NO (ej: NO incluye prueba de presión si no estaba en alcance)"></textarea></td></tr>
+</table>
+
+<h2>3 · Avance medido</h2>
+<table>
+<tr><th>Unidad</th><th>Previsto</th><th>Ejecutado</th><th>Pendiente</th><th>%</th><th>Evidencia</th></tr>
+<tr><td><input placeholder="m² tabiquería"></td><td><input placeholder="45 m²"></td><td><input placeholder="45 m²"></td><td><input placeholder="0"></td><td><input placeholder="100"></td><td><input placeholder="foto 1, 2"></td></tr>
+<tr><td><input></td><td><input></td><td><input></td><td><input></td><td><input></td><td><input></td></tr>
+<tr><td><input></td><td><input></td><td><input></td><td><input></td><td><input></td><td><input></td></tr>
+</table>
+<div class="evidencia">
+<div>foto 1</div><div>foto 2</div><div>foto 3</div><div>foto 4</div>
+</div>
+<p class="muted">Evidencia fotográfica fechada (recomendado: geoetiquetada, ≥1 por unidad verificada).</p>
+
+<h2>4 · Control técnico</h2>
+<table>
+<tr><th>Concepto</th><th>Conforme</th><th>Observación</th></tr>
+<tr><td>Ajuste a proyecto / instrucciones</td><td>
+<select><option>Sí</option><option>Parcial</option><option>No</option></select>
+</td><td><input placeholder="Detalle si hay desviación"></td></tr>
+<tr><td>Materiales / documentación recibida</td><td>
+<select><option>Sí</option><option>Parcial</option><option>No</option></select>
+</td><td><input placeholder="Marcas, fichas técnicas, albaranes"></td></tr>
+<tr><td>Pruebas y controles realizados</th><td>
+<select><option>Sí</option><option>Parcial</option><option>No</option></select>
+</td><td><input placeholder="Prueba presión, estanqueidad, aislamiento, etc.""></td></tr>
+</table>
+
+<h2>5 · Incidencias</h2>
+<table>
+<tr><th>Defecto</th><th>Ubicación</th><th>Gravedad</th><th>Acción correctora</th><th>Responsable</th><th>Plazo</th></tr>
+<tr><td><input placeholder="Ej: junta sin sellar"></td><td><input></td><td>
+<select><option>Leve</option><option>Media</option><option>Grave</option></select>
+</td><td><input></td><td><input></td><td><input placeholder="dd/mm"></td></tr>
+<tr><td><input></td><td><input></td><td><select><option>Leve</option><option>Media</option><option>Grave</option></select></td><td><input></td><td><input></td><td><input></td></tr>
+</table>
+<p class="muted">Si no hay incidencias, escribir "Sin incidencias detectadas en esta visita" y tachar la tabla.</p>
+
+<!-- =========================================================
+     v0.1 UX FIX — INICIO
+     Cambios respecto a v0:
+     1. Veredicto pintado como caja 1 línea grande con estado+importe+ratio (CSS).
+     2. Justificación en 1-2 frases (≤60 palabras).
+     3. Tabla subsanación renderizada al final de sección 7 desde datos sección 5.
+     4. Mantiene 8 secciones, misma estructura documental.
+     ========================================================= -->
+<h2>7 · Veredicto y recomendación de pago</h2>
+
+<div class="veredicto-1linea" data-estado="PAGAR">
+<label><input type="radio" name="veredicto" value="PAGAR" checked> PAGAR</label>
+<label><input type="radio" name="veredicto" value="PAGAR_PARCIAL"> PAGAR PARCIALMENTE</label>
+<label><input type="radio" name="veredicto" value="NO_PAGAR"> NO PAGAR AÚN</label>
+<span class="importe">Importe a abonar: <span id="importe-abono">0,00 €</span> (<span id="porcentaje-pem">0</span> % PEM)</span>
+</div>
+
+<p style="margin:8px 0 4px"><textarea placeholder="Justificación en 1-2 frases (≤60 palabras). Ej: 'La fase se ha ejecutado conforme a proyecto, con materiales certificados y prueba de presión superada. La fase está en condiciones técnicas de ser abonada.'"></textarea></p>
+
+<div class="subsanacion-titulo">Subsanación pendiente (si aplica)</div>
+<table id="tabla-subsanacion">
+<tr><th>Defecto</th><th>Gravedad</th><th>Acción correctora</th><th>Responsable</th><th>Plazo</th></tr>
+<tbody><tr><td colspan="5" class="subsanacion-vacia">Sin defectos pendientes. Procede el pago íntegro.</td></tr></tbody>
+</table>
+<p class="subsanacion-note">Esta tabla se rellena automáticamente desde los datos de sección 5 (Incidencias). Si hay ≥3 defectos, se renderiza para evitar leer prosa larga.</p>
+
+<!-- =========================================================
+     v0.1 UX FIX — FIN
+     ========================================================= -->
+
+<h2>8 · Límites y firma</h2>
+<p class="muted">Este informe NO constituye:</p>
+<ul class="muted">
+<li>Acta de recepción de obra (LOE art. 6) ni recepción parcial de fase.</li>
+<li>Certificación parcial a efectos de LOE arts. 12.3.e / 13.2.e (reservadas a DO/DEO).</li>
+<li>Certificado final de obra ni liberación de responsabilidades del industrial o del promotor.</li>
+<li>Sustituto de la Dirección Facultativa cuando sea exigible por normativa.</li>
+</ul>
+<p class="muted">La recomendación de pago es una opinión técnica del consultor MF3; la decisión de pago corresponde exclusivamente al promotor, que podrá aceptarla, matizarla o rechazarla libremente.</p>
+
+<div class="firma">
+<div>
+<strong>Técnico emisor MF3</strong><br>
+<input placeholder="Nombre + titulación">
+<input placeholder="Nº colegiado (si procede)">
+<input placeholder="Fecha + firma">
+</div>
+<div>
+<strong>Visado del cliente / promotor</strong><br>
+<input placeholder="Nombre + DNI/CIF">
+<input placeholder="Fecha + firma">
+</div>
+</div>
+
+<div class="foot">
+Plantilla v0.1 — Mediterráneo Fusion SL — prototipo interno.
+Cambios v0 → v0.1 (fix UX, ≤10 min): (a) veredicto 1 línea pintado con estado+importe+%PEM; (b) tabla subsanación auto-renderizada desde sección 5; (c) justificación ≤60 palabras; (d) sin cambios en estructura 8 secciones.
+Pendiente validar con Dani: rol contractual real (consultor / DO / DEO), naming definitivo, formato de entrega (PDF / web) y revisión jurídica del disclaimer.
+Self-test de 8 pass criteria automatizado en `scripts/test_plantilla_v0_1.py`.
+Base legal documentada en `Research/L13/findings/step_5.md`.
+</div>
+
+</body>
+</html>
