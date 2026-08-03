@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L7 v75 · Image Optimization Opportunities — Holding mediterranean-fusion</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, system-ui, "Segoe UI", sans-serif; background: #0a0a0f; color: #e0e0e0; padding: 24px; line-height: 1.5; }
+  h1 { color: #00d4aa; font-size: 28px; margin-bottom: 6px; }
+  h2 { color: #00d4aa; font-size: 20px; margin: 30px 0 12px; border-bottom: 1px solid #333; padding-bottom: 6px; }
+  h3 { color: #fff; font-size: 16px; margin: 18px 0 8px; }
+  .meta { color: #888; font-size: 13px; margin-bottom: 24px; }
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 6px; }
+  .b-red { background: #ff4444; color: white; }
+  .b-orange { background: #ffaa00; color: black; }
+  .b-green { background: #27ae60; color: white; }
+  .b-blue { background: #3498db; color: white; }
+  .kpi-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 20px 0; }
+  .kpi { background: #1a1a24; border-radius: 12px; padding: 18px 20px; flex: 1; min-width: 180px; border: 1px solid #2a2a3a; }
+  .kpi-v { font-size: 32px; color: #00d4aa; font-weight: bold; }
+  .kpi-l { color: #888; font-size: 12px; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; background: #1a1a24; border-radius: 8px; overflow: hidden; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #2a2a3a; font-size: 13px; }
+  th { background: #14141c; color: #00d4aa; font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:hover td { background: #1f1f2e; }
+  .url { color: #66aaff; font-family: ui-monospace, "SF Mono", monospace; font-size: 11px; word-break: break-all; }
+  .opt { background: #1a1a24; border-left: 4px solid #00d4aa; padding: 16px 20px; border-radius: 8px; margin: 12px 0; }
+  .opt-B { border-left-color: #ffaa00; }
+  .opt-C { border-left-color: #ff4444; }
+  .opt h3 { margin-top: 0; }
+  .opt ul { padding-left: 20px; margin-top: 8px; color: #ccc; font-size: 14px; }
+  .opt ul li { margin: 4px 0; }
+  .vote { display: inline-block; background: #00d4aa; color: #000; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+  .bar { height: 8px; background: #2a2a3a; border-radius: 4px; overflow: hidden; margin: 4px 0; }
+  .bar-fill { height: 100%%; background: linear-gradient(90deg, #ff4444, #ffaa00, #00d4aa); }
+  .footer { color: #666; font-size: 12px; margin-top: 40px; padding-top: 20px; border-top: 1px solid #333; }
+  a { color: #00d4aa; }
+  code { background: #14141c; padding: 1px 6px; border-radius: 3px; font-size: 12px; color: #ffaa00; }
+</style>
+</head>
+<body>
+<h1>🖼️ L7 v75 · Image Optimization Opportunities</h1>
+<div class="meta">
+  <strong>Holding:</strong> mediterranean-fusion (mf3 · liv-ing · dindon · terracotta) ·
+  <strong>Fecha:</strong> 2026-08-03 16:06 CEST ·
+  <strong>Source:</strong> L7 v72 asset audit + L7 v73 format detection (refresh 30-jul-2026) ·
+  <strong>Línea:</strong> L7 SEO local CyL
+</div>
+
+<div class="kpi-row">
+  <div class="kpi"><div class="kpi-v">5.93 MB</div><div class="kpi-l">Peso actual top5 imgs &gt;100KB × 4 marcas</div></div>
+  <div class="kpi"><div class="kpi-v">−1.94 MB</div><div class="kpi-l">Ahorro WebP (−32.6%)</div></div>
+  <div class="kpi"><div class="kpi-v">−2.63 MB</div><div class="kpi-l">Ahorro AVIF (−44.3%)</div></div>
+  <div class="kpi"><div class="kpi-v">2.68 MB</div><div class="kpi-l">Solo 2 archivos liv-ing = 60% del ahorro</div></div>
+</div>
+
+<h2>1. Ranking por marca (top5 imgs &gt;100KB)</h2>
+<table>
+  <thead>
+    <tr><th>Marca</th><th class="num">Imgs</th><th class="num">Total KB</th><th class="num">WebP KB</th><th class="num">AVIF KB</th><th class="num">Ahorro WebP</th><th class="num">Ahorro AVIF</th><th>Estado</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>liv-ing.com</strong></td>
+      <td class="num">3</td><td class="num">2 800.2</td><td class="num">1 615.1</td><td class="num">1 212.7</td>
+      <td class="num">−1.16 MB <span class="badge b-green">−42.3%</span></td>
+      <td class="num">−1.55 MB <span class="badge b-green">−56.7%</span></td>
+      <td>🔴 peor (2 imgs legacy)</td>
+    </tr>
+    <tr>
+      <td><strong>mf3.es</strong></td>
+      <td class="num">5</td><td class="num">1 451.4</td><td class="num">1 088.6</td><td class="num">943.4</td>
+      <td class="num">−0.35 MB <span class="badge b-orange">−25.0%</span></td>
+      <td class="num">−0.50 MB <span class="badge b-orange">−35.0%</span></td>
+      <td>🟠 todo JPEG legacy</td>
+    </tr>
+    <tr>
+      <td><strong>terracottavalladolid.com</strong></td>
+      <td class="num">4</td><td class="num">1 209.8</td><td class="num">907.4</td><td class="num">786.4</td>
+      <td class="num">−0.30 MB <span class="badge b-orange">−25.0%</span></td>
+      <td class="num">−0.42 MB <span class="badge b-orange">−35.0%</span></td>
+      <td>🟠 todo JPEG legacy</td>
+    </tr>
+    <tr>
+      <td><strong>dindonliving.com</strong></td>
+      <td class="num">3</td><td class="num">612.1</td><td class="num">479.8</td><td class="num">440.0</td>
+      <td class="num">−0.13 MB <span class="badge b-green">−21.6%</span></td>
+      <td class="num">−0.17 MB <span class="badge b-green">−28.1%</span></td>
+      <td>🟢 ShortPixel activo (4/5 ya WebP)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>2. Top ofensors — los 7 archivos que más pesan</h2>
+<table>
+  <thead>
+    <tr><th>Marca</th><th>Archivo</th><th class="num">KB</th><th class="num">WebP est.</th><th class="num">AVIF est.</th><th>Formato real</th><th>Acción</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>liv-ing</td>
+      <td class="url">/images/mapa.gif</td>
+      <td class="num">1 562.6</td><td class="num">937.6</td><td class="num">703.2</td>
+      <td>GIF89 (animado?)</td>
+      <td>🔴 Convertir a WebP estático (validar UX antes)</td>
+    </tr>
+    <tr>
+      <td>liv-ing</td>
+      <td class="url">/images/img_sec3.png</td>
+      <td class="num">1 120.1</td><td class="num">560.0</td><td class="num">392.0</td>
+      <td>PNG</td>
+      <td>🔴 PNG full-color → WebP (-50%)</td>
+    </tr>
+    <tr>
+      <td>mf3</td>
+      <td class="url">/img/home/Estudio2023.jpg</td>
+      <td class="num">739.5</td><td class="num">554.6</td><td class="num">480.7</td>
+      <td>JPEG</td>
+      <td>🟠 JPEG → WebP (-25%) o AVIF (-35%)</td>
+    </tr>
+    <tr>
+      <td>terracotta</td>
+      <td class="url">/Terracotta_Sala_3.jpg</td>
+      <td class="num">525.4</td><td class="num">394.0</td><td class="num">341.5</td>
+      <td>JPEG</td>
+      <td>🟠 JPEG → WebP (-25%)</td>
+    </tr>
+    <tr>
+      <td>terracotta</td>
+      <td class="url">/Spence-183-1.jpg</td>
+      <td class="num">434.6</td><td class="num">326.0</td><td class="num">282.5</td>
+      <td>JPEG</td>
+      <td>🟠 JPEG → WebP (-25%)</td>
+    </tr>
+    <tr>
+      <td>mf3</td>
+      <td class="url">/0000000003.jpg</td>
+      <td class="num">245.3</td><td class="num">184.0</td><td class="num">159.4</td>
+      <td>JPEG</td>
+      <td>🟢 batch plugin</td>
+    </tr>
+    <tr>
+      <td>dindon</td>
+      <td class="url">/Banner1-1920x800.png</td>
+      <td class="num">264.7</td><td class="num">132.3</td><td class="num">92.6</td>
+      <td>PNG</td>
+      <td>🟢 PNG → WebP (-50%)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>3. Hallazgos transversales</h2>
+<ul style="padding-left: 20px; color: #ccc;">
+  <li><strong>liv-ing.com = peor caso aislado</strong>: 2 archivos legacy (mapa.gif + img_sec3.png) suman <strong>2.68 MB</strong> = <strong>60% del ahorro total del holding</strong>. Convertir esos 2 = <strong>~1.2 MB savings en 1 commit</strong>.</li>
+  <li><strong>mf3 + terracotta</strong>: 9/9 imágenes legacy JPEG/PNG — sin plugin ShortPixel/Imagify. Conversión batch beneficiaría a ambas.</li>
+  <li><strong>dindonliving</strong>: plugin ShortPixel activo confirmado (4/5 ya WebP). Único residuo PNG = Banner1. <strong>Es la marca mejor optimizada</strong> a pesar de tener el HTML más pesado (theme Movedo, 505 KB).</li>
+  <li><strong>Caveat GIF animado</strong>: <code>mapa.gif</code> es GIF89a — Google sugiere que puede ser animado (clickable o rotador). <strong>Validar UX en navegador antes de convertir a WebP estático</strong>: si es animación, requiere WebP animado o MP4.</li>
+</ul>
+
+<h2>4. Opciones de actuación (decisión Dani · 🟡)</h2>
+
+<div class="opt">
+  <h3>🟢 Opción A — Solo 2 liv-ing (~10 min, 1.16 MB)</h3>
+  <p style="color: #ccc;">Convertir a WebP <code>mapa.gif</code> + <code>img_sec3.png</code> en Hosting o WP-admin. Sustituir URLs. Coste: 10 min Dani. ROI: <strong>60% del savings total del holding</strong> en 1 commit.</p>
+  <ul>
+    <li>✅ ROI máximo por minuto invertido</li>
+    <li>✅ Valida pipeline antes de escalar</li>
+    <li>⚠️ <strong>Riesgo UX</strong>: <code>mapa.gif</code> puede ser animado — validar manualmente antes de estático</li>
+  </ul>
+</div>
+
+<div class="opt opt-B">
+  <h3>🟠 Opción B — Batch WebP 12 imgs (~30-45 min, 1.94 MB)</h3>
+  <p style="color: #ccc;">Plugin ShortPixel/Imagify en mf3 + terracotta + reemplazar las 2 liv-ing. Configuración única ~15 min + procesado 24-48h en background. Coste: 30-45 min Dani hoy + esperar.</p>
+  <ul>
+    <li>✅ Cubre todas las marcas en 1 ciclo</li>
+    <li>✅ Pipeline recurrente (todo upload nuevo se optimiza)</li>
+    <li>⚠️ Requiere plugin de pago en algunas redes o servicio attachment</li>
+  </ul>
+</div>
+
+<div class="opt opt-C">
+  <h3>🔴 Opción C — AVIF + &lt;picture&gt; fallback (~2-4 h, 2.63 MB)</h3>
+  <p style="color: #ccc;">Convertir a AVIF + implementar <code>&lt;picture&gt;</code> con fallback WebP + JPEG legacy. Máximo savings pero requiere refactor markup en cada home.</p>
+  <ul>
+    <li>✅ Máximo savings (−44.3%)</li>
+    <li>✅ Moderno / future-proof</li>
+    <li>⚠️ 2-4 h Dani + riesgo regresión si no se prueba</li>
+  </ul>
+</div>
+
+<p style="margin: 20px 0;">Mi voto: <span class="vote">A → B escalado</span>. Primero A (validar GIF animado + arrancar producción real), si confirma escalado a B.</p>
+
+<h2>5. Impacto esperado (asunción conservadora sin PSI real)</h2>
+<table>
+  <thead>
+    <tr><th>Marca</th><th class="num">HTML KB actual</th><th class="num">TTFB</th><th class="num">CWV grade</th><th class="num">LCP estimado</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>liv-ing.com</td><td class="num">26.3</td><td class="num">0.12s</td><td>🟢 rápido</td><td class="num">~1.8s</td></tr>
+    <tr><td>mf3.es</td><td class="num">16.2</td><td class="num">0.12s</td><td>🟢 rápido</td><td class="num">~1.5s</td></tr>
+    <tr><td>terracotta</td><td class="num">135.9</td><td class="num">0.14s</td><td>🟠 medio</td><td class="num">~2.5s</td></tr>
+    <tr><td>dindonliving</td><td class="num">505.3</td><td class="num">0.39s</td><td>🔴 outlier 5×</td><td class="num">~3.5s</td></tr>
+  </tbody>
+</table>
+<p style="color: #888; font-size: 13px; margin-top: 8px;">Nota: estimación LCP from v71 CWV-proxy + savings. Sin PSI real (rate-limited + CrUX requiere API key) — para números exactos abrir PSI desde navegador de Dani.</p>
+
+<h2>6. Lo que NO está en este panel</h2>
+<ul style="padding-left: 20px; color: #888;">
+  <li>Verificación real HTTP 200 post-conversión (espera decisión Dani)</li>
+  <li>Sin alt-text (cross-holding 73%: liv-ing 100%, terracotta 75%, dindon 73% — ver L7 v74-v76)</li>
+  <li>Sin Gzip/Brotli HTML (5/5 sitios sin content-encoding en /index — ROI alto hosting config)</li>
+  <li>Sin cache-control max-age (0/5 sitios — segunda palanca hosting)</li>
+  <li>Estudiovirtual.es: HTTP 500 al VPS hoy (cert wildcard roto — pendiente decisión hosting)</li>
+</ul>
+
+<div class="footer">
+  <strong>Investigación:</strong> BRAIN · L7 v75 (re-ejecución 2026-08-03 16:06 CEST) · <a href="https://github.com/DaniBrainClaw/brain-panels/tree/main/l7">brain-panels/l7</a> · <strong>Status:</strong> pendiente decisión Dani (zona 🟡) · <strong>Publicación:</strong> https://danibrainclaw.github.io/brain-panels/l7/l7_v75_img_optimization_2026-08-03.html
+</div>
+</body>
+</html>
