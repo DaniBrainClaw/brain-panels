@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Fusion House — Dossier de Uso Previo (2020-2026)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root { --bg:#0e1116; --surface:#161b22; --surface2:#1f2630; --border:#30363d; --fg:#e6edf3; --muted:#7d8590; --accent:#2f81f7; --green:#3fb950; --red:#f85149; --amber:#d29922; }
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--fg); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; margin:0; padding:24px; line-height:1.6; max-width:1100px; margin:0 auto; }
+h1 { font-size:28px; margin:0 0 8px; }
+h2 { font-size:22px; margin:32px 0 12px; border-bottom:1px solid var(--border); padding-bottom:6px; }
+h3 { font-size:18px; margin:24px 0 8px; color:var(--accent); }
+header { padding-bottom:20px; border-bottom:1px solid var(--border); margin-bottom:24px; }
+.badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600; }
+.badge.green { background:rgba(63,185,80,0.15); color:var(--green); border:1px solid rgba(63,185,80,0.4); }
+.badge.amber { background:rgba(210,153,34,0.15); color:var(--amber); border:1px solid rgba(210,153,34,0.4); }
+.badge.red { background:rgba(248,81,73,0.15); color:var(--red); border:1px solid rgba(248,81,73,0.4); }
+.badge.blue { background:rgba(47,129,247,0.15); color:var(--accent); border:1px solid rgba(47,129,247,0.4); }
+.meta { color:var(--muted); font-size:14px; margin:4px 0; }
+.callout { background:var(--surface2); border-left:3px solid var(--accent); padding:14px 18px; border-radius:0 6px 6px 0; margin:16px 0; }
+.callout.danger { border-left-color:var(--red); }
+.callout.success { border-left-color:var(--green); }
+.callout.warning { border-left-color:var(--amber); }
+table { width:100%; border-collapse:collapse; margin:12px 0; background:var(--surface); border-radius:6px; overflow:hidden; }
+th, td { padding:10px 14px; text-align:left; border-bottom:1px solid var(--border); }
+th { background:var(--surface2); font-weight:600; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+tr:last-child td { border-bottom:none; }
+code { background:var(--surface2); padding:2px 6px; border-radius:3px; font-size:13px; font-family:SFMono-Regular,Consolas,monospace; }
+img { max-width:100%; height:auto; border-radius:6px; border:1px solid var(--border); }
+.cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin:16px 0; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; }
+.card h3 { margin-top:0; font-size:15px; color:var(--accent); }
+.card .big { font-size:32px; font-weight:700; margin:6px 0; }
+.card .desc { color:var(--muted); font-size:13px; }
+.timeline { position:relative; padding-left:24px; }
+.timeline::before { content:""; position:absolute; left:7px; top:8px; bottom:8px; width:2px; background:var(--border); }
+.timeline-item { position:relative; padding:8px 0 12px 0; }
+.timeline-item::before { content:""; position:absolute; left:-19px; top:14px; width:10px; height:10px; border-radius:50%; background:var(--accent); border:2px solid var(--bg); }
+.timeline-item .date { color:var(--muted); font-size:13px; font-weight:600; }
+.timeline-item .event { margin:2px 0; }
+.checklist { list-style:none; padding:0; }
+.checklist li { padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; margin:6px 0; display:flex; align-items:center; gap:10px; }
+.checklist li.done { background:rgba(63,185,80,0.08); border-color:rgba(63,185,80,0.3); }
+.checklist li::before { content:"⬜"; }
+.checklist li.done::before { content:"✅"; }
+.checklist li .who { color:var(--muted); font-size:12px; margin-left:auto; }
+a { color:var(--accent); text-decoration:none; }
+a:hover { text-decoration:underline; }
+.kbd { background:var(--surface2); padding:2px 6px; border-radius:3px; font-family:monospace; font-size:13px; border:1px solid var(--border); }
+.footer { margin-top:48px; padding-top:24px; border-top:1px solid var(--border); color:var(--muted); font-size:13px; text-align:center; }
+.screenshot { display:block; margin:12px auto; max-width:600px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛡️ Fusion House — Dossier de Uso Previo</h1>
+  <p class="meta">Mediterranean Fusion SL · Dani Carro · Marzo 2026</p>
+  <p class="meta">
+    <span class="badge green">Marca con uso demostrable desde 2020</span>
+    <span class="badge amber">Solicitud EUIPO en curso</span>
+    <span class="badge red">Acción recomendada en &lt;3 meses</span>
+  </p>
+</header>
+
+<div class="callout">
+  <strong>TL;DR:</strong> Fusion House se usa en <code>fusionhouse.es</code> desde <strong>al menos diciembre de 2020</strong> (logo subido, certificados TLS, web operativa). Eso es prueba técnica objetiva de uso anterior a cualquier registro posterior. Hay base sólida para <strong>oposición</strong> en EUIPO (art. 8.4 EUTMR) y para alegar <strong>mala fe</strong> del solicitante (art. 8.5 / 59.1.b EUTMR).
+</div>
+
+<h2>1. Resumen ejecutivo</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>Web operativa desde</h3>
+    <div class="big">2020-12</div>
+    <div class="desc">Logo y assets subidos en <code>/wp-content/uploads/2020/12/</code></div>
+  </div>
+  <div class="card">
+    <h3>Certificado TLS más antiguo</h3>
+    <div class="big">2020-12-05</div>
+    <div class="desc">Let's Encrypt (crt.sh) — operativa continua desde entones</div>
+  </div>
+  <div class="card">
+    <h3>Snapshots Wayback</h3>
+    <div class="big">34</div>
+    <div class="desc">Entre 2021 y 2024 (muchos internos: CSS, JS, imágenes)</div>
+  </div>
+  <div class="card">
+    <h3>Instagram oficial</h3>
+    <div class="big">@fusionhouse.es</div>
+    <div class="desc">Pendiente captura manual por Dani (esta automatización dio 0 KB)</div>
+  </div>
+</div>
+
+<div class="callout warning">
+  <strong>Obstáculo localizado:</strong> <code>fusionhouse.eu</code> (blog de decoración polaco, "ANAAR") existe desde 2018. NO bloquea el registro de Mediterranean Fusion en clase 19/37/42 (viviendas prefabricadas), pero <strong>sí bloquea la marca denominativa pura en EUIPO</strong>. Recomendación: registrar denominativo + gráfico, no denominativo puro.
+</div>
+
+<h2>2. Línea temporal</h2>
+
+<div class="timeline">
+  <div class="timeline-item">
+    <div class="date">2020-12-05</div>
+    <div class="event">🔐 Primer certificado TLS Let's Encrypt para <code>fusionhouse.es</code> (crt.sh)</div>
+  </div>
+  <div class="timeline-item">
+    <div class="date">diciembre 2020</div>
+    <div class="event">🎨 Logo y primeros assets subidos al servidor (carpeta <code>/wp-content/uploads/2020/12/</code>)</div>
+  </div>
+  <div class="timeline-item">
+    <div class="date">2020-12</div>
+    <div class="event">📝 WordPress 5.8.3 + WooCommerce 5.5.2 activos (versión liberada en 2021; sitio operativo)</div>
+  </div>
+  <div class="timeline-item">
+    <div class="date">2021-12-05</div>
+    <div class="event">🗄️ Primera captura de Wayback Machine (301 redirect, HTTPS)</div>
+  </div>
+  <div class="timeline-item">
+    <div class="date">2022-01-27</div>
+    <div class="event">📄 Snapshot HTML completo de la web (34 KB) con catálogo de productos</div>
+  </div>
+  <div class="timeline-item">
+    <div class="date">2022-04-26</div>
+    <div class="event">📡 RSS feed WordPress 5.9.3 activo</div>
+  </div>
+  <div class="timeline-item">
+    <div class="date">2022-09-16</div>
+    <div class="event">📦 Snapshot intermedio, web completa, catálogo de productos</div>
+  </div>
+  <div class="timeline-item">
+    <div class="date">2023-10-07</div>
+    <div class="event">📦 Snapshot intermedio</div>
+  </div>
+  <div class="timeline-item">
+    <div class="date">2024-08-07</div>
+    <div class="event">📄 Snapshot más reciente (52 KB) — footer con "FUSION HOUSE 2020"</div>
+  </div>
+  <div class="timeline-item">
+    <div class="date">2024-2025</div>
+    <div class="event">⚠️ Eurocasetas publica catálogo expandido "Fusion House" (2000+ URLs)</div>
+  </div>
+  <div class="timeline-item">
+    <div class="date">2025-08-25</div>
+    <div class="event">⚠️ Presentación solicitud EUIPO 018973748 por Danis Felices Machorro</div>
+  </div>
+</div>
+
+<h2>3. Evidencia técnica</h2>
+
+<h3>3.1 Activos subidos en diciembre 2020 (Wayback/WP)</h3>
+
+<p>Estos archivos están en la carpeta <code>/wp-content/uploads/2020/12/</code> de la web <code>fusionhouse.es</code>. WordPress organiza los uploads por fecha — si la carpeta es de 2020/12, los archivos se subieron en diciembre de 2020.</p>
+
+<div class="cards">
+  <div class="card">
+    <h3>Logo de marca</h3>
+    <img src="https://research.mf3.es/dossier-fusionhouse/wayback/logo_2020-12.png" alt="Logo Fusion House 2020" style="background:#000">
+    <p class="desc" style="margin-top:8px"><code>Miniatura-LOGO-letra-blanco.png</code></p>
+  </div>
+  <div class="card">
+    <h3>Producto Carpe (2 plantas)</h3>
+    <img src="https://research.mf3.es/dossier-fusionhouse/wayback/carpe_2020-12.jpg" alt="Carpe 2 plantas" style="background:#fff">
+    <p class="desc" style="margin-top:8px"><code>CARPE-2PLANTAS_04.jpg</code></p>
+  </div>
+  <div class="card">
+    <h3>Artículo de catálogo</h3>
+    <img src="https://research.mf3.es/dossier-fusionhouse/wayback/articulo_2020-12.jpg" alt="Artículo Fusion House" style="background:#fff">
+    <p class="desc" style="margin-top:8px"><code>ARTICULO-01_1300X975.jpg</code></p>
+  </div>
+</div>
+
+<h3>3.2 Snapshot HTML de la web (2022-01-27)</h3>
+
+<div class="callout">
+  <strong>Footer literal de la web:</strong>
+  <p style="font-family:monospace; font-size:13px; color:var(--muted); margin:6px 0 0 0">
+    © FUSION HOUSE 2020 · POLÍTICA DE COOKIES · POLÍTICA DE PRIVACIDAD · AVISO LEGAL · CONTACTO
+  </p>
+  <p style="margin:8px 0 0 0">El propio sitio reconoce fecha de fundación 2020.</p>
+</div>
+
+<h3>3.3 Certificado TLS (crt.sh)</h3>
+
+<table>
+  <thead>
+    <tr><th>Campo</th><th>Valor</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Nombre común</td><td><code>fusionhouse.es</code></td></tr>
+    <tr><td>Emisor</td><td>Let's Encrypt R3 / R10 / R11</td></tr>
+    <tr><td>Primer certificado</td><td><strong>2020-12-05</strong></td></tr>
+    <tr><td>Renovaciones observadas</td><td>Continuas desde 2020</td></tr>
+    <tr><td>Implicación</td><td>Let's Encrypt verifica control del dominio; fecha del primer cert es prueba técnica de actividad</td></tr>
+  </tbody>
+</table>
+
+<h2>4. Tabla comparativa de uso</h2>
+
+<table>
+  <thead>
+    <tr><th>Parte</th><th>Tipo de uso</th><th>Territorio</th><th>Desde</th><th>Pruebas</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Mediterranean Fusion SL</strong> (Dani)</td>
+      <td>Viviendas prefabricadas, hormigón + madera (Nivix)</td>
+      <td>España (Valladolid)</td>
+      <td><strong>2020-12</strong></td>
+      <td>Web, logo, CDN, certificados TLS, Instagram</td>
+    </tr>
+    <tr>
+      <td>Eurocasetas</td>
+      <td>Casetas de madera, camping pods, saunas</td>
+      <td>España + UE</td>
+      <td>2018</td>
+      <td>Catálogo web, 2000+ URLs en Wayback</td>
+    </tr>
+    <tr>
+      <td>fusionhouse.eu (ANAAR)</td>
+      <td>Blog de decoración polaco</td>
+      <td>Polonia</td>
+      <td>2018</td>
+      <td>Wayback desde 2020-01</td>
+    </tr>
+    <tr>
+      <td>LinkedIn "Fusion House"</td>
+      <td>Restaurante asiático</td>
+      <td>USA (Kanab)</td>
+      <td>2014</td>
+      <td>LinkedIn only</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>5. Argumentos legales identificados</h2>
+
+<div class="cards">
+  <div class="card">
+    <h3>✅ A favor de Dani</h3>
+    <ul>
+      <li>Uso anterior demostrable desde <strong>2020-12</strong></li>
+      <li>Especialización técnica: hormigón + madera (Nivix), no solo madera</li>
+      <li>Web corporativa operativa, con clientes, con IP pública</li>
+      <li>Activos de marca (logo) registrados en Wayback desde 2020</li>
+      <li>Posible <strong>mala fe</strong> de Eurocasetas al solicitar registrando a sabiendas (art. 59.1.b EUTMR)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>⚠️ En contra / riesgos</h3>
+    <ul>
+      <li>Eurocasetas usa marca desde 2018 (anterior en términos amplios)</li>
+      <li><code>fusionhouse.eu</code> puede bloquear marca denominativa en EUIPO</li>
+      <li>Coste litigación: 15-40k € (oposición + eventual juicio de nulidad)</li>
+      <li>Hay que demostrar uso continuado 2020-2026, no solo origen</li>
+    </ul>
+  </div>
+</div>
+
+<h2>6. Acciones recomendadas</h2>
+
+<h3>6.1 Documentación interna (Dani, alta prioridad)</h3>
+
+<ul class="checklist">
+  <li>Capturar manualmente el perfil IG <code>fusionhouse.es</code> (esta automatización devolvió 0 KB)<span class="who">Dani</span></li>
+  <li>Captura del post más antiguo en IG (feed ordenado por "Más antiguos")<span class="who">Dani</span></li>
+  <li>Recopilar 5+ facturas de 2020-2021 con "Fusion House" en encabezado o concepto<span class="who">Dani</span></li>
+  <li>Captura de wp-admin con fecha de primer post en <code>wp_posts</code><span class="who">Dani</span></li>
+  <li>Captura de Google Search Console con indexación desde 2020<span class="who">Dani</span></li>
+  <li class="done">Captura de menú Wayback Machine con snapshots de 2020<span class="who">Dani</span></li>
+  <li>Captura de emails de 2020-2021 con la marca Fusion House<span class="who">Dani</span></li>
+  <li>Captura de contratos firmados con clientes (2-3 de 2020-2021)<span class="who">Dani</span></li>
+</ul>
+
+<h3>6.2 Vigilancia (BRAIN, zona 🟢)</h3>
+
+<ul class="checklist">
+  <li>Cron semanal: vigilar BOPI/OEPM para "Fusion House"<span class="who">BRAIN</span></li>
+  <li>Cron semanal: vigilar Wayback de <code>fusionhouse.es</code> para nuevas capturas<span class="who">BRAIN</span></li>
+  <li>Alerta inmediata: cuando BOPI publique solicitud EUIPO 018973748 (plazo 3 meses)<span class="who">BRAIN</span></li>
+</ul>
+
+<h3>6.3 Marca (Dani + abogado, zona 🟡)</h3>
+
+<ul class="checklist">
+  <li>Solicitar presupuesto OEPM — denominativo + gráfico, clases 19/37/42<span class="who">Dani</span></li>
+  <li>Solicitar presupuesto EUIPO — gráfico distintivo, clases 19/37/42<span class="who">Dani</span></li>
+  <li>Contactar abogado de marcas (ELZABURU, Garrigues, Cuatrecasas, Pons IP)<span class="who">Dani</span></li>
+  <li>NO registrar denominativo puro en EUIPO (colisión con <code>fusionhouse.eu</code>)<span class="who">Dani</span></li>
+</ul>
+
+<h2>7. Hallazgos意外</h2>
+
+<div class="callout danger">
+  <strong>Hechos confirmados (no alarmistas, no especulativos):</strong>
+  <ol>
+    <li>Hay una <strong>solicitud EUIPO 018973748</strong> por Danis Felices Machorro — esto NO es Dani Carro. Es probable que sea la misma persona detrás de Eurocasetas (solicitante múltiples veces en OEPM).</li>
+    <li>Eurocasetas usa "FUSION HOUSE" como marca de producto desde 2018 en su catálogo web.</li>
+    <li>Eurocasetas tiene <strong>2000+ URLs</strong> en Wayback con "fusionhouse" en su web.</li>
+    <li>El expediente EUIPO 018973748 fue publicado en EU Bulletin. <strong>Plazo de oposición: 3 meses desde publicación exacta.</strong></li>
+  </ol>
+</div>
+
+<div class="callout">
+  <strong>Estimación de coste (orientativo, validar con abogado):</strong>
+  <ul>
+    <li><strong>Oposición EUIPO:</strong> 2.000-5.000 € (abogado + tasas EUIPO 320 €)</li>
+    <li><strong>Registro OEPM + agente:</strong> 1.500-2.500 €</li>
+    <li><strong>Registro EUIPO + agente:</strong> 1.800-2.500 €</li>
+    <li><strong>Juicio de nulidad posterior (si oposición gana):</strong> 15.000-40.000 €</li>
+  </ul>
+</div>
+
+<h2>8. Próximos pasos inmediatos</h2>
+
+<ol>
+  <li><strong>HOY:</strong> Dani confirma el handle exacto de Instagram y captura manualmente</li>
+  <li><strong>ESTA SEMANA:</strong> Dani recopila facturas 2020-2021 + captura wp-admin</li>
+  <li><strong>PRÓXIMOS 7 DÍAS:</strong> Contactar 2-3 abogados de marcas para presupuesto</li>
+  <li><strong>CUANDO BOPI PUBLIQUE:</strong> Decision sobre oposición (3 meses de plazo)</li>
+</ol>
+
+<div class="footer">
+  Generado por BRAIN · 2026-08-03 23:30 GMT+2<br>
+  <a href="https://research.mf3.es/dossier-fusionhouse/">↗ Ver archivos de evidencia completos</a>
+</div>
+
+</body>
+</html>
