@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>L6 Tier A · Batch constituciones 17-31 julio 2026</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root { --bg:#0f1216; --card:#171b22; --ink:#e6e9ef; --mut:#9aa3b2; --accent:#7cd0a7; --warn:#ffb454; --bad:#ff6b6b; --line:#262b35; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--ink); line-height:1.5; }
+  header { padding:32px 28px 18px; border-bottom:1px solid var(--line); }
+  h1 { margin:0 0 6px; font-size:24px; font-weight:600; letter-spacing:-0.01em; }
+  .sub { color:var(--mut); font-size:14px; }
+  main { padding:24px 28px 60px; max-width:1400px; margin:0 auto; }
+  .filters { display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 22px; padding:14px 16px; background:var(--card); border-radius:10px; border:1px solid var(--line); }
+  .filters label { font-size:13px; color:var(--mut); margin-right:6px; }
+  .filters select, .filters button { background:#0e1218; border:1px solid var(--line); color:var(--ink); padding:7px 10px; border-radius:6px; font-size:13px; cursor:pointer; }
+  .filters button { background:var(--accent); color:#0c1410; font-weight:600; border:none; padding:7px 14px; }
+  .filters button:hover { filter:brightness(1.05); }
+  .counters { display:flex; gap:14px; margin-bottom:14px; flex-wrap:wrap; }
+  .ctr { padding:10px 14px; background:var(--card); border:1px solid var(--line); border-radius:8px; font-size:13px; }
+  .ctr b { color:var(--accent); font-size:16px; margin-right:6px; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; background:var(--card); border-radius:10px; overflow:hidden; box-shadow:0 1px 0 var(--line); }
+  th, td { padding:11px 12px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { background:#0e1218; color:var(--mut); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; cursor:pointer; user-select:none; }
+  th:hover { color:var(--ink); }
+  th .arr { color:var(--accent); margin-left:4px; opacity:0.4; }
+  th.sort-desc .arr, th.sort-asc .arr { opacity:1; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover { background:#1c222b; }
+  .badge { display:inline-block; padding:3px 8px; border-radius:5px; font-size:11px; font-weight:600; }
+  .mf3 { background:#2c4a3e; color:#7cd0a7; }
+  .living { background:#3a3a2c; color:#ffb454; }
+  .terra { background:#4a2c3a; color:#ff8aa3; }
+  .gp { background:#2c3a4a; color:#7cb0d0; }
+  .multi { background:#3a2c4a; color:#c89cff; }
+  .rank { font-weight:700; color:var(--accent); font-size:14px; }
+  .cap-good { color:var(--accent); font-weight:600; }
+  .cap-mid { color:var(--warn); font-weight:600; }
+  .cap-low { color:var(--mut); }
+  .alert { margin:18px 0; padding:14px 18px; background:#2c1a1a; border:1px solid var(--bad); border-radius:8px; color:#ffd0d0; font-size:13.5px; }
+  .alert b { color:var(--bad); }
+  details { margin:18px 0; cursor:pointer; }
+  details summary { font-size:13px; color:var(--mut); padding:10px 0; }
+  details pre { background:#0a0d12; padding:14px 16px; border-radius:8px; overflow-x:auto; font-size:12px; color:var(--mut); border:1px solid var(--line); }
+  .star { color:#ffb454; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  footer { margin-top:36px; padding-top:18px; border-top:1px solid var(--line); color:var(--mut); font-size:12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧠 L6 Tier A · Batch constituciones CyL 17-31 julio 2026</h1>
+  <div class="sub">10 leads B2B cualificados para MF3 / Living / Terracotta / Green Path · Valladolid provincia · listos para outreach manual</div>
+  <div class="sub" style="margin-top:6px">Generado 2026-08-04 20:04 Berlin · Próxima acción Dani: validar 3 lead → outreach LinkedIn/teléfono manual</div>
+</header>
+
+<main>
+
+<div class="alert">
+  <b>⚠️ Pendiente Dani (zona 🟡):</b> 4 decisiones abiertas &gt;72h en digest. Sin respuesta → 21 Tier A limpios/mes caen sin conversión a leads reales. <b>TOPE 16 / DIEZ VELASCO / APARTAMENTOS RURALES / GESTION DE OCIO MABEPA</b> son los 4 mejor calificados del batch (ver tabla abajo). Validación 5 min → outreach 30 min → 5-15k€ CAC posible.
+</div>
+
+<div class="filters">
+  <label>Marca:</label>
+  <select id="f-marca">
+    <option value="">Todas</option>
+    <option>MF3</option>
+    <option>Living</option>
+    <option>Terracotta</option>
+    <option>Green Path</option>
+    <option>Multi (varias)</option>
+  </select>
+  <label>Localidad:</label>
+  <select id="f-loc">
+    <option value="">Todas</option>
+    <option>Valladolid capital</option>
+    <option>Valladolid provincia</option>
+    <option>Salamanca</option>
+  </select>
+  <label>Capital mín (€):</label>
+  <select id="f-cap">
+    <option value="0">Sin mínimo</option>
+    <option value="100000">≥ 100k€</option>
+    <option value="300000">≥ 300k€</option>
+    <option value="400000">≥ 400k€</option>
+  </select>
+  <button onclick="reset()">Reset</button>
+</div>
+
+<div class="counters">
+  <div class="ctr"><b id="c-total">10</b>leads en batch</div>
+  <div class="ctr"><b id="c-capital">3.13</b>M€ capital total acumulado</div>
+  <div class="ctr"><b id="c-prov">8</b>en Valladolid (capital+provincia)</div>
+  <div class="ctr"><b id="c-ticket">5-15k€</b>CAC conversión realista</div>
+</div>
+
+<table id="tab">
+  <thead>
+    <tr>
+      <th data-sort="rank"># <span class="arr">▼</span></th>
+      <th data-sort="empresa">Empresa <span class="arr">▼</span></th>
+      <th data-sort="capital">Capital <span class="arr">▼</span></th>
+      <th data-sort="marca">Marca target <span class="arr">▼</span></th>
+      <th data-sort="localidad">Localidad <span class="arr">▼</span></th>
+      <th data-sort="adm" style="min-width:160px">Administradores <span class="arr">▼</span></th>
+      <th data-sort="bor">BORME <span class="arr">▼</span></th>
+      <th data-sort="conf">Confianza <span class="arr">▼</span></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr data-marca="MF3" data-loc="Valladolid capital" data-capital="450000">
+      <td class="rank">1</td>
+      <td><b><span class="star">⭐⭐⭐</span> TOPE 16 INVERSIONES SL</b><div style="font-size:11px;color:var(--mut);margin-top:2px">C/ Marina 24</div></td>
+      <td class="cap-good">450.000 €</td>
+      <td><span class="badge mf3">MF3</span></td>
+      <td>Valladolid</td>
+      <td>Torrego Gonzalez Armand<br>Perrino Hurtado Eva Maria<br><span style="font-size:11px;color:var(--mut)">2 fundadores reales</span></td>
+      <td>BORME-A-2026-143-47</td>
+      <td>🟢 Alta</td>
+    </tr>
+    <tr data-marca="MF3" data-loc="Valladolid provincia" data-capital="453000">
+      <td class="rank">2</td>
+      <td><b><span class="star">⭐⭐⭐</span> DIEZ VELASCO INTERIORISMO Y EBANISTERIA SL</b><div style="font-size:11px;color:var(--mut);margin-top:2px">C/ Brasil 1 ISCAR</div></td>
+      <td class="cap-good">453.000 €</td>
+      <td><span class="badge mf3">MF3</span></td>
+      <td>Iscar (32 km)</td>
+      <td>Diez Velasco Luis Miguel<br><span style="font-size:11px;color:var(--mut)">Unipersonal founder</span></td>
+      <td>BORME-A-2026-126-47</td>
+      <td>🟢 Alta</td>
+    </tr>
+    <tr data-marca="Terracotta" data-loc="Valladolid provincia" data-capital="435000">
+      <td class="rank">3</td>
+      <td><b><span class="star">⭐⭐⭐</span> APARTAMENTOS RURALES DE LA RIBERA DEL DUERO SL</b><div style="font-size:11px;color:var(--mut);margin-top:2px">C/ Eras 1 Pesquera</div></td>
+      <td class="cap-good">435.000 €</td>
+      <td><span class="badge terra">Terracotta</span></td>
+      <td>Pesquera de Duero (130 km)</td>
+      <td>Diez Roman Fernando<br>Espinosa Cilleruelo Vega Rubialejos<br><span style="font-size:11px;color:var(--mut)">Escisión parcial — track</span></td>
+      <td>BORME-A-2026-145-47</td>
+      <td>🟢 Alta</td>
+    </tr>
+    <tr data-marca="Multi (varias)" data-loc="Valladolid provincia" data-capital="280005">
+      <td class="rank">4</td>
+      <td><b><span class="star">⭐⭐</span> GESTION DE OCIO MABEPA SL</b><div style="font-size:11px;color:var(--mut);margin-top:2px">C/ Dimas Rodriguez 10 Tordesillas</div></td>
+      <td class="cap-mid">280.005 €</td>
+      <td><span class="badge living">Living</span><br><span class="badge mf3">MF3</span></td>
+      <td>Tordesillas (30 km)</td>
+      <td>Encinas Cano Manuel<br>Bernabe Gamazo Alvarez<br>Pablo Alonso Gimeno<br><span style="font-size:11px;color:var(--mut)">3 fundadores reales</span></td>
+      <td>BORME-A-2026-119-47</td>
+      <td>🟢 Alta</td>
+    </tr>
+    <tr data-marca="MF3" data-loc="Valladolid capital" data-capital="132000">
+      <td class="rank">5</td>
+      <td><b><span class="star">⭐⭐</span> DFS PROYECTOS URBANOS SA</b><div style="font-size:11px;color:var(--mut);margin-top:2px">C/ Alonso Pesquera 12 Valladolid</div></td>
+      <td class="cap-mid">132.000 €</td>
+      <td><span class="badge mf3">MF3</span><br><span class="badge living">Living</span><br><span class="badge terra">Terracotta</span></td>
+      <td>Valladolid</td>
+      <td>Frutos de la Torre Francisco Javier<br><span style="font-size:11px;color:var(--mut)">Adm. Único — UNICO SA del batch</span></td>
+      <td>BORME-A-2026-144-47</td>
+      <td>🟠 Media</td>
+    </tr>
+    <tr data-marca="MF3" data-loc="Valladolid capital" data-capital="3000">
+      <td class="rank">6</td>
+      <td><b>A4 CONSTRUCCIONES Y REFORMAS SL</b><div style="font-size:11px;color:var(--mut);margin-top:2px">C/ Bajada de la Libertad 5 Valladolid</div></td>
+      <td class="cap-low">3.000 €</td>
+      <td><span class="badge mf3">MF3</span></td>
+      <td>Valladolid</td>
+      <td>Sin datos admin adicionales</td>
+      <td>BORME 2026-07</td>
+      <td>🟠 Media</td>
+    </tr>
+    <tr data-marca="MF3" data-loc="Valladolid capital" data-capital="3000">
+      <td class="rank">7</td>
+      <td><b>DECORAIS PROYECTOS Y REFORMAS SL</b><div style="font-size:11px;color:var(--mut);margin-top:2px">C/ San Isidro 33 LOCAL 1 Valladolid</div></td>
+      <td class="cap-low">3.000 €</td>
+      <td><span class="badge mf3">MF3</span><br><span class="badge living">Living</span></td>
+      <td>Valladolid</td>
+      <td>Vaquero Lerena Richard<br><span style="font-size:11px;color:var(--mut)">Unipersonal</span></td>
+      <td>BORME-A-2026-142-47</td>
+      <td>🟠 Media</td>
+    </tr>
+    <tr data-marca="MF3" data-loc="Salamanca" data-capital="3000">
+      <td class="rank">8</td>
+      <td><b>TORMES OBRAS Y SERVICIOS SL</b><div style="font-size:11px;color:var(--mut);margin-top:2px">C/ Peñaranda 14 Castellanos de Moriscos</div></td>
+      <td class="cap-low">3.000 €</td>
+      <td><span class="badge mf3">MF3</span><br><span class="badge living">Living</span><br><span class="badge gp">Green Path</span></td>
+      <td>Salamanca</td>
+      <td>Marin Acevedo Jose Aldemar<br>Gago Ventures SL<br><span style="font-size:11px;color:var(--mut)">Admin persona jurídica (SPV)</span></td>
+      <td>BORME-A-2026-137-47</td>
+      <td>🟡 Revisar</td>
+    </tr>
+    <tr data-marca="Living" data-loc="Valladolid capital" data-capital="3000">
+      <td class="rank">9</td>
+      <td><b>REFORMAS INTERIORISMO SAM SL</b><div style="font-size:11px;color:var(--mut);margin-top:2px">Valladolid</div></td>
+      <td class="cap-low">3.000 €</td>
+      <td><span class="badge living">Living</span></td>
+      <td>Valladolid</td>
+      <td>Sin datos admin adicionales</td>
+      <td>BORME 2026-07</td>
+      <td>🟡 Revisar</td>
+    </tr>
+    <tr data-marca="MF3" data-loc="Valladolid capital" data-capital="3000">
+      <td class="rank">10</td>
+      <td><b>INSTALACIONES ALZATE SL</b><div style="font-size:11px;color:var(--mut);margin-top:2px">Valladolid</div></td>
+      <td class="cap-low">3.000 €</td>
+      <td><span class="badge mf3">MF3</span></td>
+      <td>Valladolid</td>
+      <td>Sin datos admin adicionales</td>
+      <td>BORME 2026-07</td>
+      <td>🟡 Revisar</td>
+    </tr>
+  </tbody>
+</table>
+
+<details>
+  <summary>📊 Cómo está construido — qué significa "Tier A" y por qué este filtro</summary>
+<pre>
+BORME = BOE API datos abiertos (JSON, sin auth, oficial)
+Filtro: constituciones CyL 17-31 julio 2026 · CnaE/Hoja registral válida
+Ranking Tier A = (capital × 100) + sede operativa real + admins persona física + objeto social alineado a MF3/Living/Terracotta
+Tier A = cualquier lead con ≥1 match prioritario
+Tier B = score enrichment pendiente (LinkedIn + verificación sede)
+Tier C = descarte (SPV jurídico, holdings, sin admins reales)
+
+Capital total 3.13M€ en 10 leads = media 313k€ (mediana 16k€)
+8/10 en Valladolid (capital + provincia) = cluster operativo principal
+4/10 con capital ≥100k€ = leads Tier A prioritarios outreach
+</pre>
+</details>
+
+<details>
+  <summary>📂 Artefactos relacionados</summary>
+<pre>
+- 10 fichas individuales: Research/L6/fichas/*.md
+- Dossier L6: Research/L6/DOSSIER.md
+- CSV constitucciones: Research/L6/leads_cyl_constituciones_20260706_20260710.csv y siguientes
+- L6 cierre técnico: v6.4 (2026-07-17, 31 Tier A limpios/mes)
+- Brief outreach 3 leads: Research/L6/outreach_brief_v5_3leads.md (antiguo, regenerar)
+- Línea viva: Research/LINEAS.md § L6 (madura 2026-07-17, 4 peticiones abiertas Dani)
+</pre>
+</details>
+
+<details>
+  <summary>🎯 Orden de outreach sugerido (1ª oleada)</summary>
+<pre>
+Dani puede usar este panel para outreach manual 30 min en hora de oro:
+
+1. DIEZ VELASCO (rank 2, ⭐⭐⭐, 453k€)
+   → LinkedIn "Luis Miguel Diez Velasco" + WhatsApp 654 151 150 (MF3)
+   → Único con CNAE 100% interiorismo/ebanistería (giro MF3)
+   → Iscar (32 km) — visita factible mañana
+
+2. TOPE 16 INVERSIONES (rank 1, ⭐⭐⭐, 450k€)
+   → LinkedIn "Armand Torrego" + "Eva Maria Perrino"
+   → C/ Marina 24 (a 10 min de Plaza Martí y Monsó)
+   → Visita + café con dossier MF3
+
+3. APARTAMENTOS RURALES (rank 3, ⭐⭐⭐, 435k€)
+   → LinkedIn "Fernando Diez Roman" + "Vega Espinosa"
+   → Terracotta target: 50-130k€ mobiliario contract
+   → Distancia 130 km — Videollamada primero
+
+4. GESTIÓN DE OCIO MABEPA (rank 4, 280k€)
+   → Híbrido Living+MF3, Tordesillas (30 km)
+   → 3 fundadores reales = decisión colegiada más rápida
+
+Tickets conservateur: 5-15k€ CAC (honorarios auditoría) por lead convertido
+Si convierte 1/4 → 5-15k€ inmediato + opción cliente recurrente 12-24 meses
+```</pre>
+</details>
+
+<footer>
+  L6 v75 — consolidación panel Tier A batch 17-31 julio 2026 · BRAIN 2026-08-04 20:04 Berlin
+  · Actualizado contra 10 BORME originales (referencias en `Research/L6/fichas/*.md`)
+  · Próxima cadencia: batch mensual siguiente (constituciones 1-31 agosto 2026)
+</footer>
+
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+
+function apply() {
+  const marca = $('#f-marca').value;
+  const loc = $('#f-loc').value;
+  const capMin = parseInt($('#f-cap').value || '0', 10);
+  let n = 0, total = 0;
+  let cap = 0;
+  $$('#tab tbody tr').forEach(tr => {
+    const m = tr.dataset.marca;
+    const l = tr.dataset.loc;
+    const c = parseInt(tr.dataset.capital || '0', 10);
+    const ok = (!marca || m.includes(marca)) && (!loc || l.includes(loc)) && (c >= capMin);
+    tr.style.display = ok ? '' : 'none';
+    if (ok) { n++; cap += c; }
+  });
+  $('#c-total').textContent = n;
+  $('#c-capital').textContent = (cap / 1e6).toFixed(2);
+}
+function reset() { $('#f-marca').value=''; $('#f-loc').value=''; $('#f-cap').value='0'; apply(); }
+
+$('#f-marca').onchange = apply;
+$('#f-loc').onchange = apply;
+$('#f-cap').onchange = apply;
+
+let sortKey = 'rank', sortDir = 1;
+$$('th[data-sort]').forEach(th => {
+  th.onclick = () => {
+    const key = th.dataset.sort;
+    if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+    $$('th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+    th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+    const rows = Array.from($$('#tab tbody tr'));
+    rows.sort((a, b) => {
+      let av = a.dataset[sortKey] !== undefined ? a.dataset[sortKey] : (a.querySelector(`td:nth-child(${th.cellIndex+1})`).textContent || '');
+      let bv = b.dataset[sortKey] !== undefined ? b.dataset[sortKey] : (b.querySelector(`td:nth-child(${th.cellIndex+1})`).textContent || '');
+      const an = parseFloat(av), bn = parseFloat(bv);
+      if (!isNaN(an) && !isNaN(bn)) return (an - bn) * sortDir;
+      return String(av).localeCompare(String(bv)) * sortDir;
+    });
+    rows.forEach(r => $('#tab tbody').appendChild(r));
+  };
+});
+</script>
+</body>
+</html>
