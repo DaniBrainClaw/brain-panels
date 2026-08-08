@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoría LOPD completa — 14 páginas brain-panels · 2026-08-08</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--brand:#58a6ff;--ok:#3fb950;--warn:#d29922;--danger:#f85149;--info:#79c0ff;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;padding:24px;max-width:1100px;margin:0 auto}
+h1{font-size:28px;margin-bottom:8px;color:var(--brand)}
+h2{font-size:20px;margin-top:32px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+h3{font-size:16px;margin-top:20px;margin-bottom:8px;color:var(--info)}
+.subtitle{color:var(--muted);font-size:14px;margin-bottom:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px}
+.alert-danger{background:#2d0a0a;border-left:4px solid var(--danger);padding:16px;border-radius:4px;margin:16px 0}
+.alert-warn{background:#2d1f00;border-left:4px solid var(--warn);padding:16px;border-radius:4px;margin:16px 0}
+.alert-info{background:#0a1929;border-left:4px solid var(--info);padding:16px;border-radius:4px;margin:16px 0}
+.alert-ok{background:#04260a;border-left:4px solid var(--ok);padding:16px;border-radius:4px;margin:16px 0}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+th,td{padding:8px 12px;text-align:left;border:1px solid var(--border)}
+th{background:#21262d;font-weight:600}
+tr:nth-child(even) td{background:#1a1f26}
+tr.danger td{background:#2d0a0a}
+tr.ok td{color:var(--muted)}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;margin-left:8px}
+.badge-danger{background:var(--danger);color:#fff}
+.badge-warn{background:var(--warn);color:#000}
+.badge-ok{background:var(--ok);color:#000}
+.badge-info{background:var(--info);color:#000}
+code{background:#21262d;padding:2px 6px;border-radius:3px;font-size:12px;font-family:ui-monospace,'SF Mono',monospace}
+ul,ol{margin-left:24px}
+li{margin-bottom:4px}
+.lopd-key{display:inline-block;width:160px;color:var(--muted)}
+.fix-list{background:#0a1929;padding:12px;border-radius:4px;margin:12px 0;font-size:13px}
+.meta{color:var(--muted);font-size:12px;margin-top:8px}
+.btn{display:inline-block;padding:8px 16px;background:var(--brand);color:#fff;text-decoration:none;border-radius:6px;font-size:14px;margin-right:8px}
+.btn-warn{background:var(--warn);color:#000}
+</style>
+</head>
+<body>
+
+<h1>🔍 Auditoría LOPD completa — 14 páginas brain-panels</h1>
+<p class="subtitle">Barrido exhaustivo 2026-08-08 18:00 Berlin · 14 páginas públicas con potencial captura de datos · 1 sola LOPD-broken (zona 🔴 LIVE)</p>
+
+<div class="alert-danger">
+<h3 style="color:var(--danger);margin-top:0">🔴 ZONA CRÍTICA — 1 página LIVE con captura de email + consentimiento sin cláusula informativa</h3>
+<p><strong>e11/calculadora_mf3_estimativa_v0.html</strong> — expuesta públicamente desde <strong>2026-07-27 (13+ días)</strong> con:</p>
+<ul>
+<li><code>&lt;input type="email"&gt;</code> capturando email del visitante</li>
+<li><code>&lt;input type="checkbox"&gt;</code> con texto: "consiento que Mediterranean Fusion SL me contacte"</li>
+<li>0 cláusulas informativas (sin Responsable, Finalidad, Encargado, Conservación, Política privacidad, Derechos)</li>
+<li>Único elemento RGPD: clase CSS <code>.rgpd</code> (solo estilo, sin capa legal)</li>
+<li>Index la vende como "lead-magnet" → tráfico real de visitantes</li>
+</ul>
+<p class="meta">Riesgo: RGPD art. 13 → información obligatoria NO facilitada. Sanciones: 600€ a 20M€ o 4% facturación. Live leads capturándose en este momento.</p>
+</div>
+
+<h2>📊 Resumen ejecutivo del barrido</h2>
+
+<table>
+<tr><th>Estado</th><th>Cantidad</th><th>Detalle</th></tr>
+<tr class="danger"><td><span class="badge badge-danger">LOPD-BROKEN</span></td><td>1</td><td>e11 calculadora · LIVE 13+ días · zona 🔴</td></tr>
+<tr><td><span class="badge badge-warn">PARCIAL</span></td><td>0</td><td>—</td></tr>
+<tr><td><span class="badge badge-ok">OK (no form)</span></td><td>12</td><td>Sin captura de datos, sin riesgo RGPD</td></tr>
+<tr><td><span class="badge badge-info">OK con claves LOPD</span></td><td>1</td><td>pending_decisions/panel · mailto + 6 keys LOPD</td></tr>
+<tr><td><strong>TOTAL</strong></td><td>14</td><td>100% del index barrido</td></tr>
+</table>
+
+<h2>🔬 Metodología del barrido</h2>
+
+<div class="card">
+<p>Cada URL del index <code>brain-panels/index.html</code> (29 páginas únicas) se filtró a 14 candidates con potencial RGPD (formularios, capturas, contacto, plantillas, calculadoras). Para cada una se aplicaron 5 marcadores:</p>
+<ol>
+<li><code>type="email"</code> — captura explícita de email</li>
+<li><code>type="checkbox"</code> — posible consentimiento</li>
+<li><code>mailto:</code> — link de contacto</li>
+<li>Claves LOPD (case-insensitive): Responsable, Finalidad, Encargado, Derechos, Política de privacidad, Aviso Legal, RGPD, GDPR, LOPD, Ley Orgánica</li>
+<li>Clase CSS <code>rgpd</code> — heurística de cumplimiento parcial</li>
+</ol>
+<p>Heurística de clasificación:</p>
+<ul>
+<li><strong>LOPD-BROKEN</strong> = tiene form (email/checkbox) Y &lt;1 clave LOPD</li>
+<li><strong>PARCIAL</strong> = tiene form Y 1-2 claves LOPD</li>
+<li><strong>OK con claves LOPD</strong> = sin form pero cita la norma (e.g. link de contacto con cobertura)</li>
+<li><strong>OK (no form)</strong> = 0 forms, sin captura, sin riesgo</li>
+</ul>
+</div>
+
+<h2>📋 Tabla de las 14 páginas auditadas</h2>
+
+<table>
+<tr><th>Página</th><th>email</th><th>checkbox</th><th>mailto</th><th>keys LOPD</th><th>Status</th></tr>
+<tr class="danger"><td><code>e11/calculadora_mf3_estimativa_v0.html</code></td><td>✅</td><td>✅</td><td>❌</td><td>1</td><td><span class="badge badge-danger">LOPD-BROKEN</span></td></tr>
+<tr class="ok"><td><code>e17/plantilla_informe_fase_v0_1.html</code></td><td>❌</td><td>❌</td><td>❌</td><td>1</td><td><span class="badge badge-ok">OK (no form)</span></td></tr>
+<tr class="ok"><td><code>l6/panel_borme_cyl_aug_4_7_v1.html</code></td><td>❌</td><td>❌</td><td>❌</td><td>0</td><td><span class="badge badge-ok">OK (no form)</span></td></tr>
+<tr class="ok"><td><code>l6/panel_outreach_pack_3leads_v1.html</code></td><td>❌</td><td>❌</td><td>❌</td><td>0</td><td><span class="badge badge-ok">OK (no form)</span></td></tr>
+<tr class="ok"><td><code>l6/panel_outreach_pack_4leads_v1.html</code></td><td>❌</td><td>❌</td><td>❌</td><td>0</td><td><span class="badge badge-ok">OK (no form)</span></td></tr>
+<tr class="ok"><td><code>l6/panel_tier_a_batch_jul_2026.html</code></td><td>❌</td><td>❌</td><td>❌</td><td>0</td><td><span class="badge badge-ok">OK (no form)</span></td></tr>
+<tr class="ok"><td><code>l7/l7_v47_mobiliario_audit.html</code></td><td>❌</td><td>❌</td><td>❌</td><td>0</td><td><span class="badge badge-ok">OK (no form)</span></td></tr>
+<tr class="ok"><td><code>l7/l7_v75_img_optimization_2026-08-03.html</code></td><td>❌</td><td>❌</td><td>❌</td><td>0</td><td><span class="badge badge-ok">OK (no form)</span></td></tr>
+<tr class="ok"><td><code>l13/v14_caso_C.html</code></td><td>❌</td><td>❌</td><td>❌</td><td>1</td><td><span class="badge badge-ok">OK (no form)</span></td></tr>
+<tr class="ok"><td><code>l13/v14_caso_D.html</code></td><td>❌</td><td>❌</td><td>❌</td><td>1</td><td><span class="badge badge-ok">OK (no form)</span></td></tr>
+<tr class="ok"><td><code>l13/v14_caso_E.html</code></td><td>❌</td><td>❌</td><td>❌</td><td>1</td><td><span class="badge badge-ok">OK (no form)</span></td></tr>
+<tr class="ok"><td><code>l13/v15_comparador.html</code></td><td>❌</td><td>❌</td><td>❌</td><td>0</td><td><span class="badge badge-ok">OK (no form)</span></td></tr>
+<tr class="ok"><td><code>l8/auditoria_lopd_calculadoras_2026-08-08.html</code></td><td>❌</td><td>❌</td><td>❌</td><td>0</td><td><span class="badge badge-ok">OK (audit doc)</span></td></tr>
+<tr><td><code>pending_decisions/panel_cola_publicacion_v1.html</code></td><td>❌</td><td>❌</td><td>✅</td><td>6</td><td><span class="badge badge-info">OK con claves LOPD</span></td></tr>
+</table>
+
+<h2>🔧 Fix concreto para e11 (zona 🔴)</h2>
+
+<div class="card">
+<h3 style="color:var(--danger)">Acción urgente: AÑADIR CAPA INFORMATIVA RGPD art. 13</h3>
+<p>El HTML actual tiene el checkbox con texto desbalanceado. Falta la capa informativa DEBAJO/ANTES del checkbox. Mínimo legal (8 marcadores):</p>
+<div class="fix-list">
+<ul>
+<li><span class="lopd-key">🔴 [DANI] Responsable:</span> Mediterranean Fusion SL · CIF B-XXXXXXX · dirección</li>
+<li><span class="lopd-key">🔴 [DANI] Finalidad:</span> Responder a tu solicitud de estimación + contacto comercial sobre servicios MF3/Living</li>
+<li><span class="lopd-key">🔴 [DANI] Base legitimadora:</span> Consentimiento explícito (checkbox)</li>
+<li><span class="lopd-key">🔴 [DANI] Destinatarios:</span> No se ceden a terceros. Encargado de tratamiento: [proveedor email]</li>
+<li><span class="lopd-key">🔴 [DANI] Conservación:</span> Hasta [X meses] desde último contacto o solicitud de baja</li>
+<li><span class="lopd-key">🔴 [DANI] Derechos:</span> Acceso, rectificación, supresión, oposición, limitación, portabilidad → email@mf3.es</li>
+<li><span class="lopd-key">🔴 [DANI] Política privacidad:</span> https://mediterranean-fusion.es/politica-privacidad</li>
+<li><span class="lopd-key">🔴 [DANI] Reclamación:</span> AEPD (www.aepd.es) si considera sus derechos vulnerados</li>
+</ul>
+</div>
+<p><strong>Tiempo estimado:</strong> 5-10 min rellenando los 8 placeholders. <strong>Riesgo si no se hace:</strong> sigue creciendo el histórico de capturas sin base legal.</p>
+</div>
+
+<h2>📌 Corrección de diagnóstico propio (BRAIN → BRAIN)</h2>
+
+<div class="alert-warn">
+<h3 style="color:var(--warn);margin-top:0">⚠️ Errores propios corregidos</h3>
+<ul>
+<li><strong>HB 15:35 (mío):</strong> "3 demos L13 v14 prototipo VIVOS sin cláusula RGPD (mismo patrón e11)" — <strong>INCORRECTO</strong>. L13 v14 C/D/E tienen 0 forms, 46 inputs son checkboxes de simulación de decisión (no captura de email). La "1 key LOPD" detectada es narrativa, no capa legal.</li>
+<li><strong>SCOREBOARD § pendienteOK:</strong> "LOPD L13 v14 demos prototipo VIVOS sin clausula RGPD" — <strong>REMOVIDA</strong> en próxima actualización. No es zona 🔴.</li>
+<li><strong>HB 17:05 (mío):</strong> "LOPD cola L8 (v5/v4) — bloqueada por riesgo LOPD, decision Dani post-arreglo e11" — <strong>v5/v4 NO están publicadas</strong>. Viven en local <code>Research/L8/</code>. Solo e11 está LIVE.</li>
+<li><strong>Audit anterior <code>l8/auditoria_lopd_calculadoras_2026-08-08.html</code>:</strong> cubre 5 calculadoras locales. <strong>Esta auditoría complementa</strong> con el barrido del index público (14 URLs).</li>
+</ul>
+</div>
+
+<h2>🎯 Decisiones que necesita Dani (zona 🟡)</h2>
+
+<div class="card">
+<ol>
+<li><strong>Resolver e11 LIVE (zona 🔴)</strong>:
+<ul>
+<li>Opción A: Rellenar 8 marcadores <code>[DANI]</code> en el HTML y redeploy (~10 min)</li>
+<li>Opción B: Retirar la calculadora del index (cierra riesgo legal al instante, pero pierde lead-magnet)</li>
+<li>Opción C: Reemplazar el formulario por un mailto: (sin captura, sin riesgo)</li>
+</ul>
+</li>
+<li><strong>Aprobar publicación de esta auditoría</strong> (ya en zona 🟢, retroalimentable)</li>
+<li><strong>Validar script de auditoría mensual</strong> para detectar futuras LOPD-broken (1 tool call, <code>python3 scripts/audit_lopd_pages.py</code>)</li>
+</ol>
+</div>
+
+<h2>🔁 Acción de seguimiento (zona 🟢)</h2>
+
+<div class="alert-ok">
+<p><strong>Crearé <code>scripts/audit_lopd_pages.py</code></strong> — barrido automático de las 14+ URLs cada 24h, con output en JSON. Si detecta nueva página con form sin clave LOPD, avisa por Telegram. Sin tocar nada de Dani, solo vigilancia.</p>
+</div>
+
+<p class="meta">Auditoría generada 2026-08-08 18:00 Europe/Berlin por BRAIN heartbeat 30m (session ad3354e6-7f5e-483f-9c4e-0954f291630f). Metodología reproducible: urllib.request + regex set de 5 marcadores. Sin screenshots, sin cookies, sin crawling agresivo.</p>
+
+<p class="meta">Siguiente paso natural: HB 18:30 cierre auditoría + creación script <code>audit_lopd_pages.py</code> si Dani valida.</p>
+
+</body>
+</html>
