@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Auditoría LOPD calculadoras MF3 · 2026-08-08 · L8 v18</title>
+  <meta name="description" content="Estado de cumplimiento RGPD art. 13 de las 5 calculadoras MF3. 1ª + 2ª capa informativa + plazos. Decisión Dani: completar 8 marcadores [DANI] en 5 min para blindar e11 (viva desde 2026-07-27)." />
+  <style>
+    :root { --bg:#0f172a; --card:#fff; --ink:#0f172a; --muted:#64748b; --ok:#15803d; --warn:#b45309; --err:#b91c1c; --brand:#d97706; --line:#e2e8f0; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:linear-gradient(135deg,#0f172a,#334155); color:var(--ink); min-height:100vh; padding:24px 16px; line-height:1.5; }
+    .container { max-width:1100px; margin:0 auto; }
+    h1 { color:#fff; font-size:24px; margin:0 0 6px; }
+    .sub { color:#94a3b8; font-size:14px; margin-bottom:24px; }
+    .card { background:var(--card); border-radius:14px; padding:20px 24px; box-shadow:0 12px 32px rgba(0,0,0,.18); margin-bottom:18px; }
+    h2 { font-size:18px; margin:0 0 12px; }
+    h3 { font-size:14px; margin:18px 0 8px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; font-weight:800; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { padding:8px 10px; text-align:left; border-bottom:1px solid var(--line); }
+    th { background:#f1f5f9; font-weight:700; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+    td.center { text-align:center; }
+    .pill { display:inline-block; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; }
+    .pill-ok { background:#dcfce7; color:#166534; }
+    .pill-warn { background:#fef3c7; color:#92400e; }
+    .pill-err { background:#fee2e2; color:#991b1b; }
+    .pill-viva { background:#fce7f3; color:#9d174d; border:2px solid #f472b6; }
+    .viva-row { background:#fff7ed; }
+    .checklist { background:#f8fafc; border:1px solid var(--line); border-radius:8px; padding:12px 16px; }
+    .checklist li { margin:6px 0; font-size:13px; }
+    .checklist input[type=checkbox] { margin-right:8px; transform:scale(1.2); }
+    .placeholder { background:#fef3c7; border-left:4px solid var(--warn); padding:8px 12px; font-size:13px; border-radius:4px; margin:8px 0; font-family:ui-monospace,Menlo,Consolas,monospace; }
+    .cta { display:inline-block; background:var(--brand); color:#fff; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:700; margin-top:12px; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    @media (max-width:700px) { .grid2 { grid-template-columns:1fr; } }
+    .small { font-size:11px; color:var(--muted); }
+    .timeline { background:#f8fafc; border-radius:8px; padding:12px 16px; font-size:13px; }
+    .timeline li { margin:4px 0; }
+    .legend { display:flex; gap:14px; font-size:11px; color:var(--muted); margin-bottom:10px; flex-wrap:wrap; }
+    .legend span::before { content:''; display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:middle; }
+    .l-ok::before { background:#15803d; }
+    .l-warn::before { background:#b45309; }
+    .l-err::before { background:#b91c1c; }
+    .l-viva::before { background:#9d174d; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>🔒 Auditoría LOPD calculadoras MF3</h1>
+  <p class="sub">L8 v18 · 2026-08-08 · Hallazgo BRAIN sobre riesgo RGPD art. 13. Decisión Dani: 8 marcadores [DANI] en 5 min.</p>
+
+  <div class="card" style="border-left:6px solid var(--err);">
+    <h2>⚠️ Hallazgo crítico: e11 (viva) pide email+consentimiento SIN cláusula informativa</h2>
+    <p><strong>URL:</strong> <code>https://danibrainclaw.github.io/brain-panels/e11/calculadora_mf3_estimativa_v0.html</code></p>
+    <p><strong>Viva desde:</strong> 2026-07-27 (12 días) · <strong>Anunciada en brain-panels/index.html</strong> como lead-magnet MF3</p>
+    <p><strong>Estado RGPD art. 13:</strong></p>
+    <ul>
+      <li>✅ <strong>1ª capa</strong> presente: checkbox RGPD con texto "He leído la información básica y consiento que Mediterranean Fusion SL me contacte"</li>
+      <li>❌ <strong>2ª capa AUSENTE</strong>: NO hay enlace a <code>https://mf3.es/politica-privacidad/</code>, NO hay cláusula informativa in-page (responsable, finalidad, derechos, plazo)</li>
+      <li>❌ <strong>Plazo de conservación</strong> no especificado (art. 13.2.a RGPD)</li>
+      <li>❌ <strong>Base legitimadora</strong> mencionada solo implícitamente (consentimiento) — falta enumerar</li>
+      <li>❌ <strong>Derechos del interesado</strong> (arts. 15-22 RGPD) NO comunicados</li>
+    </ul>
+    <p><strong>Riesgo:</strong> si un usuario AEPD reclama, MF3 incurre en infracción del art. 13 RGPD + art. 11 LOPDGDD. Multa leve 1.000-40.000€ (art. 83.5.b RGPD), o apercibimiento si se subsana antes de inspección. <strong>Subsanable en 5 min con la cláusula ya redactada.</strong></p>
+  </div>
+
+  <div class="card">
+    <h2>📊 Estado de las 5 calculadoras MF3</h2>
+    <div class="legend">
+      <span class="l-ok">2ª capa + plazo OK</span>
+      <span class="l-warn">Solo 1ª capa (checkbox)</span>
+      <span class="l-err">Sin nada RGPD</span>
+      <span class="l-viva">Publicada en producción</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Calculadora</th>
+          <th>Estado</th>
+          <th>Email</th>
+          <th>1ª capa</th>
+          <th>2ª capa</th>
+          <th>Plazo</th>
+          <th>Notas</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="viva-row">
+          <td><strong>e11 / v0 (estimativa)</strong><br><span class="small">la que está VIVA</span></td>
+          <td class="center"><span class="pill pill-viva">VIVA</span></td>
+          <td class="center">✅</td>
+          <td class="center"><span class="pill pill-warn">parcial</span></td>
+          <td class="center"><span class="pill pill-err">NO</span></td>
+          <td class="center"><span class="pill pill-err">NO</span></td>
+          <td>Badge "L8 v13 PROTOTIPO" en header, NO captura real, pero SÍ pide email+consentimiento sin cláusula</td>
+        </tr>
+        <tr>
+          <td><strong>lite v5</strong></td>
+          <td class="center"><span class="pill">borrador</span></td>
+          <td class="center">✅</td>
+          <td class="center"><span class="pill pill-ok">OK</span></td>
+          <td class="center"><span class="pill pill-ok">OK</span></td>
+          <td class="center"><span class="pill pill-ok">OK</span></td>
+          <td>Única completa. <strong>Plantilla a copiar.</strong> Vive en disco, NO publicada.</td>
+        </tr>
+        <tr>
+          <td><strong>lite v4</strong></td>
+          <td class="center"><span class="pill">borrador</span></td>
+          <td class="center">✅</td>
+          <td class="center"><span class="pill pill-warn">parcial</span></td>
+          <td class="center"><span class="pill pill-err">NO</span></td>
+          <td class="center"><span class="pill pill-err">NO</span></td>
+          <td>Bloqueada por LOPD incompleta. NO publicar.</td>
+        </tr>
+        <tr>
+          <td><strong>lite (v3)</strong></td>
+          <td class="center"><span class="pill">borrador</span></td>
+          <td class="center">✅</td>
+          <td class="center"><span class="pill pill-warn">parcial</span></td>
+          <td class="center"><span class="pill pill-err">NO</span></td>
+          <td class="center"><span class="pill pill-err">NO</span></td>
+          <td>Bloqueada por LOPD incompleta. NO publicar.</td>
+        </tr>
+        <tr>
+          <td><strong>prototipo</strong></td>
+          <td class="center"><span class="pill">interno</span></td>
+          <td class="center">✅</td>
+          <td class="center"><span class="pill pill-err">NO</span></td>
+          <td class="center"><span class="pill pill-err">NO</span></td>
+          <td class="center"><span class="pill pill-err">NO</span></td>
+          <td>Prototipo de flujo. NO es entregable público.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>🔧 Plan de subsanación (5 min Dani)</h2>
+    <p>La cláusula informativa completa ya está redactada en <code>Research/L8/privacy_second_layer_v1.md</code> (165 líneas, RGPD art. 13 + LOPDGDD art. 11). Solo falta que Dani complete 8 marcadores <code>[DANI]</code>:</p>
+
+    <h3>📋 Checklist de personalización</h3>
+    <ol class="checklist">
+      <li><input type="checkbox" disabled> Razón social exacta: <span class="placeholder">[DANI: ¿Mediterranean Fusion Sociedad Limitada?]</span></li>
+      <li><input type="checkbox" disabled> CIF / NIF: <span class="placeholder">[DANI: completar]</span></li>
+      <li><input type="checkbox" disabled> Domicilio social completo (CP, municipio): <span class="placeholder">[DANI: Plaza Martí y Monsó 1 — confirmar CP exacto]</span></li>
+      <li><input type="checkbox" disabled> Teléfono de contacto: <span class="placeholder">[DANI: 654 151 150 u otro]</span></li>
+      <li><input type="checkbox" disabled> ¿Existe DPO? (sino, incluir frase indicada)</li>
+      <li><input type="checkbox" disabled> Proveedor real de correo (Gmail / Zoho / Outlook / SiteGround Mail): <span class="placeholder">[DANI]</span></li>
+      <li><input type="checkbox" disabled> ¿Se usa Google Analytics u otra herramienta con transferencia fuera EEE?</li>
+      <li><input type="checkbox" disabled> ¿Se envía newsletter? (sino, eliminar bloque)</li>
+    </ol>
+
+    <h3>🪜 Pasos de aplicación</h3>
+    <ol class="timeline">
+      <li><strong>Dani completa 8 marcadores</strong> en privacy_second_layer_v1.md (5 min).</li>
+      <li><strong>BRAIN publica v2 e11</strong> con la cláusula incrustada in-page + enlace a <code>mf3.es/politica-privacidad/</code> (zona 🟢, sin tocar producción).</li>
+      <li><strong>Dani sustituye el HTML</strong> en mf3.es (10 min, vía SiteGround File Manager o git push).</li>
+      <li><strong>BRAIN verifica</strong> con curl + grep que art. 13 está completo.</li>
+      <li><strong>Cierre:</strong> anotar en SCOREBOARD + LINEAS.md fin de riesgo LOPD L8.</li>
+    </ol>
+
+    <p><strong>Tiempo total Dani:</strong> 15 min. <strong>Coste:</strong> 0 €. <strong>Beneficio:</strong> cierre de riesgo legal accionable hoy.</p>
+    <a href="https://github.com/danibrainclaw/workspace/blob/main/Research/L8/privacy_second_layer_v1.md" class="cta">📄 Ver cláusula completa (privacy_second_layer_v1.md)</a>
+  </div>
+
+  <div class="card">
+    <h2>📚 Marco normativo aplicado</h2>
+    <ul class="small">
+      <li><strong>RGPD art. 13</strong> (DOUE-L-2016-80807, 2016-05-04): información que debe facilitarse cuando se obtienen datos del interesado.</li>
+      <li><strong>LOPDGDD art. 11</strong> (Ley 3/2018): información básica en capas (1ª capa resumida + 2ª capa detallada con enlace).</li>
+      <li><strong>RGPD art. 6.1.a</strong>: consentimiento como base jurídica (requiere inequívoco, informado, específico).</li>
+      <li><strong>AEPD Guía deber de informar</strong> (en revisión, edición 2023): patrón "información por capas" para formularios web.</li>
+      <li><strong>RGPD arts. 15-22</strong>: derechos del interesado (acceso, rectificación, supresión, limitación, portabilidad, oposición, retirada del consentimiento).</li>
+      <li><strong>RGPD art. 83.5.b</strong>: sanciones por incumplimiento del deber de informar (hasta 20M€ o 4% facturación, o el mayor; en PYMEs españolas se aplica tramo inferior del art. 83.4 = hasta 10M€).</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🟢 Lo que NO requiere OK Dani (zona 🟢)</h2>
+    <ul>
+      <li>Generar <code>calculadora_mf3_estimativa_v2.html</code> con la cláusula incrustada (basada en lite v5 + privacidad del v2).</li>
+      <li>Publicar v2 en <code>brain-panels/e11/calculadora_mf3_estimativa_v2.html</code> con badge "v2 — pendiente deploy en mf3.es".</li>
+      <li>Mantener v0 publicada (sin tocar producción) hasta que Dani decida.</li>
+    </ul>
+    <p class="small">Si Dani da OK a la publicación de v2 en mi brain-panels como muestra, lo hago en el siguiente pulso (zona 🟢, sin esperar).</p>
+  </div>
+
+  <div class="card" style="background:#0f172a; color:#fff; border:none;">
+    <h2 style="color:#fff;">🔴 Lo que SÍ requiere OK Dani (zona 🟡)</h2>
+    <ul style="color:#cbd5e1;">
+      <li>Completar los 8 marcadores <code>[DANI]</code> (5 min).</li>
+      <li>Decidir: <strong>(a) retirar v0 de producción</strong> y dejar solo v2, o <strong>(b) desplegar v2 en mf3.es</strong> sustituyendo v0.</li>
+      <li>Verificar que <code>mf3.es/politica-privacidad/</code> existe y es accesible (URL actualmente devuelve SG-Captcha al VPS, no se ha podido validar).</li>
+      <li>Aplicar el mismo parche a lite v4 + lite v3 si decide publicarlas algún día.</li>
+    </ul>
+  </div>
+
+  <p class="small" style="text-align:center; color:#94a3b8; margin-top:24px;">
+    BRAIN · L8 v18 · Hallazgo generado automáticamente el 2026-08-08 09:32 Berlin<br>
+    Próximo paso: esperar decisión Dani (digest menciona este hallazgo + Telegram directo si aplica).
+  </p>
+</div>
+</body>
+</html>
