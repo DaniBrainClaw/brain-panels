@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BATCH CWD fix — 23 crons</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; max-width: 1200px; margin: 20px auto; padding: 0 20px; color: #1a1a1a; }
+  h1 { font-size: 22px; border-bottom: 2px solid #d33; padding-bottom: 8px; }
+  h2 { font-size: 17px; margin-top: 32px; }
+  .summary { background: #fff8e1; border-left: 4px solid #f90; padding: 12px 16px; margin: 16px 0; }
+  .summary strong { color: #c00; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 12px; }
+  th, td { border: 1px solid #ddd; padding: 6px 8px; vertical-align: top; text-align: left; }
+  th { background: #f5f5f5; font-weight: 600; }
+  tr.rot { background: #fee; }
+  tr.lat { background: #fffbe6; }
+  td.id { font-family: monospace; font-size: 11px; color: #888; }
+  td.flag { font-size: 16px; text-align: center; }
+  td.cwd code { font-size: 11px; }
+  td.argv code { font-size: 10px; word-break: break-all; }
+  td.err { text-align: center; font-weight: 600; }
+  .muted { color: #888; font-size: 11px; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+  .legend { font-size: 13px; margin: 8px 0; }
+  .legend span { display: inline-block; margin-right: 16px; }
+</style>
+</head>
+<body>
+
+<h1>🔧 BATCH CWD fix — 23 crons con prefijo <code>tail -N|</code> corrupto</h1>
+
+<p class="summary">
+<strong>Estado:</strong> 23 crons migrados a <code>payload.kind: command</code> el 2026-08-08 12:07 Berlin llevan un <code>cwd</code> con prefijo basura <code>tail -N|</code> pegado al inicio (huella de la migración). Node falla al hacer chdir → reporta engañoso <code>spawn sh ENOENT</code> aunque <code>sh</code> sí existe.<br><br>
+<strong>Impacto actual:</strong> <span style="color:#c00">3 crones con <code>argv</code> relativo SÍ están rotos AHORA</span> (no solo latentes). Los otros 20 funcionan OK porque sus <code>argv</code> usan paths absolutos al script. Bomba de relojería: cualquier día que un script use <code>Path('.')</code> o relativo, falla sin causa clara.
+</p>
+
+<div class="legend">
+  <span>🔴 = roto ahora (argv relativo)</span>
+  <span>🟡 = latente (argv absoluto)</span>
+  <span><strong>Total: 23</strong></span>
+  <span><strong>Rotos ahora: 3</strong></span>
+  <span><strong>Latentes: 20</strong></span>
+</div>
+
+<h2>📋 Tabla de los 23 crons a parchear</h2>
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nombre</th>
+      <th>🚦</th>
+      <th>cwd actual (roto) → cwd limpio</th>
+      <th>argv (preview)</th>
+      <th>err</th>
+    </tr>
+  </thead>
+  <tbody>
+        <tr class="rot">
+          <td class="id">2340beda</td>
+          <td class="name">Checklist ask archive (23:01 Madrid L-V)</td>
+          <td class="flag">🔴</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 scripts/checklist_ask_archive.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="rot">
+          <td class="id">eb038038</td>
+          <td class="name">cron-briefing-002</td>
+          <td class="flag">🔴</td>
+          <td class="cwd"><code>tail -30|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 scripts/briefing_checklist_ayer.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="rot">
+          <td class="id">a2e6c277</td>
+          <td class="name">cron-collect-001</td>
+          <td class="flag">🔴</td>
+          <td class="cwd"><code>tail -30|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 scripts/trello_collect_daily_checklist.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">75daddf7</td>
+          <td class="name">BRAIN Nightly Learning — 01:00</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/main/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/main/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/main/workspace/scripts/nightly_self_improvement.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">check-cr</td>
+          <td class="name">Check CRM move status (mañana 07:55)</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/check_crm_move_status.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">98af9342</td>
+          <td class="name">Check CRM sync status (mañana 07:55)</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/verify_crm_sync.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">cron-913</td>
+          <td class="name">Check email pipeline 12:00</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/check_email_noon.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">ca0da3a1</td>
+          <td class="name">Cron audit diario 09:00</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/cron_audit.py --json 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">email-fe</td>
+          <td class="name">Email 07:50</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/email_pipeline.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">email-fe</td>
+          <td class="name">Email 12:00</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/email_pipeline.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">email-fe</td>
+          <td class="name">Email 14:50</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/email_pipeline.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">email-fe</td>
+          <td class="name">Email 19:00</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/email_pipeline.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">9b3b7037</td>
+          <td class="name">Morning focus — 07:45 cada día (foco canónico)</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/foco.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">mover-ta</td>
+          <td class="name">Mover tareas CRM pendientes (noche 23:00)</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/mover_tareas_pendientes_crm.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">nightly-</td>
+          <td class="name">Nightly audit</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/workspace</code><br><span class="muted">→ <code>/data/.openclaw/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/workspace/skills/audit-daily/audit_daily.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">4d659dbc</td>
+          <td class="name">Panel snapshot hourly + detect new CRM/Trello</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -20|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc bash /data/.openclaw/agents/director-organizacion/workspace/arquitectura/nucleo-os/scripts/auto_update.sh 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">52b64673</td>
+          <td class="name">Sync CRM HubSpot → crm.db (noche 23:00)</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/sync_crm_hubspot.py --apply 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">9569a162</td>
+          <td class="name">Sábado focus — 10:00 Madrid (foco canónico)</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/foco.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">44bcebe9</td>
+          <td class="name">Trello checklist diario (María + Alicia) 7:30 Madrid L-V</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/trello_create_checklist_cards.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">8eaeb018</td>
+          <td class="name">Trello checklist verify (no-duplicates) 7:35 Madrid L-V</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/director-organizacion/workspace/scripts/trello_verify_checklist_no_duplicates.py 2</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">6295f148</td>
+          <td class="name">Update memory symlinks daily at 00:05</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/director-organizacion/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/director-organizacion/workspace</code></span></td>
+          <td class="argv"><code>sh -lc bash /data/.openclaw/agents/director-organizacion/workspace/scripts/update_memory_symlinks.sh 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">50185a59</td>
+          <td class="name">cron-audit-0700</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/maintenance/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/maintenance/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/maintenance/workspace/scripts/cron_health_audit.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+        <tr class="lat">
+          <td class="id">ce94cd9b</td>
+          <td class="name">cron-audit-2200</td>
+          <td class="flag">🟡</td>
+          <td class="cwd"><code>tail -10|/data/.openclaw/agents/maintenance/workspace</code><br><span class="muted">→ <code>/data/.openclaw/agents/maintenance/workspace</code></span></td>
+          <td class="argv"><code>sh -lc python3 /data/.openclaw/agents/maintenance/workspace/scripts/cron_health_audit.py 2&gt;&amp;1</code></td>
+          <td class="err">0</td>
+        </tr>
+  </tbody>
+</table>
+
+<h2>🛠️ Patch script (zona 🟢 — listo para Dani)</h2>
+
+<p>El script <code>scripts/patch_cwds_batch.sh</code> ya está generado en el workspace. Por defecto hace <strong>dry-run</strong> (solo imprime). Con <code>--apply</code> ejecuta los 23 <code>openclaw cron update</code>.</p>
+
+<pre>#!/usr/bin/env bash
+# patch_cwds_batch.sh — fix 23 crons con cwd corrupto
+# generado 2026-08-08 16:34 Berlin
+# uso: bash patch_cwds_batch.sh [--apply]
+# default = dry-run (solo imprime qué haría)
+
+set -euo pipefail
+
+APPLY=0
+[[ "${1:-}" == "--apply" ]] && APPLY=1
+
+run() {
+  local desc="$1"; local id="$2"; local cwd_new="$3"
+  if (( APPLY )); then
+    echo "▶ APPLY $desc"
+    openclaw cron update --id "$id" --payload-cwd "$cwd_new"
+  else
+    echo "○ DRY  $desc  →  cwd = $cwd_new"
+  fi
+}
+
+# 23 crons a parchear
+
+run "Checklist ask archive (23:01 Madrid L-V)" "2340beda-5166-4d16-a7de-99382ed5daaa" "/data/.openclaw/agents/director-organizacion/workspace"
+run "cron-briefing-002" "eb038038-3ef5-4b9d-94c4-2d18a4f7fbbd" "/data/.openclaw/agents/director-organizacion/workspace"
+run "cron-collect-001" "a2e6c277-58e8-4f54-9b26-16c978859641" "/data/.openclaw/agents/director-organizacion/workspace"
+run "BRAIN Nightly Learning — 01:00" "75daddf7-081b-442b-8526-06def85f6c51" "/data/.openclaw/agents/main/workspace"
+run "Check CRM move status (mañana 07:55)" "check-crm-move-0800-001" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Check CRM sync status (mañana 07:55)" "98af9342-3aef-4e32-848a-07013ae23c08" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Check email pipeline 12:00" "cron-9132a478-1121-43a9-982e-b37c8c15e932" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Cron audit diario 09:00" "ca0da3a1-878b-4c48-9ac5-f691ff9714ac" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Email 07:50" "email-fetch-0750" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Email 12:00" "email-fetch-1200" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Email 14:50" "email-fetch-1450" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Email 19:00" "email-fetch-1900" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Morning focus — 07:45 cada día (foco canónico)" "9b3b7037-e6f1-4464-b7c1-bed14dad82c0" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Mover tareas CRM pendientes (noche 23:00)" "mover-tareas-crm-2300-001" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Nightly audit" "nightly-audit-001" "/data/.openclaw/workspace"
+run "Panel snapshot hourly + detect new CRM/Trello" "4d659dbc-a969-4b30-a49d-104829184671" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Sync CRM HubSpot → crm.db (noche 23:00)" "52b64673-4656-4364-b3ca-bd7afcfe4f81" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Sábado focus — 10:00 Madrid (foco canónico)" "9569a162-4526-4f39-b7e8-785db01c6acb" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Trello checklist diario (María + Alicia) 7:30 Madrid L-V" "44bcebe9-e0c5-47d2-9226-c56def9fdde1" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Trello checklist verify (no-duplicates) 7:35 Madrid L-V" "8eaeb018-075c-4c26-944f-f7da76d4ccfa" "/data/.openclaw/agents/director-organizacion/workspace"
+run "Update memory symlinks daily at 00:05" "6295f148-a215-4a80-95e7-ae8d9854bfc2" "/data/.openclaw/agents/director-organizacion/workspace"
+run "cron-audit-0700" "50185a59-07b8-4351-8f8c-7b87536e1c1f" "/data/.openclaw/agents/maintenance/workspace"
+run "cron-audit-2200" "ce94cd9b-936a-4cc1-876a-8397a5be45e8" "/data/.openclaw/agents/maintenance/workspace"
+</pre>
+
+<h2>📊 Métricas del fix</h2>
+<ul>
+  <li><strong>Tiempo de ejecución estimado:</strong> ~30 s (23 × ~1.3 s por <code>cron update</code>).</li>
+  <li><strong>Validación previa:</strong> <code>spawn sh ENOENT</code> reproducido con <code>spawnSync('sh',['-lc','echo OK'],{cwd:'tail -20|/tmp'})</code> → mismo error. Con cwd limpio, OK.</li>
+  <li><strong>Riesgo:</strong> muy bajo. Solo cambia el campo <code>cwd</code>; el resto del payload (argv, schedule, enabled) intacto.</li>
+  <li><strong>Reversibilidad:</strong> 100%. Si algo falla, <code>openclaw cron update --id &lt;id&gt; --payload-cwd "tail -N|/path"</code> revierte.</li>
+</ul>
+
+<h2>🔗 Trazabilidad</h2>
+<ul>
+  <li>Propuesta original: <code>Research/propuestas/cron_batch_cwd_fix_23_jobs_2026-08-08.md</code></li>
+  <li>Alerta individual <code>4d659dbc</code>: subsumida en este BATCH.</li>
+  <li>SCOREBOARD § Alertas: entrada 2026-08-08 16:30.</li>
+  <li>Generado: 2026-08-08 16:34 Berlin.</li>
+</ul>
+
+</body>
+</html>
