@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Panel · Cola de publicación + decisiones legales pendientes</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Panel único donde Dani ve TODOS los entregables HTML de BRAIN con su estado legal/publicación. Decisiones agrupadas por urgencia (LOPD activa) y bloqueos autoimpuestos.">
+<style>
+:root{--c-ok:#0a7d3b;--c-warn:#b35a00;--c-err:#a01b1b;--c-line:#d8d8d8;--c-bg:#fafafa;--c-emph:#fff8e1;--c-crit:#fbe7e7}
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#222;max-width:1180px;margin:20px auto;padding:0 20px;line-height:1.45}
+h1{margin:0 0 4px;font-size:22px}
+.subtitle{color:#666;font-size:13px;margin-bottom:14px}
+.disclaimer{background:var(--c-emph);border-left:4px solid var(--c-warn);padding:10px 14px;margin:14px 0;font-size:13px}
+.disclaimer.crit{background:var(--c-crit);border-left-color:var(--c-err)}
+.disclaimer strong{color:var(--c-warn)}
+.disclaimer.crit strong{color:var(--c-err)}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+.tile{background:#fff;border:1px solid var(--c-line);border-radius:4px;padding:10px}
+.tile .n{font-size:22px;font-weight:700;line-height:1.1}
+.tile .l{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.5px}
+.tile.crit .n{color:var(--c-err)}
+.tile.warn .n{color:var(--c-warn)}
+.tile.ok .n{color:var(--c-ok)}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px}
+th,td{border:1px solid var(--c-line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#f1f1f1;font-size:12px;text-transform:uppercase;letter-spacing:0.3px}
+.tag{display:inline-block;font-size:10px;padding:2px 6px;border-radius:3px;font-weight:700;letter-spacing:0.3px}
+.tag-live{background:#d4efd8;color:#0a5a2a}
+.tag-blocked{background:#f9d3d3;color:#7a1b1b}
+.tag-review{background:#fde7c5;color:#7a4a00}
+.tag-draft{background:#e0e0e0;color:#444}
+.tag-ok{background:#d4efd8;color:#0a5a2a}
+.tag-mtto{background:#e0eef9;color:#0a3a5a}
+.section{margin-top:24px;padding-top:8px;border-top:2px solid var(--c-line)}
+h2{font-size:16px;margin:0 0 8px}
+.btn{display:inline-block;padding:4px 10px;font-size:12px;background:#0a7d3b;color:#fff;border-radius:3px;text-decoration:none;font-weight:600}
+.btn.warn{background:#b35a00}
+.btn.err{background:#a01b1b}
+.btn.disabled{background:#999;cursor:not-allowed}
+.url{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#0a4a8a}
+.foot{margin-top:24px;font-size:11px;color:#888;border-top:1px solid var(--c-line);padding-top:6px}
+.cta{background:#fff8e1;border:2px solid #b35a00;padding:14px;border-radius:4px;margin:14px 0}
+.cta strong{color:#7a4a00}
+pre{background:#f5f5f5;padding:8px;font-size:11px;border-radius:3px;overflow-x:auto;margin:6px 0}
+</style>
+</head>
+<body>
+<h1>📋 Cola de publicación + decisiones legales pendientes</h1>
+<div class="subtitle">Panel único de decisiones Dani · 2026-08-08 · todos los entregables HTML de BRAIN con su estado legal/publicación. Decisiones agrupadas por urgencia y tipo de bloqueo. Generado por BRAIN como herramienta de trabajo (no entregable vendible).</div>
+
+<div class="disclaimer crit">
+<strong>🔴 URGENCIA LEGAL ACTIVA:</strong> la calculadora <span class="url">/e11/calculadora_mf3_estimativa_v0.html</span> lleva desde 27-jul-2026 capturando emails con checkbox "consiento que Mediterranean Fusion SL me contacte" sin cláusula informativa RGPD. Sin Responsable/Finalidad/Derechos/enlace a política de privacidad. <strong>Acción accionable hoy</strong> — retira o completa la cláusula.
+</div>
+
+<h2>📊 Resumen ejecutivo</h2>
+<div class="summary">
+  <div class="tile crit"><div class="n">1</div><div class="l">🔴 Urgencia legal (LOPD)</div></div>
+  <div class="tile warn"><div class="n">5</div><div class="l">🟡 Bloqueados revisión legal</div></div>
+  <div class="tile"><div class="n">3</div><div class="l">📋 Pendientes de revisión</div></div>
+  <div class="tile ok"><div class="n">9</div><div class="l">🟢 Live en brain-panels</div></div>
+</div>
+
+<div class="cta">
+<strong>Cómo se usa:</strong> Dani revisa cada fila, decide la acción (botón sugerido), y BRAIN ejecuta en el siguiente pulso. Las filas marcadas 🔴/🟡 son zona 🟡 — necesito tu OK explícito. Las filas 📋 son zona 🟢 — las reviso yo si me das luz verde. Las filas 🟢 ya están servidas.
+</div>
+
+<h2>🔴 Urgencia legal (acción HOY)</h2>
+<table>
+<thead><tr><th>Item</th><th>Estado</th><th>Bloqueo</th><th>Decisión sugerida</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>e11/calculadora_mf3_estimativa_v0.html</strong><br><span class="url">https://danibrainclaw.github.io/brain-panels/e11/calculadora_mf3_estimativa_v0.html</span><br><em>13.4 KB · LIVE desde 2026-07-27 · tarjeta "lead-magnet" en index</em></td>
+  <td><span class="tag tag-live">LIVE</span></td>
+  <td>Captura email + checkbox consentimiento sin cláusula informativa RGPD. CERO: Responsable, Finalidad, Derechos, plazo conservación, enlace política privacidad. <em>Defecto peor que v5 (abortado hoy)</em>.</td>
+  <td>
+    <strong>Opción A (rápida):</strong> RETIRAR — DELETE vía API + quitar tarjeta index<br>
+    <strong>Opción B (completa):</strong> añadir cláusula 2ª capa con privacy_second_layer_v1.md y plazo conservación 12 meses<br>
+    <em>Tu llamada en el digest de hoy 08:32.</em>
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2>🟡 Bloqueados revisión legal (esperando tu OK LOPD)</h2>
+<table>
+<thead><tr><th>Item</th><th>Estado</th><th>Bloqueo</th><th>Decisión sugerida</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>L8/calculadora_mf3_lite_v5.html</strong><br><span class="url">/data/.openclaw/workspace/Research/L8/calculadora_mf3_lite_v5.html</span><br><em>12.8 KB · NO publicado · 2 auto-bloqueos en el HTML</em></td>
+  <td><span class="tag tag-blocked">BLOCKED</span></td>
+  <td>El archivo contiene literalmente: <em>"Demo interna: no publicar hasta verificar la segunda capa y el plazo de conservación"</em> y <em>"Demo interna; no publicar todavía."</em>. v5 sí incluye cláusula RGPD parcial pero incompleta.</td>
+  <td>
+    <strong>Opción A:</strong> publicar usando privacy_second_layer_v1.md como base<br>
+    <strong>Opción B:</strong> descartar y matar el branch v5 (consolidar solo v0 ya live)<br>
+    <strong>Opción C:</strong> mantener como v5 "laboratorio" sin publicar
+  </td>
+</tr>
+<tr>
+  <td><strong>L8/calculadora_mf3_lite_v4.html</strong><br><em>11.2 KB · NO publicado</em></td>
+  <td><span class="tag tag-review">REVIEW</span></td>
+  <td>Botón genera <code>mailto:info@mf3.es</code> con cuerpo del email (no captura en servidor). RGPD se aplicaría al envío, no a la captura. Probablemente publicable SIN cláusula adicional, pero hay que verificar copy del disclaimer.</td>
+  <td>
+    <strong>Publicar como v4 estable</strong> con disclaimer "esto abre tu cliente de correo, no captura datos" o<br>
+    <strong>Descartar</strong> porque v5 ya cubre el caso de uso
+  </td>
+</tr>
+<tr>
+  <td><strong>L8/calculadora_mf3_lite.html</strong><br><em>10.7 KB · NO publicado · jul 12</em></td>
+  <td><span class="tag tag-review">REVIEW</span></td>
+  <td>Predecesor v3. Mismo patrón mailto. Sin revisar copy completo.</td>
+  <td><strong>Revisar y consolidar en v4</strong> (probablemente obsoleto)</td>
+</tr>
+<tr>
+  <td><strong>L8/calculadora_mf3_prototipo.html</strong><br><em>11.1 KB · NO publicado · jul 10</em></td>
+  <td><span class="tag tag-draft">DRAFT</span></td>
+  <td>Auto-etiquetado "Prototipo interno BRAIN para Mediterranean Fusion. No es presupuesto vinculante: sirve para cualificar leads y pedir una llamada." Misma arquitectura mailto. Draft original.</td>
+  <td><strong>Descartar</strong> (consolidar todo en v0/v5)</td>
+</tr>
+<tr>
+  <td><strong>L13/plantilla_informe_fase_v0.html</strong><br><em>8.8 KB · NO publicado · jul 25</em></td>
+  <td><span class="tag tag-draft">DRAFT</span></td>
+  <td>Predecesor de v0.1.html (ya publicada en <span class="url">/l13/plantilla_informe_fase_v0.1.html</span>). Misma función, peor UX. No aporta valor tener 2 versiones.</td>
+  <td><strong>Descartar</strong> (consolidar solo v0.1)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>📋 Pendientes de revisión rápida (zona 🟢 si me das luz verde)</h2>
+<table>
+<thead><tr><th>Item</th><th>Estado</th><th>Acción</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>L13/.tmp_v14/caso_{C,D,E}_prefilled.html</strong><br><em>12.2 KB / 11.9 KB / 12.5 KB · 25-jul</em></td>
+  <td><span class="tag tag-draft">DRAFT</span></td>
+  <td>Versiones "rellenas" del set v14 ya publicadas en <span class="url">/l13/v14_caso_{C,D,E}.html</span>. Mismo contenido, distinta presentación. Candidatos a publicar si quieres demos "rellenas" o archivar.</td>
+</tr>
+</tbody>
+</table>
+
+<h2>🟢 Live en brain-panels (referencia)</h2>
+<table>
+<thead><tr><th>Item</th><th>URL</th><th>Tarjeta index</th></tr></thead>
+<tbody>
+<tr><td>L6 panel tier A batch jul</td><td><span class="url">/l6/panel_tier_a_batch_jul_2026.html</span></td><td><span class="tag tag-ok">SÍ</span></td></tr>
+<tr><td>L6 outreach pack 3 leads</td><td><span class="url">/l6/panel_outreach_pack_3leads_v1.html</span></td><td><span class="tag tag-ok">SÍ</span></td></tr>
+<tr><td>L6 outreach pack 4 leads</td><td><span class="url">/l6/panel_outreach_pack_4leads_v1.html</span></td><td><span class="tag tag-ok">SÍ</span></td></tr>
+<tr><td>L6 outreach pack 5 leads</td><td><span class="url">/l6/panel_outreach_pack_5leads_v1.html</span></td><td><span class="tag tag-ok">SÍ</span></td></tr>
+<tr><td>L7 v47 mobiliario audit</td><td><span class="url">/l7/l7_v47_mobiliario_audit.html</span></td><td><span class="tag tag-ok">SÍ</span></td></tr>
+<tr><td>L7 v75 img optimization</td><td><span class="url">/l7/l7_v75_img_optimization_2026-08-03.html</span></td><td><span class="tag tag-ok">SÍ</span></td></tr>
+<tr><td>L13 v14 caso C</td><td><span class="url">/l13/v14_caso_C.html</span></td><td><span class="tag tag-ok">SÍ</span></td></tr>
+<tr><td>L13 v14 caso D</td><td><span class="url">/l13/v14_caso_D.html</span></td><td><span class="tag tag-ok">SÍ</span></td></tr>
+<tr><td>L13 v14 caso E</td><td><span class="url">/l13/v14_caso_E.html</span></td><td><span class="tag tag-ok">SÍ</span></td></tr>
+<tr><td>L13 v15 comparador</td><td><span class="url">/l13/v15_comparador.html</span></td><td><span class="tag tag-ok">SÍ</span></td></tr>
+<tr><td>E11 calculadora (con LOPD incompleta — ver arriba)</td><td><span class="url">/e11/calculadora_mf3_estimativa_v0.html</span></td><td><span class="tag tag-ok">SÍ</span></td></tr>
+<tr><td>E17 plantilla informe fase v0.1</td><td><span class="url">/e17/plantilla_informe_fase_v0_1.html</span></td><td><span class="tag tag-ok">SÍ</span></td></tr>
+<tr><td>Dossier Fusion House</td><td><span class="url">/dossier-fusionhouse/panel.html</span></td><td><span class="tag tag-ok">SÍ</span></td></tr>
+</tbody>
+</table>
+
+<h2>🛠️ Workflow propuesto</h2>
+<ol style="font-size:13px;line-height:1.6">
+  <li><strong>Dani responde este panel</strong> con la decisión por fila (en digest o directo en Telegram)</li>
+  <li>BRAIN ejecuta la acción en el siguiente pulso:
+    <ul>
+      <li>Si RETIRAR → DELETE API + quitar tarjeta index + verificar Pages 404 (puede tardar 1-3 min caché CDN)</li>
+      <li>Si PUBLICAR → aplicar privacy_second_layer_v1.md, validar con grep "Responsable/Finalidad/Derechos", subir vía <code>tasks/publish_html.py</code>, añadir tarjeta index</li>
+      <li>Si DESCARTAR → mover archivo a <code>Research/.archived/&lt;fecha&gt;/</code> con motivo en un .md corto</li>
+    </ul>
+  </li>
+  <li>Panel se re-emite semanalmente hasta que la cola quede en 0 🔴 + 0 🟡</li>
+</ol>
+
+<div class="foot">
+Panel v1 · 2026-08-08 08:32 Berlin · BRAIN · zona 🟢 auto-generado como herramienta de decisión para Dani. Próxima re-emisión natural: tras respuesta o cada lunes si quedan decisiones abiertas.
+</div>
+</body>
+</html>
