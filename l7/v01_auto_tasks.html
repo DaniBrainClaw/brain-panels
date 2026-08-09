@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🧠 Sistema Automático — Panel BRAIN</title>
+<title>🧠 BRAIN Auto-Tasks — Panel</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
   :root {
     --bg: #0a0a0f;
@@ -14,258 +13,90 @@
     --border: #1e1e2e;
     --text: #e0e0e8;
     --muted: #6b6b80;
-    --green: #00d68f;
-    --green-bg: rgba(0,214,143,.12);
-    --red: #ff4757;
-    --red-bg: rgba(255,71,87,.12);
-    --yellow: #ffa502;
-    --yellow-bg: rgba(255,165,2,.12);
-    --blue: #5b9bd5;
-    --blue-bg: rgba(91,155,213,.12);
-    --purple: #a55eea;
-    --pink: #ff6b81;
-    --cyan: #1dd1a1;
-    --orange: #ff6348;
+    --green: #00d68f; --green-bg: rgba(0,214,143,.12);
+    --red: #ff4757; --red-bg: rgba(255,71,87,.12);
+    --yellow: #ffa502; --yellow-bg: rgba(255,165,2,.12);
+    --blue: #5b9bd5; --blue-bg: rgba(91,155,213,.12);
+    --purple: #a55eea; --orange: #ff6348;
   }
 
   * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter', system-ui, sans-serif; background:var(--bg); color:var(--text); min-height:100vh; line-height:1.5; }
 
-  body {
-    font-family:'Inter', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    line-height: 1.5;
-  }
-
-  /* Header */
   header {
     background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0f0f23 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 1.5rem 2rem;
-    position: sticky;
-    top:0;
-    z-index: 100;
+    border-bottom: 1px solid var(--border); padding: 1.25rem 2rem; position: sticky; top:0; z-index:100;
     backdrop-filter: blur(20px);
   }
-
-  .header-top {
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    max-width: 1400px;
-    margin:0 auto;
-    flex-wrap:wrap;
-    gap:1rem;
-  }
-
+  .header-top { display:flex; align-items:center; justify-content:space-between; max-width:1400px; margin:0 auto; flex-wrap:wrap; gap:1rem; }
   .logo { display:flex; align-items:center; gap:.75rem; }
   .logo .brain { font-size:2rem; }
   .logo h1 { font-size:1.5rem; font-weight:800; letter-spacing:-.5px; }
-  .logo .sub { color: var(--muted); font-size:.85rem; font-weight:400; margin-left:.5rem; }
+  .logo .sub { color:var(--muted); font-size:.85rem; font-weight:400; margin-left:.5rem; }
 
-  .stats-row {
-    display:flex;
-    gap:1.5rem;
-    align-items:center;
-    flex-wrap:wrap;
-  }
-
-  .stat-pill {
-    display:flex;
-    align-items:center;
-    gap:.4rem;
-    padding:.4rem 1rem;
-    border-radius: 2rem;
-    font-size:.85rem;
-    font-weight:600;
-    background: var(--card);
-    border: 1px solid var(--border);
-  }
+  .stats-row { display:flex; gap:1rem; align-items:center; flex-wrap:wrap; }
+  .stat-pill { display:flex; align-items:center; gap:.4rem; padding:.35rem .85rem; border-radius:2rem; font-size:.82rem; font-weight:600; background:var(--card); border:1px solid var(--border); }
   .stat-pill .dot { width:10px; height:10px; border-radius:50%; }
   .stat-pill.green .dot { background:var(--green); box-shadow:0 0 8px var(--green); }
   .stat-pill.red .dot { background:var(--red); box-shadow:0 0 8px var(--red); }
   .stat-pill.yellow .dot { background:var(--yellow); box-shadow:0 0 8px var(--yellow); }
-  .stat-pill.gray .dot { background:var(--muted); }
 
-  .last-check {
-    font-size:.75rem;
-    color: var(--muted);
-    font-family:'JetBrains Mono', monospace;
+  .legend-bar {
+    max-width:1400px; margin:.75rem auto 0; padding:0 2rem; display:flex; gap:2rem; align-items:center;
+    font-size:.72rem; color:var(--muted); flex-wrap:wrap;
   }
+  .legend-item { display:flex; align-items:center; gap:.35rem; }
+  .legend-sched { font-family:'JetBrains Mono', monospace; background:#0a0a14; padding:.1rem .4rem; border-radius:3px; font-size:.68rem; }
 
-  /* Main layout */
-  .main-grid {
-    display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-    gap:1.25rem;
-    padding:1.5rem 2rem;
-    max-width: 1400px;
-    margin:0 auto;
-  }
+  .main-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap:1.25rem; padding:1.25rem 2rem; max-width:1400px; margin:0 auto; }
+  @media (min-width:1200px) { .main-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width:500px) { .main-grid { grid-template-columns:1fr; padding:.75rem; } header { padding:1rem; } }
 
-  /* Agent card */
-  .agent-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    transition: all .2s;
-  }
+  .agent-card { background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; transition:all .2s; }
+  .agent-card:hover { border-color:#2a2a40; transform:translateY(-1px); }
+  .agent-card.featured { border-color: var(--green); box-shadow: 0 0 20px rgba(0,214,143,.08); }
+  .agent-card.warning { border-color: var(--red); box-shadow: 0 0 20px rgba(255,71,87,.08); }
 
-  .agent-card:hover { border-color: #2a2a40; transform: translateY(-1px); }
-
-  .agent-header {
-    padding: 1.25rem 1.5rem;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    user-select: none;
-  }
-
+  .agent-header { padding:1.1rem 1.5rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); cursor:pointer; user-select:none; }
   .agent-header .left { display:flex; align-items:center; gap:.75rem; }
   .agent-emoji { font-size:1.75rem; }
-  .agent-name { font-weight:700; font-size:1.1rem; }
-  .agent-role { font-size:.75rem; color:var(--muted); display:block; }
-  .agent-stats { display:flex; gap:.5rem; font-size:.75rem; font-weight:600; }
-
-  .badge {
-    padding:.2rem .7rem;
-    border-radius: 1rem;
-    font-size:.72rem;
-    font-weight:600;
-  }
+  .agent-name { font-weight:700; font-size:1.05rem; }
+  .agent-role { font-size:.72rem; color:var(--muted); display:block; }
+  .agent-stats { display:flex; gap:.4rem; font-size:.72rem; font-weight:600; }
+  .badge { padding:.18rem .6rem; border-radius:1rem; font-size:.7rem; font-weight:600; }
   .badge.ok { background:var(--green-bg); color:var(--green); }
   .badge.err { background:var(--red-bg); color:var(--red); }
   .badge.warn { background:var(--yellow-bg); color:var(--yellow); }
   .badge.info { background:var(--blue-bg); color:var(--blue); }
 
-  /* Task list */
-  .task-list { padding:.75rem 1.5rem; }
-
-  .task-group-title {
-    font-size:.7rem;
-    text-transform:uppercase;
-    letter-spacing:1.5px;
-    color:var(--muted);
-    padding:.75rem 0 .5rem;
-    border-bottom:1px solid #1a1a2a;
-    margin-bottom:.5rem;
-  }
-
-  .task-row {
-    display:flex;
-    align-items:center;
-    padding:.55rem 0;
-    gap:.75rem;
-    border-bottom:1px solid #0f0f1a;
-    font-size:.85rem;
-    transition: background .15s;
-  }
-  .task-row:hover { background: rgba(255,255,255,.02); }
+  .task-list { padding:.5rem 1.5rem; }
+  .task-group-title { font-size:.68rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); padding:.75rem 0 .4rem; border-bottom:1px solid #1a1a2a; margin-bottom:.4rem; }
+  .task-row { display:flex; align-items:center; padding:.5rem 0; gap:.7rem; border-bottom:1px solid #0f0f1a; font-size:.83rem; transition:background .15s; }
+  .task-row:hover { background:rgba(255,255,255,.02); }
   .task-row:last-child { border-bottom:none; }
 
-  .task-icon {
-    font-size:1rem;
-    width:24px;
-    text-align:center;
-    flex-shrink:0;
-  }
-
+  .task-icon { font-size:.95rem; width:22px; text-align:center; flex-shrink:0; }
   .task-info { flex:1; min-width:0; }
   .task-name { font-weight:500; }
-  .task-why { font-size:.72rem; color:var(--muted); margin-top:2px; }
+  .task-why { font-size:.7rem; color:var(--muted); margin-top:1px; }
 
-  .task-schedule {
-    font-family:'JetBrains Mono', monospace;
-    font-size:.7rem;
-    color:var(--muted);
-    background:#0a0a14;
-    padding:.15rem .5rem;
-    border-radius:4px;
-    flex-shrink:0;
-    white-space:nowrap;
-  }
+  .task-schedule { font-family:'JetBrains Mono', monospace; font-size:.68rem; color:var(--muted); background:#0a0a14; padding:.12rem .45rem; border-radius:4px; flex-shrink:0; white-space:nowrap; }
+  .task-status { flex-shrink:0; font-size:.72rem; font-weight:600; }
+  .task-status.t-ok { color:var(--green); }
+  .task-status.t-err { color:var(--red); }
+  .task-status.t-warn { color:var(--yellow); }
 
-  .task-status {
-    flex-shrink:0;
-    font-size:.75rem;
-    font-weight:600;
-    display:flex;
-    align-items:center;
-    gap:.25rem;
-  }
-  .task-status.ok { color:var(--green); }
-  .task-status.err { color:var(--red); }
-  .task-status.pending { color:var(--yellow); }
+  @keyframes pulse-green { 0%,100%{box-shadow:0 0 4px var(--green)} 50%{box-shadow:0 0 16px var(--green)} }
+  @keyframes pulse-red { 0%,100%{box-shadow:0 0 4px var(--red)} 50%{box-shadow:0 0 16px var(--red)} }
+  .pulse-ok { animation:pulse-green 2s infinite; border-radius:50%; width:9px; height:9px; background:var(--green); display:inline-block; }
+  .pulse-err { animation:pulse-red 2s infinite; border-radius:50%; width:9px; height:9px; background:var(--red); display:inline-block; }
 
-  /* Pulse animation */
-  @keyframes pulse-green {
-    0%,100% { box-shadow:0 0 4px var(--green); }
-    50% { box-shadow:0 0 16px var(--green); }
-  }
-  @keyframes pulse-red {
-    0%,100% { box-shadow:0 0 4px var(--red); }
-    50% { box-shadow:0 0 16px var(--red); }
-  }
-  .pulse-ok { animation:pulse-green 2s infinite; border-radius:50%; width:10px; height:10px; background:var(--green); display:inline-block; }
-  .pulse-err { animation:pulse-red 2s infinite; border-radius:50%; width:10px; height:10px; background:var(--red); display:inline-block; }
-
-  /* Summary bar */
-  .summary-bar {
-    max-width: 1400px;
-    margin:.5rem auto 0;
-    padding:0 2rem;
-    display:flex;
-    gap:2rem;
-    font-size:.8rem;
-    color:var(--muted);
-    flex-wrap:wrap;
-  }
-
-  footer {
-    text-align:center;
-    padding:2rem;
-    font-size:.7rem;
-    color:var(--muted);
-    border-top:1px solid var(--border);
-    margin-top:2rem;
-  }
-
-  footer a { color:var(--blue); text-decoration:none; }
-
-  /* Collapsed card */
+  .empty-note { text-align:center; padding:1.25rem; color:var(--muted); font-size:.78rem; font-style:italic; }
   .agent-card.collapsed .task-list { display:none; }
   .agent-card.collapsed .agent-header { border-bottom:none; }
 
-  @media (max-width:500px) {
-    .main-grid { grid-template-columns:1fr; padding:.75rem; }
-    header { padding:1rem; }
-    .logo h1 { font-size:1.2rem; }
-  }
-
-  /* Responsive: show all agents in single column on small screens */
-  @media (min-width:1200px) {
-    .main-grid { grid-template-columns: repeat(3, 1fr); }
-  }
-
-  /* Empty agent note */
-  .empty-note {
-    text-align:center;
-    padding:1.5rem;
-    color:var(--muted);
-    font-size:.8rem;
-    font-style:italic;
-  }
-
-  /* Progress ring in header */
-  .progress-ring {
-    width:48px;
-    height:48px;
-    flex-shrink:0;
-  }
+  footer { text-align:center; padding:1.5rem; font-size:.68rem; color:var(--muted); border-top:1px solid var(--border); margin-top:1.5rem; }
+  footer a { color:var(--blue); text-decoration:none; }
 </style>
 </head>
 <body>
@@ -275,315 +106,223 @@
     <div class="logo">
       <span class="brain">🧠</span>
       <div>
-        <h1>BRAIN Auto-Tasks<span class="sub">Panel de Monitorización</span></h1>
+        <h1>BRAIN Auto-Tasks<span class="sub">· Panel de Monitorización</span></h1>
       </div>
     </div>
     <div class="stats-row">
       <div class="stat-pill green"><span class="dot"></span> <span id="cnt-ok">—</span> OK</div>
-      <div class="stat-pill red"><span class="dot"></span> <span id="cnt-err">—</span> Error</div>
-      <div class="stat-pill yellow"><span class="dot"></span> <span id="cnt-pend">—</span> Sin comprobar</div>
-      <div class="stat-pill gray"><span class="dot"></span> <span id="cnt-total">—</span> Total</div>
+      <div class="stat-pill red"><span class="dot"></span> <span id="cnt-err">—</span> Roto</div>
+      <div class="stat-pill yellow"><span class="dot"></span> <span id="cnt-pend">—</span> Sin verificar</div>
+      <div class="stat-pill"><span class="dot" style="background:var(--muted)"></span> <span id="cnt-total">—</span> Total</div>
     </div>
   </div>
 </header>
 
-<div class="summary-bar">
-  <span>🕐 Última verificación: <strong id="last-verif">—</strong></span>
-  <span>🔄 Próxima verificación: <strong id="next-verif">03:00 Europe/Berlin</strong></span>
-  <span>🔄 Refresh: <strong id="next-refresh">—</strong></span>
+<div class="legend-bar">
+  <strong>📅 Frecuencias:</strong>
+  <span class="legend-item"><span class="legend-sched">*/30 * * * *</span> = cada 30 min</span>
+  <span class="legend-item"><span class="legend-sched">0 8 * * *</span> = 08:00 diario</span>
+  <span class="legend-item"><span class="legend-sched">cada 30m</span> = intervalo (daemon)</span>
+  <span class="legend-item"><span class="legend-sched">on-demand</span> = solo bajo petición</span>
+  <span style="margin-left:auto">🕐 Última verif: <strong id="last-verif">—</strong></span>
 </div>
 
-<main class="main-grid" id="dashboard">
-</main>
+<main class="main-grid" id="dashboard"></main>
 
 <footer>
-  Panel generado por BRAIN 🧠 · <span id="gen-time">—</span> ·
+  Panel por BRAIN 🧠 · <span id="gen-time">—</span> ·
   <a href="https://github.com/DaniBrainClaw/brain-panels" target="_blank">GitHub</a>
 </footer>
 
 <script>
-// ── DATA: auto-generated, refreshed daily at 03:00 Berlin ──
 const AGENTS = [
+  // ═══ WATCHDOG — destacado, lo primero ═══
   {
-    id: "brain",
-    emoji: "🧠",
-    name: "BRAIN",
-    role: "Orquestador principal · auto-mejora · investigación autónoma",
-    color: "--purple",
-    groups: [
-      {
-        title: "🫀 Heartbeats",
-        tasks: [
-          {name:"Heartbeat 30m", why:"Pulso cada 30min: urgencias→digest→investigación. Mantiene el sistema vivo.", schedule:"*/30 * * * *", cron:"084ebd1a", ok:true},
-          {name:"Heartbeat 2h", why:"Pulso largo cada 2h: auditoría de gaps (REGLAS_BRAIN.md) y auto-mejora.", schedule:"0 */2 * * *", cron:"72941d16", ok:true},
-          {name:"End-of-day audit 22:30", why:"Audita el día, actualiza SCOREBOARD, registra CHANGELOG.", schedule:"30 22 * * *", cron:"9ed437a4", ok:true},
-        ]
-      },
-      {
-        title: "🧹 Mantenimiento de sesiones",
-        tasks: [
-          {name:"Prune sessions 30m", why:"Limpia sesiones viejas para no saturar el disco.", schedule:"*/30 * * * *", cron:"d3f1ae7f", ok:true},
-          {name:"Memory capture hourly", why:"Captura el contexto de la sesión a memoria para continuidad.", schedule:"59 0-1,9-23 * * *", cron:"33ac9ace", ok:true},
-          {name:"Update memory symlink 00:05", why:"Actualiza el symlink de memoria diaria para el día correcto.", schedule:"5 0 * * *", cron:"6295f148", ok:true},
-        ]
-      },
-      {
-        title: "📚 Aprendizaje nocturno",
-        tasks: [
-          {name:"Nightly audit 01:00", why:"Auditoría completa: scripts, disco, permisos, crons, salud.", schedule:"0 1 * * *", cron:"nightly-audit-001", ok:true},
-          {name:"Nightly Learnings 01:00", why:"Procesa errores del día y los convierte en reglas anti-repetición.", schedule:"0 1 * * *", cron:"75daddf7", ok:false, err:"error — última ejecución falló"},
-        ]
-      },
-      {
-        title: "🤖 Daemon (21 tareas automáticas)",
-        tasks: [
-          {name:"self-monitor", why:"Semáforo: sesiones>5MB, disco, daemon, errores OpenClaw.", schedule:"cada 30m", daemon:"self-monitor", ok:true},
-          {name:"timeout-watchdog", why:"Detecta stalls de BRAIN >180s y alerta a Dani por Telegram.", schedule:"cada 1m", daemon:"timeout-watchdog", ok:true},
-          {name:"system-watchdog-30m", why:"Vigilancia unificada: daemon+watcher+feeder vivos, permisos, contexto.", schedule:"cada 30m", daemon:"system-watchdog-30m", ok:true},
-          {name:"detect-sessions", why:"Encuentra sesiones >500KB para archivar.", schedule:"cada 60m", daemon:"detect-sessions", ok:true},
-          {name:"check-health", why:"Disco, RAM, sesiones activas.", schedule:"cada 2h", daemon:"check-health", ok:true},
-          {name:"compact-sessions", why:"Mide tokens y compacta si >100K.", schedule:"cada 6h", daemon:"compact-sessions", ok:true},
-          {name:"regen-inventory", why:"Regenera INVENTORY.md con catálogo completo del workspace.", schedule:"cada 6h", daemon:"regen-inventory", ok:true},
-          {name:"archive-obsolete", why:"Mueve scripts >60d sin uso a _obsolete/.", schedule:"cada 7d", daemon:"archive-obsolete", ok:true},
-          {name:"self-introspect", why:"Analiza scripts/skills/crons y genera KNOWLEDGE_BASE.md.", schedule:"cada 24h", daemon:"self-introspect", ok:true},
-          {name:"explore-codebase", why:"Explora código fuente de OpenClaw y actualiza OPENCLAW_EXPERT.", schedule:"cada 2h", daemon:"explore-codebase", ok:true},
-          {name:"task-runner", why:"Ejecuta tareas en cola queue.jsonl.", schedule:"cada 60m", daemon:"task-runner", ok:true},
-          {name:"discover-ai", why:"Busca nuevos modelos y avances en IA.", schedule:"cada 24h", daemon:"discover-ai", ok:true},
-          {name:"discover-trends", why:"Busca modelos de negocio emergentes e innovación.", schedule:"cada 24h", daemon:"discover-trends", ok:true},
-          {name:"discover-use-cases", why:"Busca casos de uso de IA aplicables a marcas de Dani.", schedule:"cada 24h", daemon:"discover-use-cases", ok:true},
-          {name:"discover-nvidia", why:"Monitoriza nuevos modelos en NVIDIA NIM (gratis).", schedule:"cada 24h", daemon:"discover-nvidia", ok:true},
-          {name:"competitive-scan", why:"Escanea competencia de marcas de Dani.", schedule:"cada 48h", daemon:"competitive-scan", ok:true},
-          {name:"value-ideas", why:"Genera ideas de valor/ventaja competitiva.", schedule:"cada 72h", daemon:"value-ideas", ok:true},
-          {name:"check-models", why:"Novedades en providers que ya tenemos.", schedule:"cada 24h", daemon:"check-models", ok:true},
-          {name:"update-openclaw-expert", why:"Actualiza OPENCLAW_EXPERT.md con hallazgos.", schedule:"cada 24h", daemon:"update-openclaw-expert", ok:true},
-          {name:"daily-ai-news", why:"Recopila noticias diarias de IA.", schedule:"cada 24h", daemon:"daily-ai-news", ok:true},
-          {name:"routing-dynamic", why:"Propone mejoras al routing de modelos.", schedule:"cada 24h", daemon:"routing-dynamic", ok:true},
-        ]
-      },
+    id:"watchdog", emoji:"🛡️", name:"System Watchdog",
+    role:"Mantiene el VPS vivo: sync, permisos, procesos, RAM, disco, ChromaDB. Si esto falla, todo lo demás cae.",
+    featured:true,
+    groups:[{title:"🛡️ Vigilancia unificada (cada 30 min)", tasks:[
+      {name:"system-watchdog-30m", why:"Bash puro, 0 tokens. Verifica: daemon+watcher+feeder vivos, permisos agents/ en 755, syncthing sin conflictos, disco<80%, RAM>500MB, ChromaDB bin presente.", schedule:"cada 30m", ok:true, detail:"Script: watchdog_unificado.sh. Output: health_status.json en maintenance."}
+    ]}]
+  },
+  // ═══ BRAIN ═══
+  {
+    id:"brain", emoji:"🧠", name:"BRAIN",
+    role:"Orquestador principal · heartbeats · auto-mejora · limpieza de sesiones",
+    groups:[
+      {title:"🫀 Heartbeats", tasks:[
+        {name:"Heartbeat 30m", why:"Pulso cada 30min: urgencias→digest→investigación.", schedule:"*/30 * * * *", ok:true},
+        {name:"Heartbeat 2h", why:"Auditoría de gaps (REGLAS_BRAIN.md) y auto-mejora.", schedule:"0 */2 * * *", ok:true},
+        {name:"End-of-day audit 22:30", why:"Audita el día, SCOREBOARD, CHANGELOG.", schedule:"30 22 * * *", ok:true},
+      ]},
+      {title:"🧹 Sesiones", tasks:[
+        {name:"Prune sessions 30m", why:"Limpia sesiones viejas.", schedule:"*/30 * * * *", ok:true},
+        {name:"Memory capture hourly", why:"Contexto de sesión → memoria.", schedule:"59 0-1,9-23 * * *", ok:true},
+        {name:"Memory symlink 00:05", why:"Symlink de memoria diaria.", schedule:"5 0 * * *", ok:true},
+      ]},
+      {title:"📚 Aprendizaje nocturno", tasks:[
+        {name:"Nightly audit 01:00", why:"Auditoría completa del sistema.", schedule:"0 1 * * *", ok:true},
+        {name:"Nightly Learnings 01:00", why:"Errores del día → reglas anti-repetición.", schedule:"0 1 * * *", ok:false, err:"última ejecución error"},
+      ]},
+      {title:"🤖 Daemon — Tareas activas (con output real)", tasks:[
+        {name:"self-monitor", why:"Semáforo: sesiones>5MB, disco, daemon, errores.", schedule:"cada 30m", ok:true},
+        {name:"timeout-watchdog", why:"Detecta stalls BRAIN >180s → alerta Telegram.", schedule:"cada 1m", ok:true},
+        {name:"detect-sessions", why:"Sesiones >500KB → archivar.", schedule:"cada 60m", ok:true},
+        {name:"check-health", why:"df + du de sesiones activas.", schedule:"cada 2h", ok:true},
+        {name:"compact-sessions", why:"Mide tokens, compacta si >100K.", schedule:"cada 6h", ok:true},
+        {name:"regen-inventory", why:"Regenera INVENTORY.md.", schedule:"cada 6h", ok:true},
+        {name:"archive-obsolete", why:"Scripts >60d sin uso → _obsolete/.", schedule:"cada 7d", ok:true},
+        {name:"self-introspect", why:"Analiza scripts/skills → KNOWLEDGE_BASE.md.", schedule:"cada 24h", ok:true},
+        {name:"task-runner", why:"Ejecuta tareas en queue.jsonl.", schedule:"cada 60m", ok:true},
+      ]},
+      {title:"💀 Daemon — Scripts sin output (stubs, nunca produjeron resultado)", tasks:[
+        {name:"discover-ai", why:"Buscar nuevos modelos IA (junio 2026, nunca implementado).", schedule:"cada 24h", ok:false, err:"sin output"},
+        {name:"discover-trends", why:"Modelos de negocio emergentes (nunca implementado).", schedule:"cada 24h", ok:false, err:"sin output"},
+        {name:"discover-use-cases", why:"Casos de uso IA para marcas (nunca implementado).", schedule:"cada 24h", ok:false, err:"sin output"},
+        {name:"discover-nvidia", why:"Nuevos modelos NVIDIA NIM (nunca implementado).", schedule:"cada 24h", ok:false, err:"sin output"},
+        {name:"competitive-scan", why:"Competencia marcas Dani (nunca implementado).", schedule:"cada 48h", ok:false, err:"sin output"},
+        {name:"value-ideas", why:"Ideas de valor (nunca implementado).", schedule:"cada 72h", ok:false, err:"sin output"},
+        {name:"check-models", why:"Novedades providers (nunca implementado).", schedule:"cada 24h", ok:false, err:"sin output"},
+        {name:"update-openclaw-expert", why:"Actualizar OPENCLAW_EXPERT.md (nunca implementado).", schedule:"cada 24h", ok:false, err:"sin output"},
+        {name:"daily-ai-news", why:"Noticias diarias IA (nunca implementado).", schedule:"cada 24h", ok:false, err:"sin output"},
+        {name:"routing-dynamic", why:"Mejoras routing modelos (nunca implementado).", schedule:"cada 24h", ok:false, err:"sin output"},
+        {name:"explore-codebase", why:"Explorar fuente OpenClaw (nunca implementado).", schedule:"cada 2h", ok:false, err:"sin output"},
+      ]},
     ]
   },
+  // ═══ DIRECTOR ═══
   {
-    id: "director",
-    emoji: "📋",
-    name: "Director Organización",
-    role: "Email · CRM · Trello · Briefings · Cola Dani",
-    color: "--blue",
-    groups: [
-      {
-        title: "📧 Email pipeline",
-        tasks: [
-          {name:"Email 07:50", why:"Triaje de email matutino: filtra, clasifica, prioriza.", schedule:"50 7 * * *", cron:"email-fetch-0750", ok:true},
-          {name:"Email 12:00", why:"Triaje mediodía.", schedule:"0 12 * * *", cron:"email-fetch-1200", ok:true},
-          {name:"Email 14:50", why:"Triaje tarde temprana.", schedule:"50 14 * * *", cron:"email-fetch-1450", ok:true},
-          {name:"Email 19:00", why:"Triaje última hora.", schedule:"0 19 * * *", cron:"email-fetch-1900", ok:true},
-          {name:"Check email pipeline 12:05", why:"Verifica que el pipeline de email funciona (fetch→parse→store).", schedule:"5 12 * * *", cron:"cron-9132a478", ok:true},
-        ]
-      },
-      {
-        title: "🏢 CRM (HubSpot)",
-        tasks: [
-          {name:"Check CRM sync 07:55", why:"Verifica sincronización HubSpot→CRM local.", schedule:"55 7 * * *", cron:"98af9342", ok:true},
-          {name:"Check CRM move 08:00", why:"Verifica movimiento de datos entre pipelines CRM.", schedule:"55 7 * * *", cron:"check-crm-move-0800-001", ok:false, err:"error"},
-          {name:"Sync CRM HubSpot 23:00", why:"Sincronización completa nocturna con HubSpot.", schedule:"0 23 * * *", cron:"52b64673", ok:true},
-          {name:"Mover tareas CRM 23:00", why:"Mueve tareas entre pipelines según reglas.", schedule:"0 23 * * *", cron:"mover-tareas-crm-2300-001", ok:true},
-        ]
-      },
-      {
-        title: "📋 Trello · Checklists",
-        tasks: [
-          {name:"Trello checklist diaria 07:30", why:"Genera checklist de Trello para el día (lu-vi).", schedule:"30 7 * * 1-5", cron:"44bcebe9", ok:false, err:"error (2x)"},
-          {name:"Trello checklist verify 07:35", why:"Verifica items completados de ayer.", schedule:"35 7 * * 1-5", cron:"8eaeb018", ok:true},
-          {name:"Checklist ask archive 23:01", why:"Archiva checklists completadas.", schedule:"1 23 * * 1-5", cron:"2340beda", ok:true},
-        ]
-      },
-      {
-        title: "📊 Briefings · Auditorías",
-        tasks: [
-          {name:"Morning focus 07:45", why:"Prioridades del día para Dani.", schedule:"45 7 * * 1-5", cron:"9b3b7037", ok:true},
-          {name:"Briefing 08:45", why:"Briefing completo: email, CRM, tareas, métricas.", schedule:"45 8 * * 1-5", cron:"eb038038", ok:true},
-          {name:"Cron audit 07:00", why:"Auditoría de crons matutina.", schedule:"0 7 * * *", cron:"50185a59", ok:false, err:"error"},
-          {name:"Cron audit 09:00", why:"Auditoría de crons diurna.", schedule:"0 9 * * *", cron:"ca0da3a1", ok:true},
-          {name:"Cron audit 22:00", why:"Auditoría de crons nocturna.", schedule:"0 22 * * *", cron:"ce94cd9b", ok:false, err:"error (2x)"},
-          {name:"Collect 23:00", why:"Recolecta métricas y logs del día.", schedule:"0 23 * * 1-5", cron:"a2e6c277", ok:true},
-          {name:"Sábado focus 10:00", why:"Revisión semanal de pendientes.", schedule:"0 10 * * 6", cron:"9569a162", ok:true},
-        ]
-      },
-      {
-        title: "📸 Snapshots",
-        tasks: [
-          {name:"Panel snapshot hourly 08-19", why:"Foto horaria de la cola Dani para GitHub Pages.", schedule:"0 8-19 * * *", cron:"4d659dbc", ok:true},
-        ]
-      },
+    id:"director", emoji:"📋", name:"Director Organización",
+    role:"Email · CRM HubSpot · Trello · Briefings · Cola Dani",
+    groups:[
+      {title:"📧 Email", tasks:[
+        {name:"Email 07:50 / 12:00 / 14:50 / 19:00", why:"Triaje 4× al día: filtra, clasifica, prioriza.", schedule:"4× diario", ok:true},
+        {name:"Check pipeline 12:05", why:"Verifica fetch→parse→store.", schedule:"5 12 * * *", ok:true},
+      ]},
+      {title:"🏢 CRM HubSpot", tasks:[
+        {name:"Check sync 07:55", why:"HubSpot→CRM local.", schedule:"55 7 * * *", ok:true},
+        {name:"Check CRM move 08:00", why:"Movimiento entre pipelines.", schedule:"55 7 * * *", ok:false, err:"error"},
+        {name:"Sync CRM 23:00", why:"Sincronización nocturna completa.", schedule:"0 23 * * *", ok:true},
+        {name:"Mover tareas 23:00", why:"Pipeline según reglas.", schedule:"0 23 * * *", ok:true},
+      ]},
+      {title:"📋 Trello", tasks:[
+        {name:"Checklist diaria 07:30", why:"Genera checklist del día (lu-vi).", schedule:"30 7 * * 1-5", ok:false, err:"error (2x)"},
+        {name:"Checklist verify 07:35", why:"Verifica completados de ayer.", schedule:"35 7 * * 1-5", ok:true},
+        {name:"Archive checklist 23:01", why:"Archiva completadas.", schedule:"1 23 * * 1-5", ok:true},
+      ]},
+      {title:"📊 Briefings", tasks:[
+        {name:"Morning focus 07:45", why:"Prioridades del día.", schedule:"45 7 * * 1-5", ok:true},
+        {name:"Briefing 08:45", why:"Email+CRM+tareas+métricas.", schedule:"45 8 * * 1-5", ok:true},
+        {name:"Cron audit 07:00", why:"Auditoría crons matutina.", schedule:"0 7 * * *", ok:false, err:"error"},
+        {name:"Cron audit 09:00", why:"Auditoría crons diurna.", schedule:"0 9 * * *", ok:true},
+        {name:"Cron audit 22:00", why:"Auditoría crons nocturna.", schedule:"0 22 * * *", ok:false, err:"error (2x)"},
+        {name:"Collect 23:00", why:"Métricas y logs del día.", schedule:"0 23 * * 1-5", ok:true},
+        {name:"Sábado focus 10:00", why:"Revisión semanal.", schedule:"0 10 * * 6", ok:true},
+      ]},
     ]
   },
+  // ═══ MAINTENANCE ═══
   {
-    id: "maintenance",
-    emoji: "🔧",
-    name: "Maintenance",
-    role: "Salud del VPS · higiene de sesiones · permisos · watchdog",
-    color: "--green",
-    groups: [
-      {
-        title: "🏥 Health Checks",
-        tasks: [
-          {name:"Health check 30m", why:"Verifica disco, RAM, gateway, uptime. Alerta si >umbral.", schedule:"*/30 * * * *", cron:"cron-7a20daaf", ok:true},
-          {name:"Panel snapshot hourly 08-19", why:"Actualiza el panel de salud en GitHub Pages.", schedule:"0 8-19 * * *", cron:"4d659dbc", ok:true},
-        ]
-      },
-      {
-        title: "🧹 Higiene (scripts on-demand vía BRAIN)",
-        tasks: [
-          {name:"session_hygiene.py", why:"Limpia sesiones huérfanas y archivos temporales.", schedule:"on-demand", ok:true},
-          {name:"heartbeat_task.py", why:"Tarea de heartbeat para maintenance.", schedule:"on-demand", ok:true},
-          {name:"check_session_runtime_permissions.py", why:"Verifica permisos de runtime de sesiones.", schedule:"on-demand", ok:true},
-        ]
-      },
+    id:"maintenance", emoji:"🔧", name:"Maintenance",
+    role:"Salud del VPS · higiene de sesiones · watchdog delegado",
+    groups:[
+      {title:"🏥 Health", tasks:[
+        {name:"Health check 30m", why:"Disco, RAM, gateway, uptime.", schedule:"*/30 * * * *", ok:true},
+        {name:"session_hygiene.py", why:"Limpia sesiones huérfanas.", schedule:"on-demand", ok:true},
+        {name:"check_permissions.py", why:"Permisos runtime sesiones.", schedule:"on-demand", ok:true},
+      ]},
     ]
   },
+  // ═══ AUDITOR ═══
   {
-    id: "auditor",
-    emoji: "🔍",
-    name: "Auditor",
-    role: "Verificación post-ejecución · calidad de entregables",
-    color: "--orange",
-    groups: [
-      {
-        title: "📝 Scripts de auditoría",
-        tasks: [
-          {name:"audit_batch.py", why:"Audita un batch de jobs verificando vs job.md.", schedule:"on-demand", ok:true},
-          {name:"audit_report.py", why:"Genera informe de auditoría con hallazgos.", schedule:"on-demand", ok:true},
-          {name:"audit_transcript.py", why:"Audita transcripciones de sesiones de ejecutor.", schedule:"on-demand", ok:true},
-        ]
-      },
-    ]
+    id:"auditor", emoji:"🔍", name:"Auditor",
+    role:"Verificación post-ejecución · calidad de entregables",
+    groups:[{title:"📝 Bajo demanda", tasks:[
+      {name:"audit_batch.py", why:"Audita batch vs job.md.", schedule:"on-demand", ok:true},
+      {name:"audit_report.py", why:"Informe de hallazgos.", schedule:"on-demand", ok:true},
+    ]}]
   },
+  // ═══ EJECUTOR ═══
   {
-    id: "ejecutor",
-    emoji: "⚡",
-    name: "Ejecutor",
-    role: "Ejecución de código · cambios en archivos · deploy",
-    color: "--cyan",
-    groups: [
-      {
-        title: "Sin tareas automáticas",
-        tasks: [],
-        empty: "El ejecutor solo actúa bajo demanda cuando BRAIN o jobber le asignan un JOB."
-      }
-    ]
+    id:"ejecutor", emoji:"⚡", name:"Ejecutor",
+    role:"Ejecución de código · cambios en archivos · deploy",
+    groups:[{title:"", tasks:[], empty:"Solo actúa bajo demanda cuando BRAIN o jobber le asignan un JOB."}]
   },
+  // ═══ INVESTIGADOR ═══
   {
-    id: "investigador",
-    emoji: "🔬",
-    name: "Investigador",
-    role: "Research profundo · fuentes · verificación de hechos",
-    color: "--pink",
-    groups: [
-      {
-        title: "Sin tareas automáticas",
-        tasks: [],
-        empty: "El investigador solo actúa bajo demanda cuando BRAIN le asigna una tarea de research."
-      }
-    ]
+    id:"investigador", emoji:"🔬", name:"Investigador",
+    role:"Research profundo · fuentes · verificación de hechos",
+    groups:[{title:"", tasks:[], empty:"Solo actúa bajo demanda cuando BRAIN le asigna una tarea de research."}]
   },
+  // ═══ JOBBER ═══
   {
-    id: "jobber",
-    emoji: "🔗",
-    name: "Jobber",
-    role: "Orquestador de jobs · fases · seguimiento",
-    color: "--yellow",
-    groups: [
-      {
-        title: "Sin tareas automáticas",
-        tasks: [],
-        empty: "Jobber orquesta jobs bajo demanda. Mantiene heartbeat-state.json para tracking."
-      }
-    ]
+    id:"jobber", emoji:"🔗", name:"Jobber",
+    role:"Orquestador de jobs · fases · seguimiento",
+    groups:[{title:"", tasks:[], empty:"Orquesta jobs bajo demanda. Mantiene heartbeat-state.json."}]
   },
 ];
 
-// ── RENDER ──
-function renderDashboard() {
-  const container = document.getElementById('dashboard');
-  let totalOk = 0, totalErr = 0, totalPend = 0, totalTasks = 0;
+function render() {
+  const c = document.getElementById('dashboard');
+  let totalOk=0, totalErr=0, totalPend=0, totalTasks=0;
 
-  container.innerHTML = AGENTS.map(agent => {
-    const groupsHtml = agent.groups.map(g => {
-      if (!g.tasks || g.tasks.length === 0) {
-        return `<div class="task-group-title">${g.title}</div>
-                <div class="empty-note">${g.empty || 'Sin tareas automáticas configuradas.'}</div>`;
-      }
-
+  c.innerHTML = AGENTS.map(a => {
+    const groupsHtml = a.groups.map(g => {
+      if (!g.tasks || !g.tasks.length) return `<div class="empty-note">${g.empty||'Sin tareas automáticas.'}</div>`;
       const tasksHtml = g.tasks.map(t => {
         totalTasks++;
-        let statusClass, icon;
-        if (t.ok === true) { totalOk++; statusClass='ok'; icon='✅'; }
-        else if (t.ok === false) { totalErr++; statusClass='err'; icon='❌'; }
-        else { totalPend++; statusClass='pending'; icon='❓'; }
-
-        const errNote = t.err ? `<br><span style="color:var(--red);font-size:.7rem">⚠️ ${t.err}</span>` : '';
-
+        let cls, icon;
+        if (t.ok===true) { totalOk++; cls='t-ok'; icon='✅'; }
+        else if (t.ok===false) { totalErr++; cls='t-err'; icon='❌'; }
+        else { totalPend++; cls='t-warn'; icon='❓'; }
+        const err = t.err ? ` <span style="color:var(--red);font-size:.68rem">— ${t.err}</span>` : '';
         return `<div class="task-row">
           <span class="task-icon">${icon}</span>
           <div class="task-info">
-            <div class="task-name">${t.name}</div>
-            <div class="task-why">${t.why}${errNote}</div>
+            <div class="task-name">${t.name}${err}</div>
+            <div class="task-why">${t.why}</div>
           </div>
           <span class="task-schedule">${t.schedule}</span>
         </div>`;
       }).join('');
-
-      return `<div class="task-group-title">${g.title}</div>${tasksHtml}`;
+      return g.title ? `<div class="task-group-title">${g.title}</div>${tasksHtml}` : tasksHtml;
     }).join('');
 
-    const okCount = agent.groups.reduce((s,g) => s + (g.tasks||[]).filter(t=>t.ok===true).length, 0);
-    const errCount = agent.groups.reduce((s,g) => s + (g.tasks||[]).filter(t=>t.ok===false).length, 0);
+    const oks = a.groups.reduce((s,g)=>s+(g.tasks||[]).filter(t=>t.ok===true).length,0);
+    const errs = a.groups.reduce((s,g)=>s+(g.tasks||[]).filter(t=>t.ok===false).length,0);
+    const warnCls = a.featured ? 'featured' : (errs>0 ? 'warning' : '');
 
-    return `<div class="agent-card">
+    return `<div class="agent-card ${warnCls}">
       <div class="agent-header" onclick="this.parentElement.classList.toggle('collapsed')">
         <div class="left">
-          <span class="agent-emoji">${agent.emoji}</span>
-          <div>
-            <span class="agent-name">${agent.name}</span>
-            <span class="agent-role">${agent.role}</span>
-          </div>
+          <span class="agent-emoji">${a.emoji}</span>
+          <div><span class="agent-name">${a.name}</span><span class="agent-role">${a.role}</span></div>
         </div>
         <div class="agent-stats">
-          ${okCount > 0 ? `<span class="badge ok">✅ ${okCount}</span>` : ''}
-          ${errCount > 0 ? `<span class="badge err">❌ ${errCount}</span>` : ''}
-          <span class="badge info">${(agent.groups.reduce((s,g)=>s+(g.tasks||[]).length,0))} total</span>
+          ${oks>0?`<span class="badge ok">✅${oks}</span>`:''}
+          ${errs>0?`<span class="badge err">❌${errs}</span>`:''}
+          <span class="badge info">${a.groups.reduce((s,g)=>s+(g.tasks||[]).length,0)}</span>
         </div>
       </div>
       <div class="task-list">${groupsHtml}</div>
     </div>`;
   }).join('');
 
-  // Update counters
-  document.getElementById('cnt-ok').textContent = totalOk;
-  document.getElementById('cnt-err').textContent = totalErr;
-  document.getElementById('cnt-pend').textContent = totalPend;
-  document.getElementById('cnt-total').textContent = totalTasks;
+  document.getElementById('cnt-ok').textContent=totalOk;
+  document.getElementById('cnt-err').textContent=totalErr;
+  document.getElementById('cnt-pend').textContent=totalPend;
+  document.getElementById('cnt-total').textContent=totalTasks;
 }
+render();
 
-// ── LOAD STATUS FROM VERIFICATION ──
-async function loadStatus() {
-  try {
-    const resp = await fetch('status.json?t=' + Date.now());
-    if (!resp.ok) throw new Error('no status file');
-    const data = await resp.json();
-    document.getElementById('last-verif').textContent = data.last_verification || '—';
-    document.getElementById('gen-time').textContent = 'Verificado: ' + (data.last_verification || '—');
-    if (data.next_refresh) {
-      document.getElementById('next-refresh').textContent = data.next_refresh;
-    }
-    // Apply status overrides (future: override individual task status from verification)
-  } catch(e) {
-    document.getElementById('last-verif').textContent = 'No verificado aún';
-    document.getElementById('gen-time').textContent = 'Generado: ' + new Date().toISOString().slice(0,16).replace('T',' ');
-  }
-}
-
-renderDashboard();
-loadStatus();
+// Load status.json if available
+fetch('status.json?t='+Date.now()).then(r=>r.json()).then(d=>{
+  document.getElementById('last-verif').textContent=d.last_verification||'—';
+  document.getElementById('gen-time').textContent='Verificado: '+(d.last_verification||'—');
+}).catch(()=>{
+  document.getElementById('last-verif').textContent='pendiente (primera verif 03:00)';
+  document.getElementById('gen-time').textContent='Generado: '+new Date().toISOString().slice(0,16).replace('T',' ');
+});
 </script>
 </body>
 </html>
