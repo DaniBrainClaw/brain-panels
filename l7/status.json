@@ -1,0 +1,227 @@
+{
+  "last_verification": "2026-08-09 21:51:41 UTC",
+  "timezone": "Europe/Berlin",
+  "checks": {
+    "cron_jobs": {
+      "status": "ok",
+      "crons": [
+        {
+          "id": "ID",
+          "name": "Name Schedule Next",
+          "status": "Delivery",
+          "ok": false
+        },
+        {
+          "id": "084ebd1a-0157-4a89-a782-a7a3506c2441",
+          "name": "BRAIN heartbeat 30m",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "cron-7a20daaf-c2af-4256-9751-317f13405960",
+          "name": "Health check —",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "d3f1ae7f-86f8-4527-acc5-aa1c448580c0",
+          "name": "BRAIN prune sessions",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "33ac9ace-d224-4317-99f3-eaeda74d8450",
+          "name": "BRAIN memory capture",
+          "status": "0-1,9-23",
+          "ok": false
+        },
+        {
+          "id": "72941d16-b623-4eb6-a4ad-870439555b97",
+          "name": "BRAIN heartbeat 2h",
+          "status": "0",
+          "ok": false
+        },
+        {
+          "id": "6295f148-a215-4a80-95e7-ae8d9854bfc2",
+          "name": "Update memory symlink...",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "75daddf7-081b-442b-8526-06def85f6c51",
+          "name": "BRAIN Nightly Learnin...",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "nightly-audit-001",
+          "name": "Nightly audit cron",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "50185a59-07b8-4351-8f8c-7b87536e1c1f",
+          "name": "cron-audit-0700 cron 0",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "44bcebe9-e0c5-47d2-9226-c56def9fdde1",
+          "name": "Trello checklist diar...",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "8eaeb018-075c-4c26-944f-f7da76d4ccfa",
+          "name": "Trello checklist veri...",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "9b3b7037-e6f1-4464-b7c1-bed14dad82c0",
+          "name": "Morning focus —",
+          "status": "7",
+          "ok": false
+        },
+        {
+          "id": "email-fetch-0750",
+          "name": "Email 07:50 cron",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "98af9342-3aef-4e32-848a-07013ae23c08",
+          "name": "Check CRM sync",
+          "status": "7",
+          "ok": false
+        },
+        {
+          "id": "check-crm-move-0800-001",
+          "name": "Check CRM move",
+          "status": "7",
+          "ok": false
+        },
+        {
+          "id": "4d659dbc-a969-4b30-a49d-104829184671",
+          "name": "Panel snapshot hourly...",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "eb038038-3ef5-4b9d-94c4-2d18a4f7fbbd",
+          "name": "cron-briefing-002 cron 45",
+          "status": "1-5",
+          "ok": false
+        },
+        {
+          "id": "ca0da3a1-878b-4c48-9ac5-f691ff9714ac",
+          "name": "Cron audit diario",
+          "status": "9",
+          "ok": false
+        },
+        {
+          "id": "email-fetch-1200",
+          "name": "Email 12:00 cron",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "cron-9132a478-1121-43a9-982e-b37c8c15e932",
+          "name": "Check email pipeline",
+          "status": "12",
+          "ok": false
+        },
+        {
+          "id": "email-fetch-1450",
+          "name": "Email 14:50 cron",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "email-fetch-1900",
+          "name": "Email 19:00 cron",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "ce94cd9b-936a-4cc1-876a-8397a5be45e8",
+          "name": "cron-audit-2200 cron 0",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "9ed437a4-c0df-4dc1-8e98-70f610da2373",
+          "name": "BRAIN end-of-day audit",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "52b64673-4656-4364-b3ca-bd7afcfe4f81",
+          "name": "Sync CRM HubSpot",
+          "status": "0",
+          "ok": false
+        },
+        {
+          "id": "a2e6c277-58e8-4f54-9b26-16c978859641",
+          "name": "cron-collect-001 cron 0",
+          "status": "1-5",
+          "ok": false
+        },
+        {
+          "id": "mover-tareas-crm-2300-001",
+          "name": "Mover tareas CRM",
+          "status": "23",
+          "ok": false
+        },
+        {
+          "id": "2340beda-5166-4d16-a7de-99382ed5daaa",
+          "name": "Checklist ask archive...",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "9569a162-4526-4f39-b7e8-785db01c6acb",
+          "name": "Sábado focus —",
+          "status": "0",
+          "ok": false
+        }
+      ],
+      "total": 30,
+      "errors": true
+    },
+    "daemon": {
+      "daemon_py": true,
+      "recurrent_feeder": true,
+      "daemon_watchdog": true,
+      "all_alive": true
+    },
+    "gateway": {
+      "alive": true
+    },
+    "disk": {
+      "usage_pct": 58,
+      "ok": true,
+      "warning": false
+    },
+    "ram": {
+      "total_mb": 3915,
+      "available_mb": 2199,
+      "ok": true
+    },
+    "syncthing": {
+      "alive": true,
+      "conflicts": 5,
+      "ok": false
+    },
+    "memory_search": {
+      "chromadb_exists": false
+    },
+    "recent_errors": {
+      "recent_errors_24h": 0,
+      "ok": true,
+      "sample": []
+    }
+  },
+  "all_ok": false,
+  "next_refresh": "mañana 03:00 Europe/Berlin"
+}
