@@ -1,5 +1,5 @@
 {
-  "last_verification": "2026-08-10 18:00:16 UTC",
+  "last_verification": "2026-08-10 18:01:12 UTC",
   "timezone": "Europe/Berlin",
   "checks": {
     "cron_jobs": {
@@ -12,14 +12,26 @@
           "ok": false
         },
         {
-          "id": "084ebd1a-0157-4a89-a782-a7a3506c2441",
-          "name": "BRAIN heartbeat 30m",
+          "id": "75daddf7-081b-442b-8526-06def85f6c51",
+          "name": "BRAIN Nightly Learnin...",
           "status": "*",
           "ok": false
         },
         {
-          "id": "75daddf7-081b-442b-8526-06def85f6c51",
-          "name": "BRAIN Nightly Learnin...",
+          "id": "dfb8c7cc-1176-45ce-a11b-9aa4cfcf6b9e",
+          "name": "🧠 Panel auto-tasks",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "72941d16-b623-4eb6-a4ad-870439555b97",
+          "name": "BRAIN heartbeat 2h",
+          "status": "0",
+          "ok": false
+        },
+        {
+          "id": "084ebd1a-0157-4a89-a782-a7a3506c2441",
+          "name": "BRAIN heartbeat 30m",
           "status": "*",
           "ok": false
         },
@@ -36,21 +48,9 @@
           "ok": false
         },
         {
-          "id": "dfb8c7cc-1176-45ce-a11b-9aa4cfcf6b9e",
-          "name": "🧠 Panel auto-tasks",
-          "status": "*",
-          "ok": false
-        },
-        {
           "id": "33ac9ace-d224-4317-99f3-eaeda74d8450",
           "name": "BRAIN memory capture",
           "status": "0-1,9-23",
-          "ok": false
-        },
-        {
-          "id": "72941d16-b623-4eb6-a4ad-870439555b97",
-          "name": "BRAIN heartbeat 2h",
-          "status": "0",
           "ok": false
         },
         {
@@ -211,7 +211,7 @@
     },
     "ram": {
       "total_mb": 3915,
-      "available_mb": 2243,
+      "available_mb": 1869,
       "ok": true
     },
     "syncthing": {
