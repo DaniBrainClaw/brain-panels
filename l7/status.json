@@ -1,5 +1,5 @@
 {
-  "last_verification": "2026-08-10 18:11:09 UTC",
+  "last_verification": "2026-08-10 18:12:10 UTC",
   "timezone": "Europe/Berlin",
   "checks": {
     "cron_jobs": {
@@ -211,7 +211,7 @@
     },
     "ram": {
       "total_mb": 3915,
-      "available_mb": 2141,
+      "available_mb": 2096,
       "ok": true
     },
     "syncthing": {
