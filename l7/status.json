@@ -1,5 +1,5 @@
 {
-  "last_verification": "2026-08-09 21:51:41 UTC",
+  "last_verification": "2026-08-10 01:00:02 UTC",
   "timezone": "Europe/Berlin",
   "checks": {
     "cron_jobs": {
@@ -30,33 +30,15 @@
           "ok": false
         },
         {
-          "id": "33ac9ace-d224-4317-99f3-eaeda74d8450",
-          "name": "BRAIN memory capture",
-          "status": "0-1,9-23",
+          "id": "dfb8c7cc-1176-45ce-a11b-9aa4cfcf6b9e",
+          "name": "🧠 Panel auto-tasks",
+          "status": "3",
           "ok": false
         },
         {
           "id": "72941d16-b623-4eb6-a4ad-870439555b97",
           "name": "BRAIN heartbeat 2h",
           "status": "0",
-          "ok": false
-        },
-        {
-          "id": "6295f148-a215-4a80-95e7-ae8d9854bfc2",
-          "name": "Update memory symlink...",
-          "status": "*",
-          "ok": false
-        },
-        {
-          "id": "75daddf7-081b-442b-8526-06def85f6c51",
-          "name": "BRAIN Nightly Learnin...",
-          "status": "*",
-          "ok": false
-        },
-        {
-          "id": "nightly-audit-001",
-          "name": "Nightly audit cron",
-          "status": "*",
           "ok": false
         },
         {
@@ -120,6 +102,12 @@
           "ok": false
         },
         {
+          "id": "33ac9ace-d224-4317-99f3-eaeda74d8450",
+          "name": "BRAIN memory capture",
+          "status": "0-1,9-23",
+          "ok": false
+        },
+        {
           "id": "email-fetch-1200",
           "name": "Email 12:00 cron",
           "status": "*",
@@ -180,13 +168,31 @@
           "ok": false
         },
         {
+          "id": "6295f148-a215-4a80-95e7-ae8d9854bfc2",
+          "name": "Update memory symlink...",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "75daddf7-081b-442b-8526-06def85f6c51",
+          "name": "BRAIN Nightly Learnin...",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "nightly-audit-001",
+          "name": "Nightly audit cron",
+          "status": "*",
+          "ok": false
+        },
+        {
           "id": "9569a162-4526-4f39-b7e8-785db01c6acb",
           "name": "Sábado focus —",
           "status": "0",
           "ok": false
         }
       ],
-      "total": 30,
+      "total": 31,
       "errors": true
     },
     "daemon": {
@@ -199,13 +205,13 @@
       "alive": true
     },
     "disk": {
-      "usage_pct": 58,
+      "usage_pct": 48,
       "ok": true,
       "warning": false
     },
     "ram": {
       "total_mb": 3915,
-      "available_mb": 2199,
+      "available_mb": 2193,
       "ok": true
     },
     "syncthing": {
