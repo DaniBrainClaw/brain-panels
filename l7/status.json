@@ -1,5 +1,5 @@
 {
-  "last_verification": "2026-08-10 17:41:20 UTC",
+  "last_verification": "2026-08-10 17:43:10 UTC",
   "timezone": "Europe/Berlin",
   "checks": {
     "cron_jobs": {
@@ -20,7 +20,7 @@
         {
           "id": "dfb8c7cc-1176-45ce-a11b-9aa4cfcf6b9e",
           "name": "🧠 Panel auto-tasks",
-          "status": "3",
+          "status": "*",
           "ok": false
         },
         {
@@ -211,7 +211,7 @@
     },
     "ram": {
       "total_mb": 3915,
-      "available_mb": 2233,
+      "available_mb": 2240,
       "ok": true
     },
     "syncthing": {
