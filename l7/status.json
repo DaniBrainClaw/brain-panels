@@ -1,5 +1,5 @@
 {
-  "last_verification": "2026-08-10 18:04:11 UTC",
+  "last_verification": "2026-08-10 18:05:12 UTC",
   "timezone": "Europe/Berlin",
   "checks": {
     "cron_jobs": {
@@ -21,12 +21,6 @@
           "id": "dfb8c7cc-1176-45ce-a11b-9aa4cfcf6b9e",
           "name": "🧠 Panel auto-tasks",
           "status": "*",
-          "ok": false
-        },
-        {
-          "id": "72941d16-b623-4eb6-a4ad-870439555b97",
-          "name": "BRAIN heartbeat 2h",
-          "status": "0",
           "ok": false
         },
         {
@@ -57,6 +51,12 @@
           "id": "ce94cd9b-936a-4cc1-876a-8397a5be45e8",
           "name": "cron-audit-2200 cron 0",
           "status": "*",
+          "ok": false
+        },
+        {
+          "id": "72941d16-b623-4eb6-a4ad-870439555b97",
+          "name": "BRAIN heartbeat 2h",
+          "status": "0",
           "ok": false
         },
         {
@@ -211,7 +211,7 @@
     },
     "ram": {
       "total_mb": 3915,
-      "available_mb": 1799,
+      "available_mb": 1855,
       "ok": true
     },
     "syncthing": {
