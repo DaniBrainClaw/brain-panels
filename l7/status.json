@@ -1,5 +1,5 @@
 {
-  "last_verification": "2026-08-10 01:00:02 UTC",
+  "last_verification": "2026-08-10 17:41:20 UTC",
   "timezone": "Europe/Berlin",
   "checks": {
     "cron_jobs": {
@@ -9,6 +9,18 @@
           "id": "ID",
           "name": "Name Schedule Next",
           "status": "Delivery",
+          "ok": false
+        },
+        {
+          "id": "75daddf7-081b-442b-8526-06def85f6c51",
+          "name": "BRAIN Nightly Learnin...",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "dfb8c7cc-1176-45ce-a11b-9aa4cfcf6b9e",
+          "name": "🧠 Panel auto-tasks",
+          "status": "3",
           "ok": false
         },
         {
@@ -30,15 +42,63 @@
           "ok": false
         },
         {
-          "id": "dfb8c7cc-1176-45ce-a11b-9aa4cfcf6b9e",
-          "name": "🧠 Panel auto-tasks",
-          "status": "3",
+          "id": "33ac9ace-d224-4317-99f3-eaeda74d8450",
+          "name": "BRAIN memory capture",
+          "status": "0-1,9-23",
           "ok": false
         },
         {
           "id": "72941d16-b623-4eb6-a4ad-870439555b97",
           "name": "BRAIN heartbeat 2h",
           "status": "0",
+          "ok": false
+        },
+        {
+          "id": "ce94cd9b-936a-4cc1-876a-8397a5be45e8",
+          "name": "cron-audit-2200 cron 0",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "9ed437a4-c0df-4dc1-8e98-70f610da2373",
+          "name": "BRAIN end-of-day audit",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "52b64673-4656-4364-b3ca-bd7afcfe4f81",
+          "name": "Sync CRM HubSpot",
+          "status": "0",
+          "ok": false
+        },
+        {
+          "id": "a2e6c277-58e8-4f54-9b26-16c978859641",
+          "name": "cron-collect-001 cron 0",
+          "status": "1-5",
+          "ok": false
+        },
+        {
+          "id": "mover-tareas-crm-2300-001",
+          "name": "Mover tareas CRM",
+          "status": "23",
+          "ok": false
+        },
+        {
+          "id": "2340beda-5166-4d16-a7de-99382ed5daaa",
+          "name": "Checklist ask archive...",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "6295f148-a215-4a80-95e7-ae8d9854bfc2",
+          "name": "Update memory symlink...",
+          "status": "*",
+          "ok": false
+        },
+        {
+          "id": "nightly-audit-001",
+          "name": "Nightly audit cron",
+          "status": "*",
           "ok": false
         },
         {
@@ -102,12 +162,6 @@
           "ok": false
         },
         {
-          "id": "33ac9ace-d224-4317-99f3-eaeda74d8450",
-          "name": "BRAIN memory capture",
-          "status": "0-1,9-23",
-          "ok": false
-        },
-        {
           "id": "email-fetch-1200",
           "name": "Email 12:00 cron",
           "status": "*",
@@ -128,60 +182,6 @@
         {
           "id": "email-fetch-1900",
           "name": "Email 19:00 cron",
-          "status": "*",
-          "ok": false
-        },
-        {
-          "id": "ce94cd9b-936a-4cc1-876a-8397a5be45e8",
-          "name": "cron-audit-2200 cron 0",
-          "status": "*",
-          "ok": false
-        },
-        {
-          "id": "9ed437a4-c0df-4dc1-8e98-70f610da2373",
-          "name": "BRAIN end-of-day audit",
-          "status": "*",
-          "ok": false
-        },
-        {
-          "id": "52b64673-4656-4364-b3ca-bd7afcfe4f81",
-          "name": "Sync CRM HubSpot",
-          "status": "0",
-          "ok": false
-        },
-        {
-          "id": "a2e6c277-58e8-4f54-9b26-16c978859641",
-          "name": "cron-collect-001 cron 0",
-          "status": "1-5",
-          "ok": false
-        },
-        {
-          "id": "mover-tareas-crm-2300-001",
-          "name": "Mover tareas CRM",
-          "status": "23",
-          "ok": false
-        },
-        {
-          "id": "2340beda-5166-4d16-a7de-99382ed5daaa",
-          "name": "Checklist ask archive...",
-          "status": "*",
-          "ok": false
-        },
-        {
-          "id": "6295f148-a215-4a80-95e7-ae8d9854bfc2",
-          "name": "Update memory symlink...",
-          "status": "*",
-          "ok": false
-        },
-        {
-          "id": "75daddf7-081b-442b-8526-06def85f6c51",
-          "name": "BRAIN Nightly Learnin...",
-          "status": "*",
-          "ok": false
-        },
-        {
-          "id": "nightly-audit-001",
-          "name": "Nightly audit cron",
           "status": "*",
           "ok": false
         },
@@ -211,7 +211,7 @@
     },
     "ram": {
       "total_mb": 3915,
-      "available_mb": 2193,
+      "available_mb": 2233,
       "ok": true
     },
     "syncthing": {
